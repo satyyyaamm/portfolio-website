@@ -190,53 +190,164 @@ const App = () => {
         </div>
       </section>
 
-      {/* Contact */}
-      <section id="contact" className="py-24 px-6 border-t border-zinc-900 bg-white text-black relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-5xl md:text-7xl font-bold mb-12 tracking-tighter">Get in touch</h2>
-          <form onSubmit={handleSendMail} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase font-bold text-zinc-400">Your Name</label>
-              <input 
-                placeholder="Ex. Jane Doe" 
-                className="bg-transparent border-b border-zinc-200 p-2 focus:outline-none focus:border-black transition-colors" 
-                onChange={e => setFormData({...formData, name: e.target.value})} 
-                required
+      {/* About */}
+      <section id="about" className="py-24 px-6 border-t border-zinc-900 bg-black relative z-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-16 items-center">
+          <div className="relative w-full max-w-[360px] mx-auto lg:mx-0">
+            <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-zinc-500/80" />
+            <div className="relative z-10 rounded-sm overflow-hidden bg-zinc-900">
+              <img
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=900&q=80"
+                alt="Profile"
+                className="w-full h-[430px] object-cover"
               />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase font-bold text-zinc-400">Email Address</label>
-              <input 
-                type="email"
-                placeholder="jane@example.com" 
-                className="bg-transparent border-b border-zinc-200 p-2 focus:outline-none focus:border-black transition-colors" 
-                onChange={e => setFormData({...formData, email: e.target.value})} 
-                required
-              />
+          </div>
+
+          <div className="max-w-3xl">
+            <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-8">
+              I am Rakesh, a full stack web developer and a programmer working remotely in my home at Dhaka, Bangladesh
+            </h2>
+
+            <div className="space-y-6 text-zinc-300 text-sm md:text-base leading-relaxed">
+              <p>
+                I've spent the last 3+ years learning and working across different areas of development: front-end development,
+                back-end development, UI/UX design and currently working for Monipur School and College science club as a Web developer.
+              </p>
+              <p>
+                These days my time is spent researching, designing, building websites, and coding. I also love to learn and
+                experiment with new things.
+              </p>
+              <p>
+                My mission is to help small and medium-sized businesses grow their audience and brand recognition by providing
+                them with stylish and modern-looking, fully functional websites.
+              </p>
             </div>
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <label className="text-[10px] uppercase font-bold text-zinc-400">Message</label>
-              <textarea 
-                placeholder="What are we building?" 
-                rows={4}
-                className="bg-transparent border-b border-zinc-200 p-2 focus:outline-none focus:border-black transition-colors resize-none" 
-                onChange={e => setFormData({...formData, message: e.target.value})} 
-                required
-              />
+
+            <div className="mt-10 flex flex-wrap gap-4">
+              <button className="bg-white text-black px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-zinc-100 transition-colors">
+                My Resume
+              </button>
+              <button className="bg-zinc-900 border border-zinc-700 text-white px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-zinc-800 transition-colors">
+                Hire me
+              </button>
             </div>
-            <button 
-              type="submit" 
-              className="md:col-span-2 bg-black text-white py-4 rounded-full font-bold uppercase tracking-widest text-[10px] hover:invert transition-all"
-            >
-              Send Message
-            </button>
-          </form>
+          </div>
         </div>
       </section>
 
-      <footer className="py-12 bg-black text-center text-[10px] text-zinc-600 tracking-widest border-t border-zinc-900">
-        © 2025 SATYAM TIWARI | CRAFTED FOR PERFORMANCE
-      </footer>
+      {/* Contact */}
+      <section id="contact" className="border-t border-zinc-900 bg-black relative z-10">
+        <div className="max-w-[1280px] mx-auto border-x border-zinc-800">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr]">
+            <div className="p-10 md:p-16 border-b border-zinc-800 lg:border-b-0 lg:border-r border-zinc-800">
+              <p className="text-sm text-zinc-300 mb-4">Contact me</p>
+              <h2 className="text-6xl font-semibold leading-none mb-6">Get in touch</h2>
+              <p className="text-zinc-400 max-w-sm text-xl leading-snug mb-7">
+                It is very important for us to keep in touch with you, so we are always ready to answer any question that interests you.
+              </p>
+              <div className="flex items-center gap-3">
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
+                  <span className="text-sm">f</span>
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
+                  <Github size={14} />
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
+                  <Linkedin size={14} />
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
+                  <ExternalLink size={14} />
+                </a>
+              </div>
+            </div>
+
+            <div className="p-10 md:p-16 border-b border-zinc-800">
+              <form onSubmit={handleSendMail} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Full name</label>
+                  <input
+                    className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base"
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Email address</label>
+                  <input
+                    type="email"
+                    className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base"
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Phone Number</label>
+                  <input className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base" />
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Subject</label>
+                  <input className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-zinc-400 mb-2">Write your message here</label>
+                  <textarea
+                    rows={2}
+                    className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base resize-none"
+                    onChange={e => setFormData({ ...formData, message: e.target.value })}
+                    required
+                  />
+                </div>
+                <button type="submit" className="mt-4 w-fit bg-white text-black px-4 py-1.5 text-sm font-medium rounded-sm">
+                  Send Message
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 border-b border-zinc-800">
+            <div className="p-10 md:p-12 border-b border-zinc-800 md:border-b-0 md:border-r">
+              <h3 className="text-5xl font-semibold mb-4">Rakesh Karmaker</h3>
+              <p className="text-zinc-400 text-lg leading-snug mb-6">
+                I'm a web developer with 3+ years of experience in front-end, back-end, and UI/UX design, creating modern, functional websites to help businesses grow.
+              </p>
+              <button className="bg-white text-black px-4 py-1.5 text-sm font-medium rounded-sm mb-8">My Resume</button>
+              <div className="flex items-center gap-3">
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><span className="text-sm">f</span></a>
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><Github size={14} /></a>
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><Linkedin size={14} /></a>
+                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><ExternalLink size={14} /></a>
+              </div>
+            </div>
+
+            <div className="p-10 md:p-12 border-b border-zinc-800 md:border-b-0 md:border-r">
+              <h4 className="text-4xl font-semibold mb-6">Contact me</h4>
+              <div className="space-y-4 text-zinc-300 text-base">
+                <p><span className="font-semibold text-white">Email:</span><br />rakeshkarmaker0175@gmail.com</p>
+                <p><span className="font-semibold text-white">Phone:</span><br />(880) 1756-170957</p>
+                <p><span className="font-semibold text-white">Adress:</span><br />East Kazipara, Mirpur<br />Dhaka, Bangladesh</p>
+              </div>
+            </div>
+
+            <div className="p-10 md:p-12">
+              <h4 className="text-4xl font-semibold mb-6">Menu</h4>
+              <ul className="space-y-3 text-zinc-300 text-base">
+                <li><a href="#home" className="hover:text-white">Home</a></li>
+                <li><a href="#services" className="hover:text-white">Services</a></li>
+                <li><a href="#projects" className="hover:text-white">Projects</a></li>
+                <li><a href="#projects" className="hover:text-white">Designs</a></li>
+                <li><a href="#about" className="hover:text-white">About W</a></li>
+                <li><a href="#contact" className="hover:text-white">FAQs</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <footer className="px-10 md:px-12 py-6 text-zinc-300 text-sm flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+            <span>Copyright © 2025 Rakesh Karmaker - All rights reserved</span>
+            <span>Designed By: Rakesh</span>
+          </footer>
+        </div>
+      </section>
       
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
