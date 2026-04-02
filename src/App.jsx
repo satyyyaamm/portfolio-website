@@ -62,10 +62,10 @@ const App = () => {
   };
 
   const services = [
-    { title: "Mobile App Dev", icon: <Smartphone size={20} />, desc: "High-performance Flutter & React Native apps." },
-    { title: "Front-End Dev", icon: <Layout size={20} />, desc: "Responsive web apps using React and Tailwind." },
-    { title: "Back-End Dev", icon: <Server size={20} />, desc: "Robust APIs with Node.js and Django." },
-    { title: "Product Strategy", icon: <Cpu size={20} />, desc: "Aligning technical builds with business goals." }
+    { title: "Mobile App Dev", icon: <Smartphone size={32} strokeWidth={1.5} />, desc: "High-performance Flutter & React Native apps." },
+    { title: "Front-End Dev", icon: <Layout size={32} strokeWidth={1.5} />, desc: "Responsive web apps using React and Tailwind." },
+    { title: "Back-End Dev", icon: <Server size={32} strokeWidth={1.5} />, desc: "Robust APIs with Node.js and Django." },
+    { title: "Product Strategy", icon: <Cpu size={32} strokeWidth={1.5} />, desc: "Aligning technical builds with business goals." }
   ];
 
   const projects = [
@@ -107,16 +107,16 @@ const App = () => {
       <section id="services" className="py-24 px-6 border-t border-zinc-900 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-8">My Services</h2>
+            <h2 className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8">My Services</h2>
             <p className="text-zinc-400 max-w-sm text-sm mb-8">Crafting functional and aesthetic digital products.</p>
           </div>
           <div className="space-y-0">
             {services.map((s, i) => (
-              <div key={i} className="border-t border-zinc-800 py-8 flex gap-6 hover:bg-zinc-900/40 px-4 transition-all group">
-                <div className="text-zinc-500 group-hover:text-white transition-colors">{s.icon}</div>
+              <div key={i} className="border-t border-zinc-800 py-8 flex gap-7 items-start hover:bg-zinc-900/40 px-4 transition-all group">
+                <div className="text-white shrink-0 pt-0.5">{s.icon}</div>
                 <div>
-                  <h3 className="text-lg font-bold mb-2">{s.title}</h3>
-                  <p className="text-zinc-500 text-xs">{s.desc}</p>
+                  <h3 className="font-service text-xl md:text-2xl font-bold tracking-tight mb-2">{s.title}</h3>
+                  <p className="text-zinc-500 text-xs md:text-sm leading-relaxed">{s.desc}</p>
                 </div>
               </div>
             ))}
