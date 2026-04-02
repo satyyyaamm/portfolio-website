@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { 
   Github, 
   Linkedin, 
   ExternalLink, 
+  Dribbble,
   Smartphone, 
   Layout, 
   Server, 
@@ -38,7 +39,15 @@ const Navbar = () => {
 
 const App = () => {
   const [activeProject, setActiveProject] = useState(0);
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [creativeIndex, setCreativeIndex] = useState(0);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
+  const creativeTrackRef = useRef(null);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -57,8 +66,11 @@ const App = () => {
 
   const handleSendMail = (e) => {
     e.preventDefault();
-    const mailtoLink = `mailto:satyamt5152@gmail.com?subject=Inquiry&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0AMessage: ${formData.message}`;
-    window.location.href = mailtoLink;
+    const subj = encodeURIComponent(formData.subject.trim() || 'Inquiry');
+    const body = encodeURIComponent(
+      `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nSubject: ${formData.subject}\n\nMessage:\n${formData.message}`
+    );
+    window.location.href = `mailto:satyamt5152@gmail.com?subject=${subj}&body=${body}`;
   };
 
   const services = [
@@ -69,22 +81,91 @@ const App = () => {
   ];
 
   const projects = [
-    { id: 0, name: "OSAC GMS", desc: "Garage management system for automotive centers.", image: "[https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80&w=800](https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80&w=800)" },
-    { id: 1, name: "Waya Waya", desc: "Mall discovery and rewards application.", image: "[https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800](https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800)" },
-    { id: 2, name: "Safe Again", desc: "Real-time women safety application.", image: "[https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800](https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800)" },
-    { id: 3, name: "UJ WayFinder", desc: "University navigation system using BLE Beacons.", image: "[https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800](https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800)" }
+    {
+      id: 0,
+      name: "OSAC GMS",
+      desc: "End-to-end garage management for automotive workshops: job cards, service history, parts inventory, and billing in one workflow. Built to cut admin time and give staff a clear daily view of bays, customers, and revenue.",
+      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80&w=1200",
+      href: "#"
+    },
+    {
+      id: 1,
+      name: "Waya Waya",
+      desc: "A mall discovery app that helps visitors find stores, deals, and events while earning rewards for check-ins and purchases. The focus is fast search, simple maps, and notifications that feel helpful—not noisy.",
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+      href: "#"
+    },
+    {
+      id: 2,
+      name: "Safe Again",
+      desc: "A safety companion for quick alerts and trusted contacts when someone feels at risk. Location sharing, emergency triggers, and calm onboarding were prioritized so the app stays dependable under stress.",
+      image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1200",
+      href: "#"
+    },
+    {
+      id: 3,
+      name: "UJ WayFinder",
+      desc: "Indoor navigation for a large campus using BLE beacons so students can find lecture halls, labs, and venues without guesswork. Offline-friendly cues and step-by-step guidance reduce late arrivals on complex sites.",
+      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200",
+      href: "#"
+    }
   ];
 
-  const designs = [
-    { title: "GMS Dashboard", desc: "Admin interface", img: "[https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200](https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200)" },
-    { title: "Checkout UI", desc: "Conversion-optimized", img: "[https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=1200](https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=1200)" },
-    { title: "Mobile UI Kit", desc: "Consistent components", img: "[https://images.unsplash.com/photo-1512428559083-a400a6b82c02?auto=format&fit=crop&q=80&w=1200](https://images.unsplash.com/photo-1512428559083-a400a6b82c02?auto=format&fit=crop&q=80&w=1200)" }
+  const creativeDesigns = [
+    {
+      name: "Checkout",
+      desc: "This page is designed for checking out your products bought from Astro Mart which, a high quality e-commerce website for delivering fresh and high quality products.",
+      image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=80",
+      accent: "#7dd3fc",
+      href: "#"
+    },
+    {
+      name: "Admin Panel",
+      desc: "The MSCSC Admin Panel streamlines website management, enabling efficient updates to events and content. A simple and user-friendly tool for the team to keep the site dynamic.",
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80",
+      accent: "#2563eb",
+      href: "#"
+    },
+    {
+      name: "Mobile experience",
+      desc: "A focused mobile flow for onboarding and daily use—clear hierarchy, generous tap targets, and motion that reinforces feedback without slowing people down.",
+      image: "https://images.unsplash.com/photo-1512428559083-a400a6b82c02?auto=format&fit=crop&w=1200&q=80",
+      accent: "#1e293b",
+      href: "#"
+    },
+    {
+      name: "Analytics suite",
+      desc: "Dashboards for teams who need signal, not noise: KPIs at a glance, drill-down when needed, and a layout that stays legible on long review sessions.",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+      accent: "#0f172a",
+      href: "#"
+    },
+    {
+      name: "Brand landing",
+      desc: "A single-scroll landing that carries brand voice from hero to CTA—typography, spacing, and imagery aligned so the story reads effortlessly on any device.",
+      image: "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=1200&q=80",
+      accent: "#27272a",
+      href: "#"
+    }
   ];
+
+  useEffect(() => {
+    const track = creativeTrackRef.current;
+    if (!track) return;
+    const cards = track.querySelectorAll("[data-creative-card]");
+    const card = cards[creativeIndex];
+    if (!card) return;
+    track.scrollTo({ left: card.offsetLeft - 24, behavior: "smooth" });
+  }, [creativeIndex]);
 
   return (
     <div className="bg-black text-white font-sans min-h-screen relative overflow-x-hidden">
       <Navbar />
-      <motion.div style={{ x: cursorX, y: cursorY }} className="fixed top-0 left-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-[120px] pointer-events-none z-0" />
+      <motion.div
+        style={{ x: cursorX, y: cursorY }}
+        className="fixed top-0 left-0 w-[400px] h-[400px] bg-white/[0.16] rounded-full blur-[100px] pointer-events-none z-[1]"
+        aria-hidden
+      />
 
       {/* Hero */}
       <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
@@ -124,69 +205,171 @@ const App = () => {
         </div>
       </section>
 
-      {/* Projects */}
-      <section id="projects" className="py-24 px-6 bg-zinc-950/20 relative z-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <div className="sticky top-32 h-fit">
-            <h2 className="text-3xl font-bold mb-12 uppercase tracking-tighter">Projects I've Created</h2>
-            {projects.map((p, i) => (
-              <div 
-                key={i} 
-                onMouseEnter={() => setActiveProject(i)} 
-                className="border-t border-zinc-800 pt-8 mb-8 cursor-pointer group"
-              >
-                <h3 className={`text-2xl font-bold transition-all ${activeProject === i ? 'text-white translate-x-2' : 'text-zinc-600'}`}>
-                  {p.name}
-                </h3>
-                <AnimatePresence>
-                  {activeProject === i && (
-                    <motion.p 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="text-zinc-400 text-xs mt-4 overflow-hidden"
-                    >
-                      {p.desc}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
+      <section id="projects" className="bg-black py-24 px-6 relative z-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-12 lg:gap-20 items-start">
+          <div className="lg:sticky lg:top-28 lg:self-start w-full max-w-xl">
+            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.1] mb-10 md:mb-12">
+              Projects I&apos;ve Created for My Clients
+            </h2>
+            <div>
+              {projects.map((p, i) => (
+                <Fragment key={p.id}>
+                  <motion.div
+                    className="rounded-lg px-2"
+                    initial={false}
+                    whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.055)" }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                    <div className="py-4 md:py-5 px-1">
+                      <motion.button
+                        type="button"
+                        onClick={() => setActiveProject(i)}
+                        aria-expanded={activeProject === i}
+                        aria-controls={`project-panel-${p.id}`}
+                        id={`project-trigger-${p.id}`}
+                        className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
+                        whileHover={{ x: 6 }}
+                        whileTap={{ scale: 0.995 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 28 }}
+                      >
+                        <h3 className="font-service text-xl md:text-2xl font-medium tracking-tight text-white">
+                          {p.name}
+                        </h3>
+                      </motion.button>
+                      <AnimatePresence initial={false}>
+                        {activeProject === i && (
+                          <motion.div
+                            id={`project-panel-${p.id}`}
+                            role="region"
+                            aria-labelledby={`project-trigger-${p.id}`}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <p className="text-zinc-400 text-sm md:text-[0.9375rem] leading-relaxed mt-3 max-w-lg">
+                              {p.desc}
+                            </p>
+                            <a
+                              href={p.href}
+                              target={p.href.startsWith("http") ? "_blank" : undefined}
+                              rel={p.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                              onClick={(e) => {
+                                if (p.href === "#") e.preventDefault();
+                              }}
+                              className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 hover:opacity-90 transition-opacity"
+                            >
+                              Learn more
+                              <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+                            </a>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                  <div
+                    className="w-full shrink-0"
+                    style={{ height: "0.5px", backgroundColor: "#ffffff" }}
+                    role="presentation"
+                    aria-hidden
+                  />
+                </Fragment>
+              ))}
+            </div>
           </div>
-          <div className="aspect-[4/5] rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-2xl">
-            <motion.img 
-              key={activeProject} 
-              initial={{ opacity: 0, scale: 1.1 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              transition={{ duration: 0.4 }}
-              src={projects[activeProject].image} 
-              className="w-full h-full object-cover" 
-            />
+          <div className="w-full flex justify-center lg:justify-end lg:self-end">
+            <motion.div
+              className="w-full max-w-md sm:max-w-lg lg:max-w-xl aspect-video rounded-2xl overflow-hidden bg-zinc-950 ring-1 ring-white/10 shadow-2xl"
+              whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              <motion.img
+                key={activeProject}
+                initial={{ opacity: 0, scale: 1.03 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                src={projects[activeProject].image}
+                alt={projects[activeProject].name}
+                className="w-full h-full object-cover object-center"
+              />
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Design Showcase / Carousel */}
-      <section className="py-24 px-6 border-t border-zinc-900 overflow-hidden relative z-10">
-        <div className="max-w-7xl mx-auto mb-12">
-          <h2 className="text-3xl font-bold uppercase tracking-tighter">Design Showcase</h2>
-          <p className="text-zinc-500 text-xs mt-2">Interfaces designed with precision.</p>
-        </div>
-        
-        <div className="flex gap-6 overflow-x-auto pb-12 snap-x no-scrollbar">
-          {designs.map((d, i) => (
-            <motion.div 
-              key={i}
-              whileHover={{ y: -10 }}
-              className="min-w-[300px] md:min-w-[450px] snap-start group"
-            >
-              <div className="aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900 mb-4">
-                <img src={d.img} alt={d.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      <section id="designs" className="bg-zinc-950 py-24 px-6 border-t border-zinc-900 relative z-10 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-10 md:mb-12">
+            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
+              Creative Designs for
+              <br />
+              My Clients
+            </h2>
+            <div className="mt-5 flex flex-row items-center justify-between gap-4">
+              <p className="text-zinc-400 text-sm tabular-nums leading-none">
+                {creativeIndex + 1}/{creativeDesigns.length}
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  aria-label="Previous design"
+                  disabled={creativeIndex === 0}
+                  onClick={() => setCreativeIndex((i) => Math.max(0, i - 1))}
+                  className="h-11 w-11 shrink-0 rounded-full bg-white text-black opacity-100 flex items-center justify-center transition-colors enabled:hover:bg-zinc-200 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-white disabled:text-black disabled:opacity-100"
+                >
+                  <ChevronLeft className="w-5 h-5 shrink-0 text-black" strokeWidth={2} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next design"
+                  disabled={creativeIndex === creativeDesigns.length - 1}
+                  onClick={() => setCreativeIndex((i) => Math.min(creativeDesigns.length - 1, i + 1))}
+                  className="h-11 w-11 shrink-0 rounded-full bg-white text-black opacity-100 flex items-center justify-center transition-colors enabled:hover:bg-zinc-200 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-white disabled:text-black disabled:opacity-100"
+                >
+                  <ChevronRight className="w-5 h-5 shrink-0 text-black" strokeWidth={2} aria-hidden />
+                </button>
               </div>
-              <h4 className="font-bold text-sm uppercase tracking-widest">{d.title}</h4>
-              <p className="text-zinc-500 text-[10px] mt-1">{d.desc}</p>
-            </motion.div>
-          ))}
+            </div>
+          </div>
+
+          <div
+            ref={creativeTrackRef}
+            className="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 -mx-1 px-1"
+          >
+            {creativeDesigns.map((d, i) => (
+              <article
+                key={d.name}
+                data-creative-card
+                className="snap-start shrink-0 w-[min(85vw,calc(100%-2rem))] sm:w-[min(72vw,420px)] lg:w-[calc(50%-0.75rem)] max-w-[520px] flex flex-col"
+              >
+                <div
+                  className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6"
+                  style={{ backgroundColor: d.accent }}
+                >
+                  <img
+                    src={d.image}
+                    alt={`${d.name} design mockup`}
+                    className="max-h-full max-w-full object-contain rounded-md shadow-lg"
+                  />
+                </div>
+                <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">
+                  {d.name},
+                </h3>
+                <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
+                <a
+                  href={d.href}
+                  onClick={(e) => {
+                    if (d.href === "#") e.preventDefault();
+                  }}
+                  className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 hover:opacity-90 transition-opacity"
+                >
+                  Learn more
+                  <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+                </a>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -236,75 +419,136 @@ const App = () => {
         </div>
       </section>
 
-      {/* Contact */}
-      <section id="contact" className="border-t border-zinc-900 bg-black relative z-10">
-        <div className="max-w-[1280px] mx-auto border-x border-zinc-800">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr]">
-            <div className="p-10 md:p-16 border-b border-zinc-800 lg:border-b-0 lg:border-r border-zinc-800">
-              <p className="text-sm text-zinc-300 mb-4">Contact me</p>
-              <h2 className="text-6xl font-semibold leading-none mb-6">Get in touch</h2>
-              <p className="text-zinc-400 max-w-sm text-xl leading-snug mb-7">
-                It is very important for us to keep in touch with you, so we are always ready to answer any question that interests you.
-              </p>
-              <div className="flex items-center gap-3">
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
-                  <span className="text-sm">f</span>
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
-                  <Github size={14} />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
-                  <Linkedin size={14} />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800">
-                  <ExternalLink size={14} />
-                </a>
+      <section id="contact" className="relative z-10 border-t border-zinc-900">
+        <div className="bg-zinc-950">
+          <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 xl:gap-24 items-start">
+              <div className="max-w-lg">
+                <p className="text-sm text-white mb-4">Contact me</p>
+                <h2 className="text-5xl sm:text-6xl md:text-7xl font-semibold text-white leading-[0.98] tracking-tight mb-6">
+                  Get in touch
+                </h2>
+                <p className="text-base md:text-lg text-white/90 leading-relaxed mb-10 max-w-md">
+                  It is very important for us to keep in touch with you, so we are always ready to answer any question that interests you.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <a
+                    href="#"
+                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="Facebook"
+                  >
+                    <span className="text-xs font-semibold leading-none">f</span>
+                  </a>
+                  <a
+                    href="#"
+                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="GitHub"
+                  >
+                    <Github size={16} strokeWidth={1.75} />
+                  </a>
+                  <a
+                    href="#"
+                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="LinkedIn"
+                  >
+                    <Linkedin size={16} strokeWidth={1.75} />
+                  </a>
+                  <a
+                    href="#"
+                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="Dribbble"
+                  >
+                    <Dribbble size={16} strokeWidth={1.75} />
+                  </a>
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <form onSubmit={handleSendMail} className="space-y-10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+                    <div>
+                      <label htmlFor="contact-name" className="block text-sm text-white mb-2">
+                        Full name
+                      </label>
+                      <input
+                        id="contact-name"
+                        name="name"
+                        value={formData.name}
+                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white"
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="contact-email" className="block text-sm text-white mb-2">
+                        Email address
+                      </label>
+                      <input
+                        id="contact-email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white"
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
+                    <div>
+                      <label htmlFor="contact-phone" className="block text-sm text-white mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        id="contact-phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white"
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="contact-subject" className="block text-sm text-white mb-2">
+                        Subject
+                      </label>
+                      <input
+                        id="contact-subject"
+                        name="subject"
+                        value={formData.subject}
+                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white"
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="contact-message" className="block text-sm text-white mb-2">
+                      Write your message here
+                    </label>
+                    <textarea
+                      id="contact-message"
+                      name="message"
+                      rows={5}
+                      value={formData.message}
+                      className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white resize-none min-h-[120px]"
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-fit bg-zinc-200 text-black px-6 py-2.5 text-sm font-medium rounded-md hover:bg-white transition-colors"
+                  >
+                    Send Message
+                  </button>
+                </form>
               </div>
             </div>
-
-            <div className="p-10 md:p-16 border-b border-zinc-800">
-              <form onSubmit={handleSendMail} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Full name</label>
-                  <input
-                    className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base"
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Email address</label>
-                  <input
-                    type="email"
-                    className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base"
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Phone Number</label>
-                  <input className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base" />
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Subject</label>
-                  <input className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm text-zinc-400 mb-2">Write your message here</label>
-                  <textarea
-                    rows={2}
-                    className="w-full bg-transparent border-b border-zinc-600 pb-2 focus:outline-none focus:border-zinc-300 text-base resize-none"
-                    onChange={e => setFormData({ ...formData, message: e.target.value })}
-                    required
-                  />
-                </div>
-                <button type="submit" className="mt-4 w-fit bg-white text-black px-4 py-1.5 text-sm font-medium rounded-sm">
-                  Send Message
-                </button>
-              </form>
-            </div>
           </div>
+        </div>
 
+        <div className="bg-black border-t border-zinc-800">
+          <div className="max-w-[1280px] mx-auto border-x border-zinc-800">
           <div className="grid grid-cols-1 md:grid-cols-3 border-b border-zinc-800">
             <div className="p-10 md:p-12 border-b border-zinc-800 md:border-b-0 md:border-r">
               <h3 className="text-5xl font-semibold mb-4">Rakesh Karmaker</h3>
@@ -335,17 +579,18 @@ const App = () => {
                 <li><a href="#home" className="hover:text-white">Home</a></li>
                 <li><a href="#services" className="hover:text-white">Services</a></li>
                 <li><a href="#projects" className="hover:text-white">Projects</a></li>
-                <li><a href="#projects" className="hover:text-white">Designs</a></li>
+                <li><a href="#designs" className="hover:text-white">Designs</a></li>
                 <li><a href="#about" className="hover:text-white">About W</a></li>
                 <li><a href="#contact" className="hover:text-white">FAQs</a></li>
               </ul>
             </div>
           </div>
 
-          <footer className="px-10 md:px-12 py-6 text-zinc-300 text-sm flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+          <footer className="px-10 md:px-12 py-6 text-zinc-300 text-sm flex flex-col md:flex-row gap-2 md:items-center md:justify-between border-t border-zinc-800">
             <span>Copyright © 2025 Rakesh Karmaker - All rights reserved</span>
             <span>Designed By: Rakesh</span>
           </footer>
+          </div>
         </div>
       </section>
       
