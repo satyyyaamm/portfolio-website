@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, Fragment } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from 'framer-motion';
 import { 
   Github, 
   Linkedin, 
-  ExternalLink, 
-  Dribbble,
+  Globe,
   Smartphone, 
   Layout, 
   Server, 
@@ -17,25 +16,156 @@ import {
   Briefcase
 } from 'lucide-react';
 
+const MediumIcon = ({ className = "h-4 w-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.78-6.82A6.8 6.8 0 0113.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" />
+  </svg>
+);
+
 const Navbar = () => {
   return (
     <nav className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-sm border-b border-zinc-900 py-3 px-6">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="text-lg font-bold tracking-tight text-white">Satyam</div>
+        <a href="#home" className="text-lg font-bold tracking-tight text-white hover:text-zinc-200 transition-colors">
+          Satyam
+        </a>
         <div className="hidden md:flex gap-6 text-xs font-medium text-zinc-400">
           <a href="#home" className="hover:text-white transition-colors">Home</a>
           <a href="#services" className="hover:text-white transition-colors">Services</a>
           <a href="#projects" className="hover:text-white transition-colors">Projects</a>
+          <a href="#designs" className="hover:text-white transition-colors">Designs</a>
           <a href="#about" className="hover:text-white transition-colors">About</a>
           <a href="#contact" className="hover:text-white transition-colors">Contact</a>
         </div>
-        <button className="border border-zinc-700 px-5 py-1.5 rounded-md text-xs font-medium hover:bg-white hover:text-black transition-all">
+        <a
+          href="#contact"
+          className="border border-zinc-700 px-5 py-1.5 rounded-md text-xs font-medium hover:bg-white hover:text-black transition-all"
+        >
           Contact
-        </button>
+        </a>
       </div>
     </nav>
   );
 };
+
+/** Soft scroll-linked reveal — tweened (not spring) so it pairs cleanly with Lenis */
+const scrollFloatReveal = {
+  initial: { opacity: 0, y: 40 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.1, margin: "-80px 0px -60px 0px" },
+  transition: { duration: 0.95, ease: [0.22, 1, 0.36, 1] },
+};
+
+const techMarqueeItems = [
+  "Flutter",
+  "Dart",
+  "Firebase",
+  "REST APIs",
+  "Android",
+  "iOS",
+  "Riverpod",
+  "BLoC",
+  "Material Design",
+  "Cupertino",
+  "SQLite",
+  "Hive",
+  "Git",
+  "GitHub Actions",
+  "Figma",
+  "React",
+  "TypeScript",
+  "Tailwind CSS",
+  "Node.js",
+  "GraphQL",
+  "WebSockets",
+  "CI/CD",
+  "Play Store",
+  "App Store",
+];
+
+const techPillClass =
+  "inline-flex shrink-0 items-center rounded border border-zinc-800/90 bg-zinc-900/70 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-zinc-200 shadow-sm backdrop-blur-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]";
+
+function TechMarqueePill({ label, staggerIndex }) {
+  return (
+    <motion.span
+      className={techPillClass}
+      initial={{ opacity: 0, y: 18, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        delay: 0.14 + staggerIndex * 0.034,
+        type: "spring",
+        stiffness: 440,
+        damping: 26,
+        mass: 0.85,
+      }}
+    >
+      {label}
+    </motion.span>
+  );
+}
+
+function TechMarqueeStrip({ items }) {
+  const doubled = [...items, ...items];
+  return (
+    <div
+      className="tech-marquee-track flex w-max gap-2 sm:gap-2.5"
+      style={{ "--tech-marquee-duration": "48s" }}
+    >
+      {doubled.map((label, i) => (
+        <TechMarqueePill key={`${label}-${i}`} label={label} staggerIndex={i} />
+      ))}
+    </div>
+  );
+}
+
+function HeroTechMarquee() {
+  const reduced = useReducedMotion();
+
+  if (reduced) {
+    return (
+      <div className="mt-14 w-full max-w-7xl md:mt-20">
+        <p className="mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+          Technologies I use
+        </p>
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
+          {techMarqueeItems.map((label) => (
+            <span key={label} className={techPillClass}>
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const edgeFade =
+    "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.2) 8%, rgba(0,0,0,0.75) 20%, black 38%, black 62%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.2) 92%, transparent 100%)";
+
+  return (
+    <motion.div
+      className="tech-marquee-wrap mt-14 w-full md:mt-20"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.45, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <p className="mb-6 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+        Technologies I use
+      </p>
+      <div
+        className="relative w-full max-w-7xl mx-auto overflow-hidden py-2"
+        style={{
+          maskImage: edgeFade,
+          WebkitMaskImage: edgeFade,
+        }}
+      >
+        <div className="flex min-h-10 items-center sm:min-h-[2.75rem]">
+          <TechMarqueeStrip items={techMarqueeItems} />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 const App = () => {
   const [activeProject, setActiveProject] = useState(0);
@@ -155,7 +285,9 @@ const App = () => {
     const cards = track.querySelectorAll("[data-creative-card]");
     const card = cards[creativeIndex];
     if (!card) return;
-    track.scrollTo({ left: card.offsetLeft - 24, behavior: "smooth" });
+    const padLeft = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    const target = Math.max(0, card.offsetLeft - padLeft);
+    track.scrollTo({ left: target, behavior: "smooth" });
   }, [creativeIndex]);
 
   return (
@@ -168,7 +300,7 @@ const App = () => {
       />
 
       {/* Hero */}
-      <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
+      <section id="home" className="scroll-mt-24 min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-zinc-500 mb-6">
           <MapPin size={14} /><span className="text-xs font-medium">India | Open to Remote</span>
         </motion.div>
@@ -182,10 +314,11 @@ const App = () => {
           <button className="bg-white text-black px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">Get yours now</button>
           <a href="#projects" className="bg-zinc-900 border border-zinc-800 text-white px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">See my work</a>
         </div>
+        <HeroTechMarquee />
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 px-6 border-t border-zinc-900 relative z-10">
+      <motion.section id="services" className="scroll-mt-24 py-24 px-6 border-t border-zinc-900 relative z-10" {...scrollFloatReveal}>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div>
             <h2 className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8">My Services</h2>
@@ -203,9 +336,9 @@ const App = () => {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section id="projects" className="bg-black py-24 px-6 relative z-10">
+      <motion.section id="projects" className="scroll-mt-24 bg-black py-24 px-6 relative z-10" {...scrollFloatReveal}>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-12 lg:gap-20 items-start">
           <div className="lg:sticky lg:top-28 lg:self-start w-full max-w-xl">
             <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.1] mb-10 md:mb-12">
@@ -296,11 +429,10 @@ const App = () => {
             </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section id="designs" className="bg-zinc-950 py-24 px-6 border-t border-zinc-900 relative z-10 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-10 md:mb-12">
+      <motion.section id="designs" className="scroll-mt-24 bg-zinc-950 py-24 border-t border-zinc-900 relative z-10 overflow-x-visible overflow-y-visible" {...scrollFloatReveal}>
+        <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-12">
             <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
               Creative Designs for
               <br />
@@ -331,17 +463,18 @@ const App = () => {
                 </button>
               </div>
             </div>
-          </div>
+        </div>
 
+        <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-visible">
           <div
             ref={creativeTrackRef}
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 -mx-1 px-1"
+            className="flex gap-6 overflow-x-auto overflow-y-visible overscroll-x-contain snap-x snap-proximity no-scrollbar pb-2 px-[clamp(1.25rem,6vw,6cm)] [scroll-padding-inline:clamp(1.25rem,6vw,6cm)]"
           >
-            {creativeDesigns.map((d, i) => (
+            {creativeDesigns.map((d) => (
               <article
                 key={d.name}
                 data-creative-card
-                className="snap-start shrink-0 w-[min(85vw,calc(100%-2rem))] sm:w-[min(72vw,420px)] lg:w-[calc(50%-0.75rem)] max-w-[520px] flex flex-col"
+                className="snap-start shrink-0 w-[min(88vw,520px)] sm:w-[min(72vw,440px)] lg:w-[min(46vw,520px)] max-w-[520px] flex flex-col"
               >
                 <div
                   className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6"
@@ -371,10 +504,10 @@ const App = () => {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* About */}
-      <section id="about" className="py-24 px-6 border-t border-zinc-900 bg-black relative z-10">
+      <motion.section id="about" className="scroll-mt-24 py-24 px-6 border-t border-zinc-900 bg-black relative z-10" {...scrollFloatReveal}>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-16 items-center">
           <div className="relative w-full max-w-[360px] mx-auto lg:mx-0">
             <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-zinc-500/80" />
@@ -417,9 +550,9 @@ const App = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section id="contact" className="relative z-10 border-t border-zinc-900">
+      <motion.section id="contact" className="scroll-mt-24 relative z-10 border-t border-zinc-900" {...scrollFloatReveal}>
         <div className="bg-zinc-950">
           <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 xl:gap-24 items-start">
@@ -454,11 +587,13 @@ const App = () => {
                     <Linkedin size={16} strokeWidth={1.75} />
                   </a>
                   <a
-                    href="#"
+                    href="https://medium.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
-                    aria-label="Dribbble"
+                    aria-label="Medium"
                   >
-                    <Dribbble size={16} strokeWidth={1.75} />
+                    <MediumIcon className="h-4 w-4" />
                   </a>
                 </div>
               </div>
@@ -547,52 +682,125 @@ const App = () => {
           </div>
         </div>
 
-        <div className="bg-black border-t border-zinc-800">
-          <div className="max-w-[1280px] mx-auto border-x border-zinc-800">
-          <div className="grid grid-cols-1 md:grid-cols-3 border-b border-zinc-800">
-            <div className="p-10 md:p-12 border-b border-zinc-800 md:border-b-0 md:border-r">
-              <h3 className="text-5xl font-semibold mb-4">Rakesh Karmaker</h3>
-              <p className="text-zinc-400 text-lg leading-snug mb-6">
-                I'm a web developer with 3+ years of experience in front-end, back-end, and UI/UX design, creating modern, functional websites to help businesses grow.
-              </p>
-              <button className="bg-white text-black px-4 py-1.5 text-sm font-medium rounded-sm mb-8">My Resume</button>
-              <div className="flex items-center gap-3">
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><span className="text-sm">f</span></a>
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><Github size={14} /></a>
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><Linkedin size={14} /></a>
-                <a href="#" className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center hover:bg-zinc-800"><ExternalLink size={14} /></a>
+        <div className="bg-transparent border-t border-zinc-800">
+          <div className="max-w-7xl mx-auto px-6 py-14 md:py-16 lg:px-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-0">
+              <div className="lg:pr-12 lg:border-r border-zinc-700/80">
+                <h3 className="font-service text-4xl md:text-5xl font-semibold text-white tracking-tight mb-5">
+                  Satyam Tiwari
+                </h3>
+                <p className="font-service text-zinc-400 text-base md:text-lg leading-relaxed mb-8 max-w-md">
+                  Flutter and mobile developer building scalable apps and polished interfaces. I work across product UI, APIs, and shipping reliable experiences users enjoy.
+                </p>
+                <a
+                  href="#"
+                  className="inline-block bg-white text-black px-5 py-2.5 text-sm font-medium rounded-md mb-10 hover:bg-zinc-200 transition-colors"
+                >
+                  My Resume
+                </a>
+                <div className="flex flex-wrap items-center gap-3">
+                  <a
+                    href="#"
+                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="Facebook"
+                  >
+                    <span className="text-sm font-semibold leading-none">f</span>
+                  </a>
+                  <a
+                    href="#"
+                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="GitHub"
+                  >
+                    <Github size={16} strokeWidth={1.75} />
+                  </a>
+                  <a
+                    href="#"
+                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="LinkedIn"
+                  >
+                    <Linkedin size={16} strokeWidth={1.75} />
+                  </a>
+                  <a
+                    href="#"
+                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                    aria-label="Website"
+                  >
+                    <Globe size={16} strokeWidth={1.75} />
+                  </a>
+                </div>
               </div>
-            </div>
 
-            <div className="p-10 md:p-12 border-b border-zinc-800 md:border-b-0 md:border-r">
-              <h4 className="text-4xl font-semibold mb-6">Contact me</h4>
-              <div className="space-y-4 text-zinc-300 text-base">
-                <p><span className="font-semibold text-white">Email:</span><br />rakeshkarmaker0175@gmail.com</p>
-                <p><span className="font-semibold text-white">Phone:</span><br />(880) 1756-170957</p>
-                <p><span className="font-semibold text-white">Adress:</span><br />East Kazipara, Mirpur<br />Dhaka, Bangladesh</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8 lg:pl-12">
+                <div>
+                  <h4 className="text-2xl md:text-3xl font-semibold text-white mb-6">Contact me</h4>
+                  <div className="space-y-5 text-zinc-400 text-base leading-relaxed">
+                    <p>
+                      <span className="font-semibold text-white">Email:</span>
+                      <br />
+                      <a
+                        href="mailto:satyamt5152@gmail.com"
+                        className="hover:text-white transition-colors underline-offset-2 hover:underline"
+                      >
+                        satyamt5152@gmail.com
+                      </a>
+                    </p>
+                    <p>
+                      <span className="font-semibold text-white">Phone:</span>
+                      <br />
+                      Available on request
+                    </p>
+                    <p>
+                      <span className="font-semibold text-white">Address:</span>
+                      <br />
+                      India — open to remote
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-2xl md:text-3xl font-semibold text-white mb-6">Menu</h4>
+                  <ul className="space-y-3 text-zinc-400 text-base">
+                    <li>
+                      <a href="#home" className="hover:text-white transition-colors">
+                        Home
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#services" className="hover:text-white transition-colors">
+                        Services
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#projects" className="hover:text-white transition-colors">
+                        Projects
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#designs" className="hover:text-white transition-colors">
+                        Designs
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#about" className="hover:text-white transition-colors">
+                        About me
+                      </a>
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </div>
-
-            <div className="p-10 md:p-12">
-              <h4 className="text-4xl font-semibold mb-6">Menu</h4>
-              <ul className="space-y-3 text-zinc-300 text-base">
-                <li><a href="#home" className="hover:text-white">Home</a></li>
-                <li><a href="#services" className="hover:text-white">Services</a></li>
-                <li><a href="#projects" className="hover:text-white">Projects</a></li>
-                <li><a href="#designs" className="hover:text-white">Designs</a></li>
-                <li><a href="#about" className="hover:text-white">About W</a></li>
-                <li><a href="#contact" className="hover:text-white">FAQs</a></li>
-              </ul>
             </div>
           </div>
 
-          <footer className="px-10 md:px-12 py-6 text-zinc-300 text-sm flex flex-col md:flex-row gap-2 md:items-center md:justify-between border-t border-zinc-800">
-            <span>Copyright © 2025 Rakesh Karmaker - All rights reserved</span>
-            <span>Designed By: Rakesh</span>
+          <footer className="border-t border-zinc-700 px-6 py-6">
+            <p className="text-center text-zinc-400 text-sm leading-relaxed">
+              Copyright © 2026 Satyam Tiwari - All rights reserved
+              <span className="mx-2 text-zinc-600" aria-hidden>
+                ||
+              </span>
+              Designed By: Satyam Tiwari
+            </p>
           </footer>
-          </div>
         </div>
-      </section>
+      </motion.section>
       
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
