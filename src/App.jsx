@@ -667,7 +667,7 @@ const App = () => {
         <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-visible">
           <div
             ref={creativeTrackRef}
-            className="flex gap-6 overflow-x-auto overflow-y-visible overscroll-x-contain snap-x snap-proximity no-scrollbar pb-2 px-[clamp(1.25rem,6vw,6cm)] [scroll-padding-inline:clamp(1.25rem,6vw,6cm)]"
+            className="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain snap-x snap-proximity no-scrollbar pb-2 px-[clamp(1.25rem,6vw,6cm)] [scroll-padding-inline:clamp(1.25rem,6vw,6cm)]"
           >
             {creativeDesigns.map((d) => (
               <article
