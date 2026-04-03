@@ -308,6 +308,7 @@ const App = () => {
   const [contactFormError, setContactFormError] = useState('');
   const [contactHoneypot, setContactHoneypot] = useState('');
   const [pointerCoarse, setPointerCoarse] = useState(false);
+  const [serviceHoverIndex, setServiceHoverIndex] = useState(null);
   const reducedMotion = useReducedMotion();
 
   const mouseX = useMotionValue(0);
@@ -576,8 +577,31 @@ const App = () => {
           </div>
           <div className="space-y-0">
             {services.map((s, i) => (
-              <div key={i} className="border-t border-zinc-800 py-8 flex gap-7 items-start hover:bg-zinc-900/40 px-4 transition-all group">
-                <div className="text-white shrink-0 pt-0.5">{s.icon}</div>
+              <div
+                key={i}
+                className="border-t border-zinc-800 py-8 flex gap-7 items-start hover:bg-zinc-900/40 px-4 transition-all group"
+                onMouseEnter={() => setServiceHoverIndex(i)}
+                onMouseLeave={() => setServiceHoverIndex(null)}
+              >
+                <motion.div
+                  className="text-white shrink-0 pt-0.5 inline-flex origin-center will-change-transform"
+                  animate={{
+                    rotate:
+                      !reducedMotion && serviceHoverIndex === i ? 1080 : 0,
+                  }}
+                  transition={
+                    !reducedMotion && serviceHoverIndex === i
+                      ? {
+                          type: 'spring',
+                          stiffness: 280,
+                          damping: 16,
+                          mass: 0.55,
+                        }
+                      : { duration: 0 }
+                  }
+                >
+                  {s.icon}
+                </motion.div>
                 <div>
                   <h3 className="font-service text-xl md:text-2xl font-bold tracking-tight mb-2">{s.title}</h3>
                   <p className="text-zinc-500 text-xs md:text-sm leading-relaxed">{s.desc}</p>
@@ -684,39 +708,150 @@ const App = () => {
 
       <section id="designs" className="bg-zinc-950 py-24 border-t border-zinc-900 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
-            More interfaces &amp;
-            <br />
-            team-era builds
-          </h2>
-          <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-            {creativeDesigns.map((d) => (
-              <article key={d.name} className="flex flex-col">
-                <div
-                  className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6"
-                  style={{ backgroundColor: d.accent }}
+          {reducedMotion ? (
+            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
+              More interfaces &amp;
+              <br />
+              team-era builds
+            </h2>
+          ) : (
+            <motion.h2
+              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.45 }}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: { staggerChildren: 0.14, delayChildren: 0.08 },
+                },
+              }}
+            >
+              <motion.span
+                className="block"
+                variants={{
+                  hidden: { opacity: 0, y: 32, filter: 'blur(6px)' },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    filter: 'blur(0px)',
+                    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
+                  },
+                }}
+              >
+                More interfaces &amp;
+              </motion.span>
+              <motion.span
+                className="block"
+                variants={{
+                  hidden: { opacity: 0, y: 32, filter: 'blur(6px)' },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    filter: 'blur(0px)',
+                    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
+                  },
+                }}
+              >
+                team-era builds
+              </motion.span>
+            </motion.h2>
+          )}
+
+          {reducedMotion ? (
+            <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+              {creativeDesigns.map((d) => (
+                <article
+                  key={d.name}
+                  className="group flex flex-col transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 motion-reduce:hover:translate-y-0"
                 >
-                  <img
-                    src={d.image}
-                    alt={`${d.name} design mockup`}
-                    className="max-h-full max-w-full object-contain rounded-md shadow-lg"
-                  />
-                </div>
-                <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">{d.name},</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
-                <a
-                  href={d.href}
-                  onClick={(e) => {
-                    if (d.href === "#") e.preventDefault();
+                  <div
+                    className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-white/[0.07] transition-[box-shadow,ring-color] duration-300 group-hover:ring-white/18 group-hover:shadow-[0_22px_48px_-14px_rgba(0,0,0,0.65)] motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-white/[0.07]"
+                    style={{ backgroundColor: d.accent }}
+                  >
+                    <img
+                      src={d.image}
+                      alt={`${d.name} design mockup`}
+                      className="max-h-full max-w-full object-contain rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                  </div>
+                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">{d.name},</h3>
+                  <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
+                  <a
+                    href={d.href}
+                    onClick={(e) => {
+                      if (d.href === '#') e.preventDefault();
+                    }}
+                    className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
+                  >
+                    Learn more
+                    <ArrowRight
+                      className="w-4 h-4 shrink-0 transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                  </a>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.12, margin: '0px 0px -48px 0px' }}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: { staggerChildren: 0.12, delayChildren: 0.2 },
+                },
+              }}
+            >
+              {creativeDesigns.map((d) => (
+                <motion.article
+                  key={d.name}
+                  variants={{
+                    hidden: { opacity: 0, y: 40 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+                    },
                   }}
-                  className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 hover:opacity-90 transition-opacity"
+                  whileHover={{ y: -6 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                  className="group flex flex-col will-change-transform"
                 >
-                  Learn more
-                  <ArrowRight className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
-                </a>
-              </article>
-            ))}
-          </div>
+                  <div
+                    className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-white/[0.07] transition-[box-shadow,ring-color] duration-300 group-hover:ring-white/18 group-hover:shadow-[0_22px_48px_-14px_rgba(0,0,0,0.65)] motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-white/[0.07]"
+                    style={{ backgroundColor: d.accent }}
+                  >
+                    <img
+                      src={d.image}
+                      alt={`${d.name} design mockup`}
+                      className="max-h-full max-w-full object-contain rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                  </div>
+                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">{d.name},</h3>
+                  <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
+                  <a
+                    href={d.href}
+                    onClick={(e) => {
+                      if (d.href === '#') e.preventDefault();
+                    }}
+                    className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
+                  >
+                    Learn more
+                    <ArrowRight
+                      className="w-4 h-4 shrink-0 transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                  </a>
+                </motion.article>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
 
