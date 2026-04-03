@@ -61,6 +61,7 @@ const MEDIUM_URL = "https://medium.com/@satyamt5152";
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY ?? "";
 const GITHUB_URL = "https://github.com/satyyyaamm";
 const LINKEDIN_URL = "https://www.linkedin.com/in/satyam-tiwari-a03299200";
+const EMAIL_MAILTO = "mailto:satyamt5152@gmail.com";
 const PHONE_DISPLAY = "+91 87933 80992";
 const PHONE_TEL = "tel:+918793380992";
 
@@ -494,27 +495,6 @@ const App = () => {
 
   const creativeDesigns = [
     {
-      name: "Mobiurja",
-      desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
-      image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1200&q=80",
-      accent: "#1e3a5f",
-      href: "#",
-    },
-    {
-      name: "Social Share",
-      desc: "Linktree-style social profile aggregation: built frontend components, responsive layouts, and interaction flows so users could present links and content in one place.",
-      image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=1200&q=80",
-      accent: "#4c1d95",
-      href: "#",
-    },
-    {
-      name: "Sportly",
-      desc: "Sports-focused mobile application: shipped and maintained features alongside designers and backend engineers in an agile release cadence with code review.",
-      image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80",
-      accent: "#14532d",
-      href: "#",
-    },
-    {
       name: "OSAC GMS (preview)",
       desc: "Garage operations UI: job cards, sales staff workflows, and technician views—web-first Flutter targeting workshops that need clarity under daily load.",
       image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80",
@@ -526,6 +506,20 @@ const App = () => {
       desc: "Safety-first UX: emergency signal paths, verified-user matching, and community surfaces designed for speed and trust under stress.",
       image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
       accent: "#3f3f46",
+      href: "#",
+    },
+    {
+      name: "Mobiurja",
+      desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
+      image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1200&q=80",
+      accent: "#1e3a5f",
+      href: "#",
+    },
+    {
+      name: "Social Share",
+      desc: "Linktree-style social profile aggregation: built frontend components, responsive layouts, and interaction flows so users could present links and content in one place.",
+      image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=1200&q=80",
+      accent: "#4c1d95",
       href: "#",
     },
   ];
@@ -559,12 +553,13 @@ const App = () => {
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-8xl font-bold max-w-5xl mb-4 tracking-tight leading-[1]">
           I'm Satyam Tiwari <br /> Flutter Developer
         </motion.h1>
-        <p className="text-zinc-500 text-sm font-medium tracking-wide mb-6">Product owner mindset · India · Open to remote</p>
         <p className="text-zinc-400 max-w-2xl text-sm md:text-base mb-10 leading-relaxed">
           Product-focused mobile and frontend developer with ~5 years total experience—1.5 years full-time product work and 3.5+ years as an independent freelancer shipping apps customers use every day, from UI through App Store deployment and long-term support.
         </p>
         <div className="flex gap-4">
-          <button className="bg-white text-black px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">Get yours now</button>
+          <a href="#contact" className="bg-white text-black px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">
+            Get yours now
+          </a>
           <a href="#projects" className="bg-zinc-900 border border-zinc-800 text-white px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">See my work</a>
         </div>
         <HeroTechMarquee />
@@ -631,7 +626,7 @@ const App = () => {
                     whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.055)" }}
                     transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                   >
-                    <div className="py-4 md:py-5 px-1">
+                    <div className="py-2 md:py-2.5 px-1">
                       <motion.button
                         type="button"
                         onClick={() => setActiveProject(i)}
@@ -639,14 +634,14 @@ const App = () => {
                         aria-controls={`project-panel-${p.id}`}
                         id={`project-trigger-${p.id}`}
                         className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
-                        whileHover={{ x: 6 }}
+                        whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.995 }}
                         transition={{ type: "spring", stiffness: 420, damping: 28 }}
                       >
-                        <h3 className="font-service text-xl md:text-2xl font-medium tracking-tight text-white">
+                        <h3 className="font-service text-lg md:text-xl font-medium tracking-tight text-white leading-snug">
                           {p.name}
                         </h3>
-                        <p className="text-zinc-500 text-xs mt-1.5 font-normal tabular-nums">{p.meta}</p>
+                        <span className="sr-only">{p.meta}</span>
                       </motion.button>
                       <AnimatePresence initial={false}>
                         {activeProject === i && (
@@ -660,11 +655,11 @@ const App = () => {
                             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
                             className="overflow-hidden"
                           >
-                            <p className="mt-3 max-w-lg text-sm leading-relaxed text-zinc-400">{p.summary}</p>
+                            <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-400">{p.summary}</p>
                             <button
                               type="button"
                               onClick={() => setProjectDetailIndex(i)}
-                              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-white hover:opacity-90 transition-opacity"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-white hover:opacity-90 transition-opacity"
                             >
                               Learn more
                               <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
@@ -794,7 +789,7 @@ const App = () => {
                   For collaborations, freelance mobile work, or product builds—email or call. I typically reply within one business day.
                 </p>
                 <p className="text-sm text-zinc-400 mb-10">
-                  <a href={`mailto:satyamt5152@gmail.com`} className="text-white hover:underline underline-offset-2">
+                  <a href={EMAIL_MAILTO} className="text-white hover:underline underline-offset-2">
                     satyamt5152@gmail.com
                   </a>
                   <span className="mx-2 text-zinc-600" aria-hidden>
@@ -809,7 +804,7 @@ const App = () => {
                     href={GITHUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    className="social-icon-btn"
                     aria-label="GitHub"
                   >
                     <Github size={16} strokeWidth={1.75} />
@@ -818,7 +813,7 @@ const App = () => {
                     href={LINKEDIN_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    className="social-icon-btn"
                     aria-label="LinkedIn"
                   >
                     <Linkedin size={16} strokeWidth={1.75} />
@@ -827,10 +822,17 @@ const App = () => {
                     href={MEDIUM_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 w-10 shrink-0 rounded-full bg-zinc-800 border border-zinc-700/90 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors"
+                    className="social-icon-btn"
                     aria-label="Medium"
                   >
                     <MediumIcon className="h-4 w-4" />
+                  </a>
+                  <a
+                    href={EMAIL_MAILTO}
+                    className="social-icon-btn"
+                    aria-label="Email"
+                  >
+                    <Mail size={16} strokeWidth={1.75} />
                   </a>
                 </div>
               </div>
@@ -1000,7 +1002,7 @@ const App = () => {
                     href={GITHUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                    className="social-icon-btn"
                     aria-label="GitHub"
                   >
                     <Github size={16} strokeWidth={1.75} />
@@ -1009,16 +1011,21 @@ const App = () => {
                     href={LINKEDIN_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
+                    className="social-icon-btn"
                     aria-label="LinkedIn"
                   >
                     <Linkedin size={16} strokeWidth={1.75} />
                   </a>
                   <a
-                    href="mailto:satyamt5152@gmail.com"
-                    className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors"
-                    aria-label="Email"
+                    href={MEDIUM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="social-icon-btn"
+                    aria-label="Medium"
                   >
+                    <MediumIcon className="h-4 w-4" />
+                  </a>
+                  <a href={EMAIL_MAILTO} className="social-icon-btn" aria-label="Email">
                     <Mail size={16} strokeWidth={1.75} />
                   </a>
                 </div>
@@ -1032,7 +1039,7 @@ const App = () => {
                       <span className="font-semibold text-white">Email:</span>
                       <br />
                       <a
-                        href="mailto:satyamt5152@gmail.com"
+                        href={EMAIL_MAILTO}
                         className="hover:text-white transition-colors underline-offset-2 hover:underline"
                       >
                         satyamt5152@gmail.com
@@ -1048,7 +1055,13 @@ const App = () => {
                     <p>
                       <span className="font-semibold text-white">Address:</span>
                       <br />
-                      India — open to remote
+                      <span className="mt-1 inline-block max-w-sm">
+                        STELLA TOWERS PHASE 1, Stella Towers, D1-104, Moshi
+                        <br />
+                        Alandi Rd, Dudulgaon, Pimpri-Chinchwad, Moshi
+                        <br />
+                        Pune — 412105
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -1089,10 +1102,6 @@ const App = () => {
           <footer className="border-t border-zinc-700 px-6 py-6">
             <p className="text-center text-zinc-400 text-sm leading-relaxed">
               Copyright © 2026 Satyam Tiwari - All rights reserved
-              <span className="mx-2 text-zinc-600" aria-hidden>
-                ||
-              </span>
-              Designed By: Satyam Tiwari
             </p>
           </footer>
         </div>
