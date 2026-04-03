@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   motion,
   AnimatePresence,
@@ -27,6 +27,75 @@ const MediumIcon = ({ className = "h-4 w-4" }) => (
     <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.78-6.82A6.8 6.8 0 0113.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" />
   </svg>
 );
+
+const SECTION_EASE = [0.22, 1, 0.36, 1];
+
+const sectionHeadStaggerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.14, delayChildren: 0.08 },
+  },
+};
+
+const sectionLineRevealVariants = {
+  hidden: { opacity: 0, y: 32, filter: 'blur(6px)' },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.75, ease: SECTION_EASE },
+  },
+};
+
+const sectionFadeUpVariants = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, ease: SECTION_EASE },
+  },
+};
+
+const sectionListStaggerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1, delayChildren: 0.12 },
+  },
+};
+
+const sectionListItemFadeUpVariants = {
+  hidden: { opacity: 0, y: 22 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: SECTION_EASE },
+  },
+};
+
+const sectionCardStaggerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.12, delayChildren: 0.2 },
+  },
+};
+
+const sectionCardItemVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, ease: SECTION_EASE },
+  },
+};
+
+const sectionProjectRowVariants = {
+  hidden: { opacity: 0, x: -22 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.5, ease: SECTION_EASE },
+  },
+};
 
 const Navbar = () => {
   return (
@@ -569,16 +638,36 @@ const App = () => {
       {/* Services */}
       <section id="services" className="py-24 px-6 border-t border-zinc-900 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <div>
-            <h2 className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8">My Services</h2>
-            <p className="text-zinc-400 max-w-md text-sm mb-8 leading-relaxed">
+          <motion.div
+            variants={sectionHeadStaggerVariants}
+            initial={reducedMotion ? false : 'hidden'}
+            whileInView={reducedMotion ? undefined : 'visible'}
+            viewport={{ once: true, amount: 0.4 }}
+          >
+            <motion.h2
+              variants={sectionLineRevealVariants}
+              className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8"
+            >
+              My Services
+            </motion.h2>
+            <motion.p
+              variants={sectionLineRevealVariants}
+              className="text-zinc-400 max-w-md text-sm mb-8 leading-relaxed"
+            >
               Aligned with how I work in production: mobile-first delivery, web frontends, backend integrations, Firebase/Mongo, and owning the full lifecycle with founders and stakeholders.
-            </p>
-          </div>
-          <div className="space-y-0">
+            </motion.p>
+          </motion.div>
+          <motion.div
+            className="space-y-0"
+            variants={sectionListStaggerVariants}
+            initial={reducedMotion ? false : 'hidden'}
+            whileInView={reducedMotion ? undefined : 'visible'}
+            viewport={{ once: true, amount: 0.2 }}
+          >
             {services.map((s, i) => (
-              <div
+              <motion.div
                 key={i}
+                variants={sectionListItemFadeUpVariants}
                 className="border-t border-zinc-800 py-8 flex gap-7 items-start hover:bg-zinc-900/40 px-4 transition-all group"
                 onMouseEnter={() => setServiceHoverIndex(i)}
                 onMouseLeave={() => setServiceHoverIndex(null)}
@@ -606,15 +695,21 @@ const App = () => {
                   <h3 className="font-service text-xl md:text-2xl font-bold tracking-tight mb-2">{s.title}</h3>
                   <p className="text-zinc-500 text-xs md:text-sm leading-relaxed">{s.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       <section id="projects" className="bg-black py-24 px-6 relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16 xl:gap-20">
-          <div className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(54%,620px)] xl:w-[min(54%,720px)]">
+          <motion.div
+            className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(54%,620px)] xl:w-[min(54%,720px)]"
+            variants={sectionFadeUpVariants}
+            initial={reducedMotion ? false : 'hidden'}
+            whileInView={reducedMotion ? undefined : 'visible'}
+            viewport={{ once: true, amount: 0.28 }}
+          >
             <motion.div
               className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-white/10 shadow-2xl lg:mx-0 lg:max-w-none"
               style={{
@@ -635,15 +730,32 @@ const App = () => {
                 loading="eager"
               />
             </motion.div>
-          </div>
+          </motion.div>
 
           <div className="order-2 min-w-0 flex-1 lg:order-1 lg:max-w-xl">
-            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.1] mb-6 md:mb-8">
-              Selected projects &amp; shipped apps
-            </h2>
-            <div className="pr-0 lg:pr-2">
+            <motion.h2
+              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.1] mb-6 md:mb-8"
+              variants={sectionHeadStaggerVariants}
+              initial={reducedMotion ? false : 'hidden'}
+              whileInView={reducedMotion ? undefined : 'visible'}
+              viewport={{ once: true, amount: 0.45 }}
+            >
+              <motion.span className="block" variants={sectionLineRevealVariants}>
+                Selected projects &amp;
+              </motion.span>
+              <motion.span className="block" variants={sectionLineRevealVariants}>
+                shipped apps
+              </motion.span>
+            </motion.h2>
+            <motion.div
+              className="pr-0 lg:pr-2"
+              variants={sectionListStaggerVariants}
+              initial={reducedMotion ? false : 'hidden'}
+              whileInView={reducedMotion ? undefined : 'visible'}
+              viewport={{ once: true, amount: 0.12, margin: '0px 0px -32px 0px' }}
+            >
               {projects.map((p, i) => (
-                <Fragment key={p.id}>
+                <motion.div key={p.id} variants={sectionProjectRowVariants}>
                   <motion.div
                     className="rounded-lg px-2"
                     initial={false}
@@ -699,9 +811,9 @@ const App = () => {
                     role="presentation"
                     aria-hidden
                   />
-                </Fragment>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -720,39 +832,12 @@ const App = () => {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.45 }}
-              variants={{
-                hidden: {},
-                visible: {
-                  transition: { staggerChildren: 0.14, delayChildren: 0.08 },
-                },
-              }}
+              variants={sectionHeadStaggerVariants}
             >
-              <motion.span
-                className="block"
-                variants={{
-                  hidden: { opacity: 0, y: 32, filter: 'blur(6px)' },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    filter: 'blur(0px)',
-                    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
-                  },
-                }}
-              >
+              <motion.span className="block" variants={sectionLineRevealVariants}>
                 More interfaces &amp;
               </motion.span>
-              <motion.span
-                className="block"
-                variants={{
-                  hidden: { opacity: 0, y: 32, filter: 'blur(6px)' },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    filter: 'blur(0px)',
-                    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] },
-                  },
-                }}
-              >
+              <motion.span className="block" variants={sectionLineRevealVariants}>
                 team-era builds
               </motion.span>
             </motion.h2>
@@ -800,24 +885,12 @@ const App = () => {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.12, margin: '0px 0px -48px 0px' }}
-              variants={{
-                hidden: {},
-                visible: {
-                  transition: { staggerChildren: 0.12, delayChildren: 0.2 },
-                },
-              }}
+              variants={sectionCardStaggerVariants}
             >
               {creativeDesigns.map((d) => (
                 <motion.article
                   key={d.name}
-                  variants={{
-                    hidden: { opacity: 0, y: 40 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-                    },
-                  }}
+                  variants={sectionCardItemVariants}
                   whileHover={{ y: -6 }}
                   transition={{ type: 'spring', stiffness: 420, damping: 26 }}
                   className="group flex flex-col will-change-transform"
@@ -858,7 +931,13 @@ const App = () => {
       {/* About */}
       <section id="about" className="py-24 px-6 border-t border-zinc-900 bg-black relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-16 items-start">
-          <div className="relative w-full max-w-[360px] mx-auto lg:mx-0">
+          <motion.div
+            className="relative w-full max-w-[360px] mx-auto lg:mx-0"
+            variants={sectionFadeUpVariants}
+            initial={reducedMotion ? false : 'hidden'}
+            whileInView={reducedMotion ? undefined : 'visible'}
+            viewport={{ once: true, amount: 0.35 }}
+          >
             <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-zinc-500/80" />
             <div className="relative z-10 rounded-sm overflow-hidden bg-zinc-900 ring-1 ring-white/10">
               <img
@@ -867,31 +946,41 @@ const App = () => {
                 className="w-full h-[430px] object-cover"
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="max-w-3xl space-y-8">
-            <div>
-              <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
-                Satyam Tiwari — Flutter developer with a product-owner lens
-              </h2>
-              <div className="space-y-5 text-zinc-300 text-sm md:text-base leading-relaxed">
-                <p>
-                  I&apos;m a product-focused mobile and frontend developer with <span className="text-white font-medium">5 years of total experience</span>
-                  : about <span className="text-white font-medium">1.5 years</span> in full-time product teams and{' '}
-                  <span className="text-white font-medium">3.5+ years</span> as an independent freelancer shipping apps that stay in production.
-                </p>
-                <p>
-                  I&apos;m used to owning products end to end—UI/UX implementation, architecture, testing, App Store and Play releases, compliance, and post-launch support—
-                  and working directly with founders to turn requirements into reliable systems.
-                </p>
-                <p>
-                  <span className="text-white font-medium">App Store highlight:</span> four live mobile applications in production, with hands-on experience in App Store Connect,
-                  TestFlight, certificates, provisioning profiles, bundle identifiers, and the review process.
-                </p>
-              </div>
-            </div>
+          <motion.div
+            className="max-w-3xl flex flex-col gap-8"
+            variants={sectionHeadStaggerVariants}
+            initial={reducedMotion ? false : 'hidden'}
+            whileInView={reducedMotion ? undefined : 'visible'}
+            viewport={{ once: true, amount: 0.28 }}
+          >
+            <motion.h2
+              variants={sectionLineRevealVariants}
+              className="text-3xl md:text-5xl font-bold leading-tight"
+            >
+              Satyam Tiwari — Flutter developer with a product-owner lens
+            </motion.h2>
+            <motion.div
+              variants={sectionListStaggerVariants}
+              className="space-y-5 text-zinc-300 text-sm md:text-base leading-relaxed"
+            >
+              <motion.p variants={sectionListItemFadeUpVariants}>
+                I&apos;m a product-focused mobile and frontend developer with <span className="text-white font-medium">5 years of total experience</span>
+                : about <span className="text-white font-medium">1.5 years</span> in full-time product teams and{' '}
+                <span className="text-white font-medium">3.5+ years</span> as an independent freelancer shipping apps that stay in production.
+              </motion.p>
+              <motion.p variants={sectionListItemFadeUpVariants}>
+                I&apos;m used to owning products end to end—UI/UX implementation, architecture, testing, App Store and Play releases, compliance, and post-launch support—
+                and working directly with founders to turn requirements into reliable systems.
+              </motion.p>
+              <motion.p variants={sectionListItemFadeUpVariants}>
+                <span className="text-white font-medium">App Store highlight:</span> four live mobile applications in production, with hands-on experience in App Store Connect,
+                TestFlight, certificates, provisioning profiles, bundle identifiers, and the review process.
+              </motion.p>
+            </motion.div>
 
-            <div className="flex flex-wrap gap-4 pt-2">
+            <motion.div variants={sectionFadeUpVariants} className="flex flex-wrap gap-4 pt-2">
               <a
                 href={RESUME_URL}
                 target="_blank"
@@ -906,8 +995,8 @@ const App = () => {
               >
                 Hire me
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -915,15 +1004,29 @@ const App = () => {
         <div className="bg-zinc-950">
           <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 xl:gap-24 items-start">
-              <div className="max-w-lg">
-                <p className="text-sm text-white mb-4">Contact me</p>
-                <h2 className="text-5xl sm:text-6xl md:text-7xl font-semibold text-white leading-[0.98] tracking-tight mb-6">
+              <motion.div
+                className="max-w-lg"
+                variants={sectionHeadStaggerVariants}
+                initial={reducedMotion ? false : 'hidden'}
+                whileInView={reducedMotion ? undefined : 'visible'}
+                viewport={{ once: true, amount: 0.35 }}
+              >
+                <motion.p variants={sectionLineRevealVariants} className="text-sm text-white mb-4">
+                  Contact me
+                </motion.p>
+                <motion.h2
+                  variants={sectionLineRevealVariants}
+                  className="text-5xl sm:text-6xl md:text-7xl font-semibold text-white leading-[0.98] tracking-tight mb-6"
+                >
                   Get in touch
-                </h2>
-                <p className="text-base md:text-lg text-white/90 leading-relaxed mb-6 max-w-md">
+                </motion.h2>
+                <motion.p
+                  variants={sectionLineRevealVariants}
+                  className="text-base md:text-lg text-white/90 leading-relaxed mb-6 max-w-md"
+                >
                   For collaborations, freelance mobile work, or product builds—email or call. I typically reply within one business day.
-                </p>
-                <p className="text-sm text-zinc-400 mb-10">
+                </motion.p>
+                <motion.p variants={sectionFadeUpVariants} className="text-sm text-zinc-400 mb-10">
                   <a href={EMAIL_MAILTO} className="text-white hover:underline underline-offset-2">
                     satyamt5152@gmail.com
                   </a>
@@ -933,8 +1036,8 @@ const App = () => {
                   <a href={PHONE_TEL} className="text-white hover:underline underline-offset-2">
                     {PHONE_DISPLAY}
                   </a>
-                </p>
-                <div className="flex flex-wrap items-center gap-3">
+                </motion.p>
+                <motion.div variants={sectionFadeUpVariants} className="flex flex-wrap items-center gap-3">
                   <a
                     href={GITHUB_URL}
                     target="_blank"
@@ -969,10 +1072,16 @@ const App = () => {
                   >
                     <Mail size={16} strokeWidth={1.75} />
                   </a>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <div className="min-w-0">
+              <motion.div
+                className="min-w-0"
+                variants={sectionFadeUpVariants}
+                initial={reducedMotion ? false : 'hidden'}
+                whileInView={reducedMotion ? undefined : 'visible'}
+                viewport={{ once: true, amount: 0.2, margin: '0px 0px -40px 0px' }}
+              >
                 <form onSubmit={handleContactSubmit} className="relative space-y-10">
                   <p className="sr-only" aria-live="polite">
                     {contactFormStatus === 'success' && 'Message sent successfully.'}
@@ -1109,15 +1218,21 @@ const App = () => {
                     {contactFormStatus === 'sending' ? 'Sending…' : 'Send Message'}
                   </button>
                 </form>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>
 
         <div className="bg-transparent border-t border-zinc-800">
-          <div className="max-w-7xl mx-auto px-6 py-14 md:py-16 lg:px-10">
+          <motion.div
+            className="max-w-7xl mx-auto px-6 py-14 md:py-16 lg:px-10"
+            variants={sectionHeadStaggerVariants}
+            initial={reducedMotion ? false : 'hidden'}
+            whileInView={reducedMotion ? undefined : 'visible'}
+            viewport={{ once: true, amount: 0.2 }}
+          >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-0">
-              <div className="lg:pr-12 lg:border-r border-zinc-700/80">
+              <motion.div variants={sectionFadeUpVariants} className="lg:pr-12 lg:border-r border-zinc-700/80">
                 <h3 className="font-service text-4xl md:text-5xl font-semibold text-white tracking-tight mb-5">
                   Satyam Tiwari
                 </h3>
@@ -1164,9 +1279,12 @@ const App = () => {
                     <Mail size={16} strokeWidth={1.75} />
                   </a>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8 lg:pl-12">
+              <motion.div
+                variants={sectionFadeUpVariants}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8 lg:pl-12"
+              >
                 <div>
                   <h4 className="text-2xl md:text-3xl font-semibold text-white mb-6">Contact me</h4>
                   <div className="space-y-5 text-zinc-400 text-base leading-relaxed">
@@ -1230,9 +1348,9 @@ const App = () => {
                     </li>
                   </ul>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           <footer className="border-t border-zinc-700 px-6 py-6">
             <p className="text-center text-zinc-400 text-sm leading-relaxed">

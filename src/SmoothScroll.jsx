@@ -8,6 +8,32 @@ import 'lenis/dist/lenis.css';
 const NAV_SCROLL_OFFSET = -64;
 
 export function SmoothScroll({ children }) {
+  /** Full reload without a hash: browsers often restore old scroll (e.g. mid-page). Reset to top. */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+    } catch {
+      /* noop */
+    }
+    const hash = window.location.hash;
+    if (hash && hash !== '#') return;
+
+    const goTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    };
+    goTop();
+    requestAnimationFrame(goTop);
+    const t0 = window.setTimeout(goTop, 0);
+    const t1 = window.setTimeout(goTop, 100);
+    return () => {
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -52,8 +78,15 @@ export function SmoothScroll({ children }) {
     };
     window.addEventListener('popstate', onPopState);
 
+    const h = window.location.hash;
+    if (!h || h === '#') {
+      lenis.scrollTo(0, { immediate: true });
+    }
+
     requestAnimationFrame(() => {
-      scrollToHashTarget(window.location.hash);
+      requestAnimationFrame(() => {
+        scrollToHashTarget(window.location.hash);
+      });
     });
 
     return () => {
