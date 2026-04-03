@@ -49,7 +49,7 @@ const Navbar = () => {
   );
 };
 
-/** Soft scroll-linked reveal — tweened (not spring) so it pairs cleanly with Lenis */
+/** Soft scroll-linked reveal — tweened (not spring) */
 const scrollFloatReveal = {
   initial: { opacity: 0, y: 40 },
   whileInView: { opacity: 1, y: 0 },
@@ -565,10 +565,7 @@ const App = () => {
               Selected projects &amp; shipped apps
             </h2>
             <p className="mb-4 text-xs text-zinc-500 lg:hidden">Scroll the list below; preview stays above.</p>
-            <div
-              className="max-h-[min(48vh,calc(100dvh-14rem))] overflow-y-auto overscroll-y-contain pr-2 lg:max-h-[calc(100dvh-10rem)] [scrollbar-width:thin] [scrollbar-color:rgba(82,82,91,0.9)_transparent]"
-              style={{ WebkitOverflowScrolling: "touch" }}
-            >
+            <div className="pr-0 lg:pr-2">
               {projects.map((p, i) => (
                 <Fragment key={p.id}>
                   <motion.div

@@ -4,6 +4,15 @@
   --font-service: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Avoid horizontal bleed from full-bleed sections */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 @keyframes tech-marquee {
   from {
     transform: translate3d(0, 0, 0);
