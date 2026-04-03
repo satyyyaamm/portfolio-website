@@ -1,5 +1,12 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  animate,
+  useMotionValue,
+  useSpring,
+  useReducedMotion,
+} from 'framer-motion';
 import { 
   Github, 
   Linkedin, 
@@ -228,6 +235,61 @@ function ProjectDetailDialog({ project, onClose }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Coarse pointer: drift the hero glow between random points near each screen corner (no fixed loop). */
+function CoarsePointerAmbientGlow() {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const scale = useMotionValue(1);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const randomTarget = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const zones = [
+        { minX: -0.1 * w, maxX: 0.22 * w, minY: -0.08 * h, maxY: 0.22 * h },
+        { minX: 0.38 * w, maxX: 0.78 * w, minY: -0.06 * h, maxY: 0.2 * h },
+        { minX: 0.35 * w, maxX: 0.82 * w, minY: 0.26 * h, maxY: 0.62 * h },
+        { minX: -0.12 * w, maxX: 0.25 * w, minY: 0.22 * h, maxY: 0.58 * h },
+      ];
+      const z = zones[Math.floor(Math.random() * zones.length)];
+      return {
+        x: z.minX + Math.random() * (z.maxX - z.minX),
+        y: z.minY + Math.random() * (z.maxY - z.minY),
+        scale: 0.85 + Math.random() * 0.32,
+        duration: 4.5 + Math.random() * 6.5,
+      };
+    };
+
+    const loop = async () => {
+      await new Promise((r) => requestAnimationFrame(r));
+      while (!cancelled) {
+        const t = randomTarget();
+        await Promise.all([
+          animate(x, t.x, { duration: t.duration, ease: [0.25, 0.08, 0.25, 1] }),
+          animate(y, t.y, { duration: t.duration, ease: [0.25, 0.08, 0.25, 1] }),
+          animate(scale, t.scale, { duration: t.duration, ease: [0.25, 0.08, 0.25, 1] }),
+        ]);
+      }
+    };
+    loop();
+    return () => {
+      cancelled = true;
+    };
+    // MotionValues are stable for the lifetime of this component
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <motion.div
+      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(88vw,340px)] w-[min(88vw,340px)] rounded-full bg-white/[0.17] blur-[88px] md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)]"
+      style={{ x, y, scale }}
+      aria-hidden
+    />
   );
 }
 
@@ -479,24 +541,8 @@ const App = () => {
           aria-hidden
         />
       )}
-      {/* Touch / coarse pointer: slow ambient drift (phones & tablets have no hover cursor) */}
-      {!reducedMotion && pointerCoarse && (
-        <motion.div
-          className="pointer-events-none fixed left-[6%] top-[12%] z-[1] h-[min(88vw,340px)] w-[min(88vw,340px)] rounded-full bg-white/[0.14] blur-[88px] md:left-[12%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)]"
-          initial={false}
-          animate={{
-            x: [0, 42, -32, 24, -12, 0],
-            y: [0, -28, 22, -18, 14, 0],
-            scale: [1, 1.06, 1.02, 1.08, 1],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          aria-hidden
-        />
-      )}
+      {/* Touch / coarse pointer: random corner-to-corner drift */}
+      {!reducedMotion && pointerCoarse && <CoarsePointerAmbientGlow />}
       {/* Reduced motion: single static glow */}
       {reducedMotion && (
         <div
