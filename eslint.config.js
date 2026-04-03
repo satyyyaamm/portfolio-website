@@ -23,7 +23,8 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // PascalCase components + `motion` (used as motion.div; no jsx-uses-vars in this flat setup)
+      'no-unused-vars': ['error', { varsIgnorePattern: '^([A-Z_].*|motion)$' }],
     },
   },
 ])

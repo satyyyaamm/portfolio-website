@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from 'framer-motion';
 import { 
   Github, 
@@ -7,11 +7,9 @@ import {
   Smartphone, 
   Layout, 
   Server, 
-  ChevronRight, 
   ArrowRight, 
   Cpu, 
   MapPin, 
-  ChevronLeft, 
   X,
   Briefcase,
   Mail,
@@ -47,14 +45,6 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
-
-/** Soft scroll-linked reveal — tweened (not spring) */
-const scrollFloatReveal = {
-  initial: { opacity: 0, y: 40 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.1, margin: "-80px 0px -60px 0px" },
-  transition: { duration: 0.95, ease: [0.22, 1, 0.36, 1] },
 };
 
 const RESUME_URL = "/Satyam-Tiwari-Resume.pdf";
@@ -187,12 +177,7 @@ function ProjectDetailDialog({ project, onClose }) {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   if (!project) return null;
@@ -209,7 +194,7 @@ function ProjectDetailDialog({ project, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="project-detail-title"
-        className="relative z-10 flex max-h-[min(88vh,640px)] w-full max-w-lg flex-col rounded-t-2xl border border-zinc-800 bg-zinc-950 shadow-2xl sm:max-h-[85vh] sm:rounded-2xl"
+        className="relative z-10 flex w-full max-w-lg flex-col rounded-t-2xl border border-zinc-800 bg-zinc-950 shadow-2xl sm:rounded-2xl"
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 px-5 py-4">
           <div className="min-w-0 pr-2">
@@ -227,7 +212,7 @@ function ProjectDetailDialog({ project, onClose }) {
             <X className="h-5 w-5" strokeWidth={2} aria-hidden />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 px-5 py-5">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{project.role}</p>
           <p className="mt-3 text-sm leading-relaxed text-zinc-300">{project.desc}</p>
           {project.highlights?.length > 0 && (
@@ -249,7 +234,6 @@ function ProjectDetailDialog({ project, onClose }) {
 const App = () => {
   const [activeProject, setActiveProject] = useState(0);
   const [projectDetailIndex, setProjectDetailIndex] = useState(null);
-  const [creativeIndex, setCreativeIndex] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -260,7 +244,6 @@ const App = () => {
   const [contactFormStatus, setContactFormStatus] = useState('idle');
   const [contactFormError, setContactFormError] = useState('');
   const [contactHoneypot, setContactHoneypot] = useState('');
-  const creativeTrackRef = useRef(null);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -275,6 +258,8 @@ const App = () => {
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
+    // mouseX / mouseY are stable MotionValue instances from useMotionValue
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleContactSubmit = async (e) => {
@@ -472,17 +457,6 @@ const App = () => {
     },
   ];
 
-  useEffect(() => {
-    const track = creativeTrackRef.current;
-    if (!track) return;
-    const cards = track.querySelectorAll("[data-creative-card]");
-    const card = cards[creativeIndex];
-    if (!card) return;
-    const padLeft = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-    const target = Math.max(0, card.offsetLeft - padLeft);
-    track.scrollTo({ left: target, behavior: "smooth" });
-  }, [creativeIndex]);
-
   return (
     <div className="bg-black text-white font-sans min-h-screen relative overflow-x-hidden">
       <Navbar />
@@ -493,7 +467,7 @@ const App = () => {
       />
 
       {/* Hero */}
-      <section id="home" className="scroll-mt-24 min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
+      <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-zinc-500 mb-6">
           <MapPin size={14} /><span className="text-xs font-medium">India | Open to Remote</span>
         </motion.div>
@@ -512,7 +486,7 @@ const App = () => {
       </section>
 
       {/* Services */}
-      <motion.section id="services" className="scroll-mt-24 py-24 px-6 border-t border-zinc-900 relative z-10" {...scrollFloatReveal}>
+      <section id="services" className="py-24 px-6 border-t border-zinc-900 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div>
             <h2 className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8">My Services</h2>
@@ -532,12 +506,11 @@ const App = () => {
             ))}
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      <motion.section id="projects" className="scroll-mt-24 bg-black py-24 px-6 relative z-10" {...scrollFloatReveal}>
+      <section id="projects" className="bg-black py-24 px-6 relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16 xl:gap-20">
-          {/* Preview first on mobile; sticky under nav so it stays visible while scrolling the project list / section */}
-          <div className="order-1 w-full shrink-0 sticky top-20 z-[5] bg-black pb-3 lg:order-2 lg:top-24 lg:z-[2] lg:w-[min(54%,620px)] lg:bg-transparent lg:pb-0 xl:w-[min(54%,720px)]">
+          <div className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(54%,620px)] xl:w-[min(54%,720px)]">
             <motion.div
               className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-white/10 shadow-2xl lg:mx-0 lg:max-w-none"
               style={{
@@ -564,7 +537,6 @@ const App = () => {
             <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.1] mb-6 md:mb-8">
               Selected projects &amp; shipped apps
             </h2>
-            <p className="mb-4 text-xs text-zinc-500 lg:hidden">Scroll the list below; preview stays above.</p>
             <div className="pr-0 lg:pr-2">
               {projects.map((p, i) => (
                 <Fragment key={p.id}>
@@ -628,53 +600,18 @@ const App = () => {
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      <motion.section id="designs" className="scroll-mt-24 bg-zinc-950 py-24 border-t border-zinc-900 relative z-10 overflow-x-visible overflow-y-visible" {...scrollFloatReveal}>
-        <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-12">
-            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
-              More interfaces &amp;
-              <br />
-              team-era builds
-            </h2>
-            <div className="mt-5 flex flex-row items-center justify-between gap-4">
-              <p className="text-zinc-400 text-sm tabular-nums leading-none">
-                {creativeIndex + 1}/{creativeDesigns.length}
-              </p>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  aria-label="Previous design"
-                  disabled={creativeIndex === 0}
-                  onClick={() => setCreativeIndex((i) => Math.max(0, i - 1))}
-                  className="h-11 w-11 shrink-0 rounded-full bg-white text-black opacity-100 flex items-center justify-center transition-colors enabled:hover:bg-zinc-200 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-white disabled:text-black disabled:opacity-100"
-                >
-                  <ChevronLeft className="w-5 h-5 shrink-0 text-black" strokeWidth={2} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next design"
-                  disabled={creativeIndex === creativeDesigns.length - 1}
-                  onClick={() => setCreativeIndex((i) => Math.min(creativeDesigns.length - 1, i + 1))}
-                  className="h-11 w-11 shrink-0 rounded-full bg-white text-black opacity-100 flex items-center justify-center transition-colors enabled:hover:bg-zinc-200 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-white disabled:text-black disabled:opacity-100"
-                >
-                  <ChevronRight className="w-5 h-5 shrink-0 text-black" strokeWidth={2} aria-hidden />
-                </button>
-              </div>
-            </div>
-        </div>
-
-        <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 overflow-visible">
-          <div
-            ref={creativeTrackRef}
-            className="flex gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain snap-x snap-proximity no-scrollbar pb-2 px-[clamp(1.25rem,6vw,6cm)] [scroll-padding-inline:clamp(1.25rem,6vw,6cm)]"
-          >
+      <section id="designs" className="bg-zinc-950 py-24 border-t border-zinc-900 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
+            More interfaces &amp;
+            <br />
+            team-era builds
+          </h2>
+          <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
             {creativeDesigns.map((d) => (
-              <article
-                key={d.name}
-                data-creative-card
-                className="snap-start shrink-0 w-[min(88vw,520px)] sm:w-[min(72vw,440px)] lg:w-[min(46vw,520px)] max-w-[520px] flex flex-col"
-              >
+              <article key={d.name} className="flex flex-col">
                 <div
                   className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6"
                   style={{ backgroundColor: d.accent }}
@@ -685,9 +622,7 @@ const App = () => {
                     className="max-h-full max-w-full object-contain rounded-md shadow-lg"
                   />
                 </div>
-                <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">
-                  {d.name},
-                </h3>
+                <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">{d.name},</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
                 <a
                   href={d.href}
@@ -703,12 +638,12 @@ const App = () => {
             ))}
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* About */}
-      <motion.section id="about" className="scroll-mt-24 py-24 px-6 border-t border-zinc-900 bg-black relative z-10" {...scrollFloatReveal}>
+      <section id="about" className="py-24 px-6 border-t border-zinc-900 bg-black relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-16 items-start">
-          <div className="relative w-full max-w-[360px] mx-auto lg:mx-0 lg:sticky lg:top-28">
+          <div className="relative w-full max-w-[360px] mx-auto lg:mx-0">
             <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-zinc-500/80" />
             <div className="relative z-10 rounded-sm overflow-hidden bg-zinc-900 ring-1 ring-white/10">
               <img
@@ -759,9 +694,9 @@ const App = () => {
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      <motion.section id="contact" className="scroll-mt-24 relative z-10 border-t border-zinc-900" {...scrollFloatReveal}>
+      <section id="contact" className="relative z-10 border-t border-zinc-900">
         <div className="bg-zinc-950">
           <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 xl:gap-24 items-start">
@@ -1076,16 +1011,12 @@ const App = () => {
             </p>
           </footer>
         </div>
-      </motion.section>
+      </section>
       
       {projectDetailIndex !== null && projects[projectDetailIndex] && (
         <ProjectDetailDialog project={projects[projectDetailIndex]} onClose={() => setProjectDetailIndex(null)} />
       )}
 
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
     </div>
   );
 };

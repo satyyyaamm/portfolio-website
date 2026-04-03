@@ -4,13 +4,8 @@
   --font-service: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
-/*
- * Horizontal clip only — vertical scroll stays the default document / viewport scroll (whole page).
- */
-html {
-  overflow-x: hidden;
-}
-
+/* Clip horizontal overflow from full-bleed sections */
+html,
 body {
   overflow-x: hidden;
 }
