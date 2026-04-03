@@ -70,8 +70,8 @@ const techMarqueeItems = [
   "Dart",
   "JavaScript",
   "React Native",
-  "React.js",
-  "Angular",
+  "Next.js",
+  "React",
   "Node.js",
   "Django",
   "MongoDB",
@@ -388,9 +388,9 @@ const App = () => {
       desc: "Cross-platform iOS & Android apps with strong performance, offline patterns, and App Store / Play Store delivery—including TestFlight, certificates, and review cycles.",
     },
     {
-      title: "Frontend (React & Angular)",
+      title: "Frontend (Next.js & React)",
       icon: <Layout size={32} strokeWidth={1.5} />,
-      desc: "Reusable UI, dashboards, and responsive flows in React.js; Angular for problem-solving and legacy fixes alongside designers and backend teams.",
+      desc: "Reusable UI, dashboards, and responsive flows in Next.js and React—routing, server and client components, and performance-minded delivery alongside designers and backend teams.",
     },
     {
       title: "Backend & data",
@@ -516,10 +516,10 @@ const App = () => {
       href: "#",
     },
     {
-      name: "Social Share",
-      desc: "Linktree-style social profile aggregation: built frontend components, responsive layouts, and interaction flows so users could present links and content in one place.",
-      image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=1200&q=80",
-      accent: "#4c1d95",
+      name: "Woopdo",
+      desc: "Real-world connection app: guided partner activities (“woops”), prompts, and social discovery—mobile UI and flows for timed, in-person experiences in beta.",
+      image: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1200&q=80",
+      accent: "#0f766e",
       href: "#",
     },
   ];
