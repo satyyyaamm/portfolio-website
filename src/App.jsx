@@ -244,6 +244,8 @@ const App = () => {
   const [contactFormStatus, setContactFormStatus] = useState('idle');
   const [contactFormError, setContactFormError] = useState('');
   const [contactHoneypot, setContactHoneypot] = useState('');
+  const [pointerCoarse, setPointerCoarse] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -252,15 +254,24 @@ const App = () => {
   const cursorY = useSpring(mouseY, springConfig);
 
   useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const sync = () => setPointerCoarse(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion || pointerCoarse) return;
     const handleMouseMove = (e) => {
-      mouseX.set(e.clientX - 200); 
-      mouseY.set(e.clientY - 200); 
+      mouseX.set(e.clientX - 200);
+      mouseY.set(e.clientY - 200);
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
     // mouseX / mouseY are stable MotionValue instances from useMotionValue
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reducedMotion, pointerCoarse]);
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -460,11 +471,39 @@ const App = () => {
   return (
     <div className="bg-black text-white font-sans min-h-screen relative overflow-x-hidden">
       <Navbar />
-      <motion.div
-        style={{ x: cursorX, y: cursorY }}
-        className="fixed top-0 left-0 w-[400px] h-[400px] bg-white/[0.16] rounded-full blur-[100px] pointer-events-none z-[1]"
-        aria-hidden
-      />
+      {/* Desktop / fine pointer: glow follows cursor */}
+      {!reducedMotion && !pointerCoarse && (
+        <motion.div
+          style={{ x: cursorX, y: cursorY }}
+          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full bg-white/[0.16] blur-[100px]"
+          aria-hidden
+        />
+      )}
+      {/* Touch / coarse pointer: slow ambient drift (phones & tablets have no hover cursor) */}
+      {!reducedMotion && pointerCoarse && (
+        <motion.div
+          className="pointer-events-none fixed left-[6%] top-[12%] z-[1] h-[min(88vw,340px)] w-[min(88vw,340px)] rounded-full bg-white/[0.14] blur-[88px] md:left-[12%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)]"
+          initial={false}
+          animate={{
+            x: [0, 42, -32, 24, -12, 0],
+            y: [0, -28, 22, -18, 14, 0],
+            scale: [1, 1.06, 1.02, 1.08, 1],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          aria-hidden
+        />
+      )}
+      {/* Reduced motion: single static glow */}
+      {reducedMotion && (
+        <div
+          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(80vw,300px)] w-[min(80vw,300px)] rounded-full bg-white/[0.1] blur-[88px] md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px]"
+          aria-hidden
+        />
+      )}
 
       {/* Hero */}
       <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
