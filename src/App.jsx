@@ -60,6 +60,8 @@ function aspectRatioCss(w, h) {
   return `${w} / ${h}`;
 }
 
+const SLIDESHOW_SWIPE_MIN_PX = 50;
+
 /** Auto-advancing slideshow; optional `onAspectRatioChange` for fluid project preview frames. */
 function ProjectPreviewSlideshow({
   images,
@@ -72,7 +74,11 @@ function ProjectPreviewSlideshow({
   const [index, setIndex] = useState(0);
   const [dimsByIndex, setDimsByIndex] = useState({});
   const onAspectRef = useRef(onAspectRatioChange);
+  const pointerStartRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  const suppressClickTimeoutRef = useRef(null);
   const isCard = variant === 'card';
+  const multi = images.length > 1;
 
   useLayoutEffect(() => {
     onAspectRef.current = onAspectRatioChange;
@@ -110,6 +116,87 @@ function ProjectPreviewSlideshow({
     return () => window.clearInterval(id);
   }, [images.length, reducedMotion]);
 
+  useEffect(
+    () => () => {
+      if (suppressClickTimeoutRef.current) {
+        window.clearTimeout(suppressClickTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const releasePointerIfCaptured = (target, pointerId) => {
+    try {
+      if (target?.hasPointerCapture?.(pointerId)) {
+        target.releasePointerCapture(pointerId);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const scheduleSuppressClickClear = () => {
+    suppressClickRef.current = true;
+    if (suppressClickTimeoutRef.current) {
+      window.clearTimeout(suppressClickTimeoutRef.current);
+    }
+    suppressClickTimeoutRef.current = window.setTimeout(() => {
+      suppressClickRef.current = false;
+      suppressClickTimeoutRef.current = null;
+    }, 450);
+  };
+
+  const handlePointerDown = (e) => {
+    if (!multi) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    pointerStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      pointerId: e.pointerId,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerUpOrCancel = (e) => {
+    const start = pointerStartRef.current;
+    if (!start || start.pointerId !== e.pointerId) return;
+    releasePointerIfCaptured(e.currentTarget, e.pointerId);
+    pointerStartRef.current = null;
+
+    if (e.type === 'pointercancel') return;
+
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    const mostlyHorizontal =
+      Math.abs(dx) >= SLIDESHOW_SWIPE_MIN_PX &&
+      Math.abs(dx) > Math.abs(dy) * 0.85;
+    if (!mostlyHorizontal) return;
+
+    scheduleSuppressClickClear();
+    if (dx < 0) {
+      setIndex((i) => (i + 1) % images.length);
+    } else {
+      setIndex((i) => (i - 1 + images.length) % images.length);
+    }
+  };
+
+  const handleLostPointerCapture = (e) => {
+    if (pointerStartRef.current?.pointerId === e.pointerId) {
+      pointerStartRef.current = null;
+    }
+  };
+
+  const handleStageClick = (e) => {
+    if (!suppressClickRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    suppressClickRef.current = false;
+    if (suppressClickTimeoutRef.current) {
+      window.clearTimeout(suppressClickTimeoutRef.current);
+      suppressClickTimeoutRef.current = null;
+    }
+  };
+
   const handleImgLoad = (e) => {
     const el = e.currentTarget;
     const i = Number(el.dataset.slideIndex);
@@ -131,18 +218,35 @@ function ProjectPreviewSlideshow({
     ? 'w-2 bg-white/45 hover:bg-white/75'
     : 'w-2 bg-mocha-400/50 hover:bg-mocha-500/70';
   const imgClass = isCard
-    ? 'max-h-full max-w-full object-contain object-center rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100'
-    : 'max-h-full max-w-full object-contain object-center';
+    ? 'max-h-full max-w-full object-contain object-center rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100 pointer-events-none'
+    : 'max-h-full max-w-full object-contain object-center pointer-events-none';
 
   return (
     <div className="relative h-full min-h-0 w-full">
-      <div className={`flex h-full min-h-0 w-full items-center justify-center pt-0 ${stagePb}`}>
+      <div
+        className={`flex h-full min-h-0 w-full items-center justify-center pt-0 ${stagePb} ${multi ? 'touch-pan-y select-none cursor-grab active:cursor-grabbing' : ''}`}
+        role={multi ? 'region' : undefined}
+        aria-roledescription={multi ? 'carousel' : undefined}
+        aria-label={
+          multi
+            ? showDots
+              ? `${projectName} screenshots, ${index + 1} of ${images.length}. Swipe horizontally or use the dots.`
+              : `${projectName} screenshots, ${index + 1} of ${images.length}. Swipe horizontally to change.`
+            : undefined
+        }
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUpOrCancel}
+        onPointerCancel={handlePointerUpOrCancel}
+        onLostPointerCapture={handleLostPointerCapture}
+        onClick={handleStageClick}
+      >
         <AnimatePresence mode="wait" initial={false}>
           <motion.img
             key={index}
             data-slide-index={index}
             src={images[index]}
             alt={`${projectName} — screenshot ${index + 1} of ${images.length}`}
+            draggable={false}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -501,18 +605,37 @@ function CoarsePointerAmbientGlow() {
     let cancelled = false;
 
     const randomTarget = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const zones = [
-        { minX: -0.1 * w, maxX: 0.22 * w, minY: -0.08 * h, maxY: 0.22 * h },
-        { minX: 0.38 * w, maxX: 0.78 * w, minY: -0.06 * h, maxY: 0.2 * h },
-        { minX: 0.35 * w, maxX: 0.82 * w, minY: 0.26 * h, maxY: 0.62 * h },
-        { minX: -0.12 * w, maxX: 0.25 * w, minY: 0.22 * h, maxY: 0.58 * h },
-      ];
-      const z = zones[Math.floor(Math.random() * zones.length)];
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const md = window.matchMedia("(min-width: 768px)").matches;
+      const leftPct = md ? 0.08 : 0.04;
+      const topPct = md ? 0.1 : 0.08;
+      const size = md ? Math.min(0.7 * vw, 380) : Math.min(0.92 * vw, 360);
+      const blurPx = md ? 88 : 76;
+      const maxScale = 1.17;
+      const pad = blurPx + ((maxScale - 1) * size) / 2 + 20;
+
+      const left0 = leftPct * vw;
+      const top0 = topPct * vh;
+      let minX = -left0 - pad;
+      let maxX = vw - left0 - size + pad;
+      let minY = -top0 - pad;
+      let maxY = vh - top0 - size + pad;
+
+      if (maxX < minX) {
+        const mid = (minX + maxX) / 2;
+        minX = mid;
+        maxX = mid;
+      }
+      if (maxY < minY) {
+        const mid = (minY + maxY) / 2;
+        minY = mid;
+        maxY = mid;
+      }
+
       return {
-        x: z.minX + Math.random() * (z.maxX - z.minX),
-        y: z.minY + Math.random() * (z.maxY - z.minY),
+        x: minX + Math.random() * (maxX - minX),
+        y: minY + Math.random() * (maxY - minY),
         scale: 0.85 + Math.random() * 0.32,
         duration: 4.5 + Math.random() * 6.5,
       };
@@ -539,7 +662,7 @@ function CoarsePointerAmbientGlow() {
 
   return (
     <motion.div
-      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(88vw,340px)] w-[min(88vw,340px)] rounded-full blur-[88px] md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] bg-mocha-600/12"
+      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(92vw,360px)] w-[min(92vw,360px)] rounded-full blur-[76px] bg-mocha-600/42 md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] md:blur-[88px] md:bg-mocha-600/30"
       style={{ x, y, scale }}
       aria-hidden
     />
@@ -757,11 +880,16 @@ const App = () => {
   const cursorY = useSpring(mouseY, springConfig);
 
   useEffect(() => {
-    const mq = window.matchMedia("(pointer: coarse)");
-    const sync = () => setPointerCoarse(mq.matches);
+    const mqCoarse = window.matchMedia("(pointer: coarse)");
+    const mqNarrow = window.matchMedia("(max-width: 767px)");
+    const sync = () => setPointerCoarse(mqCoarse.matches || mqNarrow.matches);
     sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    mqCoarse.addEventListener("change", sync);
+    mqNarrow.addEventListener("change", sync);
+    return () => {
+      mqCoarse.removeEventListener("change", sync);
+      mqNarrow.removeEventListener("change", sync);
+    };
   }, []);
 
   useEffect(() => {
@@ -969,7 +1097,7 @@ const App = () => {
       {!reducedMotion && !pointerCoarse && (
         <motion.div
           style={{ x: cursorX, y: cursorY }}
-          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-600/11"
+          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-600/18"
           aria-hidden
         />
       )}
@@ -978,7 +1106,7 @@ const App = () => {
       {/* Reduced motion: single static glow */}
       {reducedMotion && (
         <div
-          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(80vw,300px)] w-[min(80vw,300px)] rounded-full blur-[88px] md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] bg-mocha-600/8"
+          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(88vw,320px)] w-[min(88vw,320px)] rounded-full blur-[76px] bg-mocha-600/32 md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] md:blur-[88px] md:bg-mocha-600/12"
           aria-hidden
         />
       )}
