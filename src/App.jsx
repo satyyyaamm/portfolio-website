@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   motion,
   AnimatePresence,
@@ -20,7 +20,187 @@ import {
   X,
   Briefcase,
   Mail,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+
+import gms1 from './assets/gms/gms1.png';
+import gms2 from './assets/gms/gms2.png';
+import gms3 from './assets/gms/gms3.png';
+import gms4 from './assets/gms/gms4.png';
+import sa1 from './assets/sa/sa1.png';
+import sa2 from './assets/sa/sa2.png';
+import sa3 from './assets/sa/sa3.png';
+import sa4 from './assets/sa/sa4.png';
+import woopdo1 from './assets/woopdo/woopdo1.png';
+import woopdo2 from './assets/woopdo/woopdo2.png';
+import woopdo3 from './assets/woopdo/woopdo3.png';
+import woopdo4 from './assets/woopdo/woopdo4.png';
+import waya1 from './assets/wayawaya/IMG_0193.PNG';
+import waya2 from './assets/wayawaya/IMG_0194.PNG';
+import waya3 from './assets/wayawaya/IMG_0195.PNG';
+import waya4 from './assets/wayawaya/IMG_0196.PNG';
+import waya5 from './assets/wayawaya/IMG_0197.PNG';
+import waya6 from './assets/wayawaya/IMG_0198.PNG';
+import uj1 from './assets/uj/IMG_0188.PNG';
+import uj2 from './assets/uj/IMG_0189.PNG';
+import uj3 from './assets/uj/IMG_0190.PNG';
+import uj4 from './assets/uj/IMG_0191.PNG';
+import uj5 from './assets/uj/IMG_0192.PNG';
+import aboutPortrait from './assets/satyam.png';
+
+const GMS_GALLERY = [gms1, gms2, gms3, gms4];
+const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
+const WOOPDO_GALLERY = [woopdo1, woopdo2, woopdo3, woopdo4];
+const WAYA_WAYA_GALLERY = [waya1, waya2, waya3, waya4, waya5, waya6];
+const UJ_WAYFINDER_GALLERY = [uj1, uj2, uj3, uj4, uj5];
+
+function aspectRatioCss(w, h) {
+  if (!w || !h) return '16 / 9';
+  return `${w} / ${h}`;
+}
+
+/** Auto-advancing slideshow; optional `onAspectRatioChange` for fluid project preview frames. */
+function ProjectPreviewSlideshow({
+  images,
+  projectName,
+  reducedMotion,
+  onAspectRatioChange,
+  variant = 'default',
+  showDots = true,
+}) {
+  const [index, setIndex] = useState(0);
+  const [dimsByIndex, setDimsByIndex] = useState({});
+  const onAspectRef = useRef(onAspectRatioChange);
+  const isCard = variant === 'card';
+
+  useLayoutEffect(() => {
+    onAspectRef.current = onAspectRatioChange;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    images.forEach((src, i) => {
+      const img = new Image();
+      img.onload = () => {
+        if (cancelled) return;
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        if (!w || !h) return;
+        setDimsByIndex((prev) => ({ ...prev, [i]: { w, h } }));
+      };
+      img.src = src;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [images]);
+
+  useLayoutEffect(() => {
+    if (!onAspectRef.current) return;
+    const d = dimsByIndex[index];
+    onAspectRef.current(aspectRatioCss(d?.w, d?.h));
+  }, [index, dimsByIndex]);
+
+  useEffect(() => {
+    if (reducedMotion || images.length <= 1) return;
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % images.length);
+    }, 5500);
+    return () => window.clearInterval(id);
+  }, [images.length, reducedMotion]);
+
+  const handleImgLoad = (e) => {
+    const el = e.currentTarget;
+    const i = Number(el.dataset.slideIndex);
+    if (Number.isNaN(i)) return;
+    const w = el.naturalWidth;
+    const h = el.naturalHeight;
+    if (!w || !h) return;
+    setDimsByIndex((prev) => ({ ...prev, [i]: { w, h } }));
+  };
+
+  const stagePb = isCard
+    ? showDots
+      ? 'pb-7 sm:pb-8'
+      : 'pb-0'
+    : 'pb-9 sm:pb-10';
+  const dotWrapBottom = isCard ? 'bottom-1.5' : 'bottom-2.5';
+  const dotActive = isCard ? 'w-5 bg-white shadow-sm' : 'w-6 bg-mocha-600';
+  const dotIdle = isCard
+    ? 'w-2 bg-white/45 hover:bg-white/75'
+    : 'w-2 bg-mocha-400/50 hover:bg-mocha-500/70';
+  const imgClass = isCard
+    ? 'max-h-full max-w-full object-contain object-center rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100'
+    : 'max-h-full max-w-full object-contain object-center';
+
+  return (
+    <div className="relative h-full min-h-0 w-full">
+      <div className={`flex h-full min-h-0 w-full items-center justify-center pt-0 ${stagePb}`}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.img
+            key={index}
+            data-slide-index={index}
+            src={images[index]}
+            alt={`${projectName} — screenshot ${index + 1} of ${images.length}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+            className={imgClass}
+            onLoad={handleImgLoad}
+          />
+        </AnimatePresence>
+      </div>
+      {showDots && images.length > 1 && (
+        <div
+          className={`absolute ${dotWrapBottom} left-0 right-0 flex justify-center gap-1.5 px-2 sm:gap-2`}
+          role="tablist"
+          aria-label="Screenshot slides"
+        >
+          {images.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`Show screenshot ${i + 1}`}
+              onClick={() => setIndex(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === index ? dotActive : dotIdle
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function designCardSlides(d) {
+  return d.gallery?.length ? d.gallery : [d.image];
+}
+
+function DesignCardPreview({ design, reducedMotion, designCardHoverShadow }) {
+  const slides = designCardSlides(design);
+  return (
+    <div
+      className={`aspect-[4/3] w-full min-h-0 rounded-xl overflow-hidden flex flex-col ring-1 ring-mocha-700/10 group-hover:ring-mocha-700/20 transition-[box-shadow,ring-color] duration-300 ${designCardHoverShadow} motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-mocha-700/10`}
+      style={{ backgroundColor: design.accent }}
+    >
+      <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
+        <ProjectPreviewSlideshow
+          key={design.name}
+          images={slides}
+          projectName={design.name}
+          reducedMotion={reducedMotion}
+          variant="card"
+          showDots={false}
+        />
+      </div>
+    </div>
+  );
+}
 
 const MediumIcon = ({ className = "h-4 w-4" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -132,6 +312,8 @@ const MEDIUM_URL = "https://medium.com/@satyamt5152";
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY ?? "";
 const GITHUB_URL = "https://github.com/satyyyaamm";
 const LINKEDIN_URL = "https://www.linkedin.com/in/satyam-tiwari-a03299200";
+const UPWORK_URL =
+  "https://www.upwork.com/freelancers/~017488413fc2713bec?mp_source=share";
 const EMAIL_MAILTO = "mailto:satyamt5152@gmail.com";
 const PHONE_DISPLAY = "+91 87933 80992";
 const PHONE_TEL = "tel:+918793380992";
@@ -364,9 +546,135 @@ function CoarsePointerAmbientGlow() {
   );
 }
 
+function DesignImageLightbox({ title, images, onClose }) {
+  const [index, setIndex] = useState(0);
+  const n = images.length;
+
+  useEffect(() => {
+    setIndex(0);
+  }, [title]);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (n <= 1) return;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setIndex((i) => (i - 1 + n) % n);
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setIndex((i) => (i + 1) % n);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose, n]);
+
+  const goPrev = () => setIndex((i) => (i - 1 + n) % n);
+  const goNext = () => setIndex((i) => (i + 1) % n);
+
+  return (
+    <div className="fixed inset-0 z-[110]">
+      <button
+        type="button"
+        className="absolute inset-0 z-0 bg-mocha-950/88 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close full-size images"
+      />
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="pointer-events-auto absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white text-mocha-900 shadow-md ring-1 ring-mocha-900/15 transition-colors hover:bg-mocha-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-950 sm:right-4 sm:top-4 sm:h-10 sm:w-10"
+        aria-label="Close full-size view"
+      >
+        <X className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+      </button>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="design-lightbox-title"
+        className="relative z-10 flex h-full min-h-0 flex-col p-3 pt-14 sm:p-5 sm:pt-16 pointer-events-none"
+      >
+        <div className="pointer-events-auto flex shrink-0 items-center pb-2 sm:pb-3 pr-11 sm:pr-12">
+          <p
+            id="design-lightbox-title"
+            className="min-w-0 truncate text-sm font-medium text-mocha-50 sm:text-base"
+          >
+            {title}
+          </p>
+        </div>
+
+        <div className="pointer-events-none flex min-h-0 flex-1 items-center justify-center gap-1 sm:gap-3">
+          {n > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goPrev();
+              }}
+              className="pointer-events-auto shrink-0 rounded-full p-2 text-mocha-100 transition-colors hover:bg-white/10 sm:p-3"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2} aria-hidden />
+            </button>
+          )}
+          <div className="pointer-events-auto flex min-h-0 min-w-0 flex-1 items-center justify-center px-1">
+            <img
+              src={images[index]}
+              alt={`${title} — full size ${index + 1} of ${n}`}
+              className="max-h-[min(88dvh,100%)] w-auto max-w-full object-contain shadow-2xl"
+            />
+          </div>
+          {n > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goNext();
+              }}
+              className="pointer-events-auto shrink-0 rounded-full p-2 text-mocha-100 transition-colors hover:bg-white/10 sm:p-3"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2} aria-hidden />
+            </button>
+          )}
+        </div>
+
+        {n > 1 && (
+          <p className="pointer-events-auto pt-2 text-center text-xs text-mocha-200/90">
+            {index + 1} / {n}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const App = () => {
   const [activeProject, setActiveProject] = useState(0);
+  const [projectGalleryAspect, setProjectGalleryAspect] = useState('16 / 9');
   const [projectDetailIndex, setProjectDetailIndex] = useState(null);
+  const [designLightbox, setDesignLightbox] = useState(null);
+
+  useEffect(() => {
+    setProjectGalleryAspect('16 / 9');
+  }, [activeProject]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -388,7 +696,6 @@ const App = () => {
         marqueeFadeRgb: '243,247,244',
         designCardHoverShadow:
           'group-hover:shadow-[0_20px_44px_-16px_rgba(47,61,52,0.12)]',
-        projectCardShadow: '0 25px 50px -12px rgba(47, 61, 52, 0.12)',
         rowHoverBg: 'rgba(47, 61, 52, 0.05)',
         designAccent1: '#556b5c',
       };
@@ -398,7 +705,6 @@ const App = () => {
         marqueeFadeRgb: '242,245,248',
         designCardHoverShadow:
           'group-hover:shadow-[0_20px_44px_-16px_rgba(47,55,66,0.12)]',
-        projectCardShadow: '0 25px 50px -12px rgba(47, 55, 66, 0.12)',
         rowHoverBg: 'rgba(47, 55, 66, 0.05)',
         designAccent1: '#556070',
       };
@@ -407,7 +713,6 @@ const App = () => {
       marqueeFadeRgb: '249,246,240',
       designCardHoverShadow:
         'group-hover:shadow-[0_20px_44px_-16px_rgba(61,52,44,0.12)]',
-      projectCardShadow: '0 25px 50px -12px rgba(28, 25, 23, 0.12)',
       rowHoverBg: 'rgba(28, 25, 23, 0.05)',
       designAccent1: '#6f5f4f',
     };
@@ -564,7 +869,8 @@ const App = () => {
         "Admin: staff, inventory, workshop resources, profile/task templates for repeatable job creation.",
         "Stack: Flutter & Dart, Riverpod, GoRouter—designed for multi-role access and long-term maintainability.",
       ],
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80&w=1200",
+      image: gms1,
+      gallery: GMS_GALLERY,
       href: "#",
     },
     {
@@ -580,7 +886,8 @@ const App = () => {
         "Offline-first sync with SQL plus remote data; points for entering malls and voucher redemption with partners.",
         "Shared architecture patterns with UJ WayFinder, tuned via configuration.",
       ],
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
+      image: waya1,
+      gallery: WAYA_WAYA_GALLERY,
       href: "#",
     },
     {
@@ -595,7 +902,8 @@ const App = () => {
         "Map rendering and indoor navigation logic with BLE beacon integration.",
         "Common codebase with Waya Waya, separated by configuration.",
       ],
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200",
+      image: uj1,
+      gallery: UJ_WAYFINDER_GALLERY,
       href: "#",
     },
     {
@@ -611,19 +919,8 @@ const App = () => {
         "Community module with location-based filtering; separate collections for signals, chats, posts, and users.",
         "Push notifications for emergencies, signal updates, and community activity.",
       ],
-      image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=1200",
-      href: "#",
-    },
-    {
-      id: 4,
-      name: "PURI (Urinalysis)",
-      meta: "HealthTech · Flutter · Retired",
-      role: "Developer",
-      summary:
-        "Mobile HealthTech product focused on urinalysis workflows: end-to-end Flutter implementation from early build through store presence and later retirement from active distribution. The project reinforced how I scope features, ship under regulatory-adjacent constraints, and wind down a product cleanly while keeping lessons for future health-related mobile work.",
-      desc: "Mobile urinalysis / health-focused application; retired from active distribution with learnings carried into later HealthTech-adjacent work.",
-      highlights: ["End-to-end mobile ownership through lifecycle from build to retirement."],
-      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=1200",
+      image: sa1,
+      gallery: SAFE_AGAIN_GALLERY,
       href: "#",
     },
   ];
@@ -631,16 +928,18 @@ const App = () => {
   const creativeDesigns = useMemo(
     () => [
       {
-        name: "OSAC GMS (preview)",
+        name: "OSAC GMS",
         desc: "Garage operations UI: job cards, sales staff workflows, and technician views—web-first Flutter targeting workshops that need clarity under daily load.",
-        image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80",
+        image: gms1,
+        gallery: GMS_GALLERY,
         accent: themeMotion.designAccent1,
         href: "#",
       },
       {
-        name: "Safe Again (flows)",
+        name: "Safe Again",
         desc: "Safety-first UX: emergency signal paths, verified-user matching, and community surfaces designed for speed and trust under stress.",
-        image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
+        image: sa1,
+        gallery: SAFE_AGAIN_GALLERY,
         accent: "#3f3f46",
         href: "#",
       },
@@ -654,7 +953,8 @@ const App = () => {
       {
         name: "Woopdo",
         desc: "Real-world connection app: guided partner activities (“woops”), prompts, and social discovery—mobile UI and flows for timed, in-person experiences in beta.",
-        image: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1200&q=80",
+        image: woopdo1,
+        gallery: WOOPDO_GALLERY,
         accent: "#0f766e",
         href: "#",
       },
@@ -772,31 +1072,41 @@ const App = () => {
       <section id="projects" className="bg-mocha-100 py-24 px-6 relative z-10 border-t border-mocha-200/70">
         <div className="max-w-7xl mx-auto flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16 xl:gap-20">
           <motion.div
-            className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(54%,620px)] xl:w-[min(54%,720px)]"
+            className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(62%,760px)] xl:w-[min(64%,880px)]"
             variants={sectionFadeUpVariants}
             initial={reducedMotion ? false : 'hidden'}
             whileInView={reducedMotion ? undefined : 'visible'}
             viewport={{ once: true, amount: 0.28 }}
           >
             <motion.div
-              className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-white ring-1 ring-mocha-200/90 shadow-xl lg:mx-0 lg:max-w-none"
+              className="mx-auto w-full max-w-4xl lg:mx-0 lg:max-w-none"
               style={{
-                aspectRatio: "16 / 9",
-                maxHeight: "min(52vh, calc(100dvh - 7.5rem))",
+                aspectRatio: projects[activeProject].gallery?.length
+                  ? projectGalleryAspect
+                  : '16 / 9',
+                maxHeight: 'min(64vh, calc(100dvh - 5.5rem))',
               }}
-              whileHover={{ scale: 1.02, boxShadow: themeMotion.projectCardShadow }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
             >
-              <motion.img
-                key={activeProject}
-                initial={{ opacity: 0, scale: 1.03 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                src={projects[activeProject].image}
-                alt={projects[activeProject].name}
-                className="h-full w-full min-h-0 object-cover object-center"
-                loading="eager"
-              />
+              {projects[activeProject].gallery?.length ? (
+                <ProjectPreviewSlideshow
+                  key={activeProject}
+                  images={projects[activeProject].gallery}
+                  projectName={projects[activeProject].name}
+                  reducedMotion={reducedMotion}
+                  onAspectRatioChange={setProjectGalleryAspect}
+                />
+              ) : (
+                <motion.img
+                  key={activeProject}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                  src={projects[activeProject].image}
+                  alt={projects[activeProject].name}
+                  className="h-full w-full min-h-0 object-contain object-center"
+                  loading="eager"
+                />
+              )}
             </motion.div>
           </motion.div>
 
@@ -915,23 +1225,31 @@ const App = () => {
               {creativeDesigns.map((d) => (
                 <article
                   key={d.name}
-                  className="group flex flex-col transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 motion-reduce:hover:translate-y-0"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${d.name} — open full-size images`}
+                  onClick={() =>
+                    setDesignLightbox({ title: d.name, images: designCardSlides(d) })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDesignLightbox({ title: d.name, images: designCardSlides(d) });
+                    }
+                  }}
+                  className="group flex cursor-pointer flex-col rounded-lg transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 motion-reduce:hover:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-150"
                 >
-                  <div
-                    className={`aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-mocha-700/10 group-hover:ring-mocha-700/20 transition-[box-shadow,ring-color] duration-300 ${designCardHoverShadow} motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-mocha-700/10`}
-                    style={{ backgroundColor: d.accent }}
-                  >
-                    <img
-                      src={d.image}
-                      alt={`${d.name} design mockup`}
-                      className="max-h-full max-w-full object-contain rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                    />
-                  </div>
-                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name},</h3>
+                  <DesignCardPreview
+                    design={d}
+                    reducedMotion={reducedMotion}
+                    designCardHoverShadow={designCardHoverShadow}
+                  />
+                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name}</h3>
                   <p className="text-mocha-600 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
                   <a
                     href={d.href}
                     onClick={(e) => {
+                      e.stopPropagation();
                       if (d.href === '#') e.preventDefault();
                     }}
                     className="inline-flex items-center gap-1 text-mocha-600 text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
@@ -960,23 +1278,31 @@ const App = () => {
                   variants={sectionCardItemVariants}
                   whileHover={{ y: -6 }}
                   transition={{ type: 'spring', stiffness: 420, damping: 26 }}
-                  className="group flex flex-col will-change-transform"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${d.name} — open full-size images`}
+                  onClick={() =>
+                    setDesignLightbox({ title: d.name, images: designCardSlides(d) })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDesignLightbox({ title: d.name, images: designCardSlides(d) });
+                    }
+                  }}
+                  className="group flex cursor-pointer flex-col will-change-transform rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-150"
                 >
-                  <div
-                    className={`aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-mocha-700/10 group-hover:ring-mocha-700/20 transition-[box-shadow,ring-color] duration-300 ${designCardHoverShadow} motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-mocha-700/10`}
-                    style={{ backgroundColor: d.accent }}
-                  >
-                    <img
-                      src={d.image}
-                      alt={`${d.name} design mockup`}
-                      className="max-h-full max-w-full object-contain rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                    />
-                  </div>
-                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name},</h3>
+                  <DesignCardPreview
+                    design={d}
+                    reducedMotion={reducedMotion}
+                    designCardHoverShadow={designCardHoverShadow}
+                  />
+                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name}</h3>
                   <p className="text-mocha-600 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
                   <a
                     href={d.href}
                     onClick={(e) => {
+                      e.stopPropagation();
                       if (d.href === '#') e.preventDefault();
                     }}
                     className="inline-flex items-center gap-1 text-mocha-600 text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
@@ -997,21 +1323,23 @@ const App = () => {
 
       {/* About */}
       <section id="about" className="py-24 px-6 border-t border-mocha-200/80 bg-mocha-50 relative z-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-16 items-start">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,480px)_1fr] gap-16 items-start">
           <motion.div
-            className="relative w-full max-w-[360px] mx-auto lg:mx-0"
+            className="relative mx-auto flex w-full max-w-[min(100%,440px)] justify-center lg:mx-0 lg:max-w-none lg:justify-start"
             variants={sectionFadeUpVariants}
             initial={reducedMotion ? false : 'hidden'}
             whileInView={reducedMotion ? undefined : 'visible'}
             viewport={{ once: true, amount: 0.35 }}
           >
-            <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-mocha-300/80" />
-            <div className="relative z-10 rounded-sm overflow-hidden bg-white ring-1 ring-mocha-200/90">
-              <img
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=900&q=80"
-                alt="Satyam Tiwari"
-                className="w-full h-[430px] object-cover"
-              />
+            <div className="relative aspect-square w-full max-w-[360px] sm:max-w-[400px] md:max-w-[440px] rounded-full ring-2 ring-mocha-600 ring-offset-4 ring-offset-mocha-50">
+              <div className="h-full w-full overflow-hidden rounded-full">
+                <img
+                  src={aboutPortrait}
+                  alt="Satyam Tiwari"
+                  className="h-full w-full object-cover object-center select-none"
+                  decoding="async"
+                />
+              </div>
             </div>
           </motion.div>
 
@@ -1057,7 +1385,9 @@ const App = () => {
                 Resume
               </a>
               <a
-                href="#contact"
+                href={UPWORK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center bg-white border border-stone-300/90 text-mocha-800 px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-stone-50 transition-colors"
               >
                 Hire me
@@ -1429,6 +1759,14 @@ const App = () => {
       
       {projectDetailIndex !== null && projects[projectDetailIndex] && (
         <ProjectDetailDialog project={projects[projectDetailIndex]} onClose={() => setProjectDetailIndex(null)} />
+      )}
+
+      {designLightbox && (
+        <DesignImageLightbox
+          title={designLightbox.title}
+          images={designLightbox.images}
+          onClose={() => setDesignLightbox(null)}
+        />
       )}
 
     </div>
