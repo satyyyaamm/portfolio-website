@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-service: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   /* Warm brown: a touch lighter & more ochre than cool stone, less “muddy gray” */
   --color-mocha-50: #f9f6f0;
@@ -15,6 +16,121 @@
   --color-mocha-800: #3d342c;
 }
 
+/* Registered hues so html[data-theme] can interpolate brown ↔ green ↔ slate */
+@property --color-mocha-50 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f9f6f0;
+}
+@property --color-mocha-100 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f0ebe3;
+}
+@property --color-mocha-150 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e8e0d4;
+}
+@property --color-mocha-200 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e5dfd6;
+}
+@property --color-mocha-300 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #d4c9bf;
+}
+@property --color-mocha-400 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #a89888;
+}
+@property --color-mocha-500 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8a7a6a;
+}
+@property --color-mocha-600 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6f5f4f;
+}
+@property --color-mocha-700 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #5a4a3d;
+}
+@property --color-mocha-800 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3d342c;
+}
+
+/* Warm brown (explicit state for cycling) */
+html[data-theme="brown"] {
+  --color-mocha-50: #f9f6f0;
+  --color-mocha-100: #f0ebe3;
+  --color-mocha-150: #e8e0d4;
+  --color-mocha-200: #e5dfd6;
+  --color-mocha-300: #d4c9bf;
+  --color-mocha-400: #a89888;
+  --color-mocha-500: #8a7a6a;
+  --color-mocha-600: #6f5f4f;
+  --color-mocha-700: #5a4a3d;
+  --color-mocha-800: #3d342c;
+}
+
+/* Matched-depth sage green */
+html[data-theme="green"] {
+  --color-mocha-50: #f3f7f4;
+  --color-mocha-100: #e6efe9;
+  --color-mocha-150: #dce8e0;
+  --color-mocha-200: #d3e2d9;
+  --color-mocha-300: #b9cfc1;
+  --color-mocha-400: #8a9f8f;
+  --color-mocha-500: #6c8272;
+  --color-mocha-600: #556b5c;
+  --color-mocha-700: #445648;
+  --color-mocha-800: #2f3d34;
+}
+
+/* Dusty slate — cool blue-gray, same depth as brown / sage */
+html[data-theme="slate"] {
+  --color-mocha-50: #f2f5f8;
+  --color-mocha-100: #e8edf3;
+  --color-mocha-150: #dfe6ee;
+  --color-mocha-200: #d5dfe8;
+  --color-mocha-300: #b9c4d1;
+  --color-mocha-400: #8b98a8;
+  --color-mocha-500: #6d7c8c;
+  --color-mocha-600: #556070;
+  --color-mocha-700: #444e5c;
+  --color-mocha-800: #2f3742;
+}
+
+/* Slow, smooth cross-fade between themes (registered color props) */
+html[data-theme] {
+  transition:
+    --color-mocha-50 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-100 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-150 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-200 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-300 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-400 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-500 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-600 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-700 6.5s cubic-bezier(0.45, 0.05, 0.25, 1),
+    --color-mocha-800 6.5s cubic-bezier(0.45, 0.05, 0.25, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] {
+    transition: none;
+  }
+}
+
 /*
  * Body & UI use mocha-* for a cohesive warm brown (not cool gray-brown).
  */
@@ -23,6 +139,7 @@ body {
   overflow-x: hidden;
   background-color: var(--color-mocha-50);
   color: var(--color-mocha-600);
+  font-family: var(--font-sans);
 }
 
 .social-icon-btn {

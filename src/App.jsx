@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   motion,
   AnimatePresence,
@@ -101,7 +101,7 @@ function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-50 bg-mocha-50/90 backdrop-blur-sm border-b border-mocha-200/90 py-3 px-6">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
-        <a href="#home" className="text-lg font-bold tracking-tight text-mocha-800 hover:text-mocha-700 transition-colors">
+        <a href="#home" className="font-service text-lg font-bold tracking-tight text-mocha-800 hover:text-mocha-700 transition-colors">
           Satyam
         </a>
         <div className="hidden md:flex flex-1 justify-center gap-6 text-xs font-medium text-mocha-600">
@@ -202,7 +202,7 @@ function TechMarqueeStrip({ items }) {
   );
 }
 
-function HeroTechMarquee() {
+function HeroTechMarquee({ fadeRgb = "249,246,240" }) {
   const reduced = useReducedMotion();
 
   if (reduced) {
@@ -222,8 +222,7 @@ function HeroTechMarquee() {
     );
   }
 
-  const edgeFade =
-    "linear-gradient(90deg, transparent 0%, rgba(249,246,240,0.2) 8%, rgba(249,246,240,0.75) 20%, rgb(249,246,240) 38%, rgb(249,246,240) 62%, rgba(249,246,240,0.75) 80%, rgba(249,246,240,0.2) 92%, transparent 100%)";
+  const edgeFade = `linear-gradient(90deg, transparent 0%, rgba(${fadeRgb},0.2) 8%, rgba(${fadeRgb},0.75) 20%, rgb(${fadeRgb}) 38%, rgb(${fadeRgb}) 62%, rgba(${fadeRgb},0.75) 80%, rgba(${fadeRgb},0.2) 92%, transparent 100%)`;
 
   return (
     <motion.div
@@ -380,10 +379,71 @@ const App = () => {
   const [contactHoneypot, setContactHoneypot] = useState('');
   const [pointerCoarse, setPointerCoarse] = useState(false);
   const [serviceHoverIndex, setServiceHoverIndex] = useState(null);
+  const [huePhase, setHuePhase] = useState('brown');
   const reducedMotion = useReducedMotion();
 
-  const designCardHoverShadow =
-    "group-hover:shadow-[0_20px_44px_-16px_rgba(61,52,44,0.12)]";
+  const themeMotion = useMemo(() => {
+    if (huePhase === 'green') {
+      return {
+        marqueeFadeRgb: '243,247,244',
+        designCardHoverShadow:
+          'group-hover:shadow-[0_20px_44px_-16px_rgba(47,61,52,0.12)]',
+        projectCardShadow: '0 25px 50px -12px rgba(47, 61, 52, 0.12)',
+        rowHoverBg: 'rgba(47, 61, 52, 0.05)',
+        designAccent1: '#556b5c',
+      };
+    }
+    if (huePhase === 'slate') {
+      return {
+        marqueeFadeRgb: '242,245,248',
+        designCardHoverShadow:
+          'group-hover:shadow-[0_20px_44px_-16px_rgba(47,55,66,0.12)]',
+        projectCardShadow: '0 25px 50px -12px rgba(47, 55, 66, 0.12)',
+        rowHoverBg: 'rgba(47, 55, 66, 0.05)',
+        designAccent1: '#556070',
+      };
+    }
+    return {
+      marqueeFadeRgb: '249,246,240',
+      designCardHoverShadow:
+        'group-hover:shadow-[0_20px_44px_-16px_rgba(61,52,44,0.12)]',
+      projectCardShadow: '0 25px 50px -12px rgba(28, 25, 23, 0.12)',
+      rowHoverBg: 'rgba(28, 25, 23, 0.05)',
+      designAccent1: '#6f5f4f',
+    };
+  }, [huePhase]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = huePhase;
+  }, [huePhase]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setHuePhase('brown');
+      document.documentElement.dataset.theme = 'brown';
+      return;
+    }
+    let cancelled = false;
+    let tid;
+    const scheduleNext = () => {
+      tid = window.setTimeout(() => {
+        if (cancelled) return;
+        setHuePhase((p) => {
+          if (p === 'brown') return 'green';
+          if (p === 'green') return 'slate';
+          return 'brown';
+        });
+        scheduleNext();
+      }, 14000 + Math.random() * 4000);
+    };
+    scheduleNext();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(tid);
+    };
+  }, [reducedMotion]);
+
+  const designCardHoverShadow = themeMotion.designCardHoverShadow;
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -568,36 +628,39 @@ const App = () => {
     },
   ];
 
-  const creativeDesigns = [
-    {
-      name: "OSAC GMS (preview)",
-      desc: "Garage operations UI: job cards, sales staff workflows, and technician views—web-first Flutter targeting workshops that need clarity under daily load.",
-      image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80",
-      accent: "#6f5f4f",
-      href: "#",
-    },
-    {
-      name: "Safe Again (flows)",
-      desc: "Safety-first UX: emergency signal paths, verified-user matching, and community surfaces designed for speed and trust under stress.",
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
-      accent: "#3f3f46",
-      href: "#",
-    },
-    {
-      name: "Mobiurja",
-      desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
-      image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1200&q=80",
-      accent: "#1e3a5f",
-      href: "#",
-    },
-    {
-      name: "Woopdo",
-      desc: "Real-world connection app: guided partner activities (“woops”), prompts, and social discovery—mobile UI and flows for timed, in-person experiences in beta.",
-      image: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1200&q=80",
-      accent: "#0f766e",
-      href: "#",
-    },
-  ];
+  const creativeDesigns = useMemo(
+    () => [
+      {
+        name: "OSAC GMS (preview)",
+        desc: "Garage operations UI: job cards, sales staff workflows, and technician views—web-first Flutter targeting workshops that need clarity under daily load.",
+        image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80",
+        accent: themeMotion.designAccent1,
+        href: "#",
+      },
+      {
+        name: "Safe Again (flows)",
+        desc: "Safety-first UX: emergency signal paths, verified-user matching, and community surfaces designed for speed and trust under stress.",
+        image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
+        accent: "#3f3f46",
+        href: "#",
+      },
+      {
+        name: "Mobiurja",
+        desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
+        image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1200&q=80",
+        accent: "#1e3a5f",
+        href: "#",
+      },
+      {
+        name: "Woopdo",
+        desc: "Real-world connection app: guided partner activities (“woops”), prompts, and social discovery—mobile UI and flows for timed, in-person experiences in beta.",
+        image: "https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1200&q=80",
+        accent: "#0f766e",
+        href: "#",
+      },
+    ],
+    [themeMotion.designAccent1]
+  );
 
   return (
     <div className="bg-mocha-50 text-mocha-600 font-sans min-h-screen relative overflow-x-hidden">
@@ -625,7 +688,7 @@ const App = () => {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-mocha-500 mb-6">
           <MapPin size={14} /><span className="text-xs font-medium">India | Open to Remote</span>
         </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-8xl font-bold max-w-5xl mb-4 tracking-tight leading-[1] text-mocha-800">
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="font-service text-5xl md:text-8xl font-bold max-w-5xl mb-4 tracking-tight leading-[1] text-mocha-800">
           I'm Satyam Tiwari <br /> Flutter Developer
         </motion.h1>
         <p className="text-mocha-600 max-w-2xl text-sm md:text-base mb-10 leading-relaxed">
@@ -635,9 +698,9 @@ const App = () => {
           <a href="#contact" className="btn-primary-sm">
             Get yours now
           </a>
-          <a href="#projects" className="bg-white border border-mocha-200 text-mocha-800 px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-mocha-50 active:scale-95">See my work</a>
+          <a href="#projects" className="bg-white border border-stone-300/90 text-mocha-800 px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-stone-50 active:scale-95">See my work</a>
         </div>
-        <HeroTechMarquee />
+        <HeroTechMarquee fadeRgb={themeMotion.marqueeFadeRgb} />
       </section>
 
       {/* Services */}
@@ -721,7 +784,7 @@ const App = () => {
                 aspectRatio: "16 / 9",
                 maxHeight: "min(52vh, calc(100dvh - 7.5rem))",
               }}
-              whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(28, 25, 23, 0.12)" }}
+              whileHover={{ scale: 1.02, boxShadow: themeMotion.projectCardShadow }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             >
               <motion.img
@@ -764,7 +827,7 @@ const App = () => {
                   <motion.div
                     className="rounded-lg px-2"
                     initial={false}
-                    whileHover={{ backgroundColor: "rgba(28, 25, 23, 0.05)" }}
+                    whileHover={{ backgroundColor: themeMotion.rowHoverBg }}
                     transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                   >
                     <div className="py-2 md:py-2.5 px-1">
@@ -811,8 +874,7 @@ const App = () => {
                     </div>
                   </motion.div>
                   <div
-                    className="w-full shrink-0"
-                    style={{ height: "0.5px", backgroundColor: "#d4c9bf" }}
+                    className="h-px w-full shrink-0 bg-mocha-300/90"
                     role="presentation"
                     aria-hidden
                   />
@@ -962,7 +1024,7 @@ const App = () => {
           >
             <motion.h2
               variants={sectionLineRevealVariants}
-              className="text-3xl md:text-5xl font-bold leading-tight text-mocha-800"
+              className="font-service text-3xl md:text-5xl font-bold leading-tight text-mocha-800"
             >
               Satyam Tiwari — Flutter developer with a product-owner lens
             </motion.h2>
@@ -996,7 +1058,7 @@ const App = () => {
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center bg-white border border-mocha-200 text-mocha-800 px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-mocha-50 transition-colors"
+                className="inline-flex items-center justify-center bg-white border border-stone-300/90 text-mocha-800 px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-stone-50 transition-colors"
               >
                 Hire me
               </a>
@@ -1021,7 +1083,7 @@ const App = () => {
                 </motion.p>
                 <motion.h2
                   variants={sectionLineRevealVariants}
-                  className="text-5xl sm:text-6xl md:text-7xl font-semibold text-mocha-800 leading-[0.98] tracking-tight mb-6"
+                  className="font-service text-5xl sm:text-6xl md:text-7xl font-semibold text-mocha-800 leading-[0.98] tracking-tight mb-6"
                 >
                   Get in touch
                 </motion.h2>
@@ -1241,7 +1303,7 @@ const App = () => {
                 <h3 className="font-service text-4xl md:text-5xl font-semibold text-mocha-800 tracking-tight mb-5">
                   Satyam Tiwari
                 </h3>
-                <p className="font-service text-mocha-600 text-base md:text-lg leading-relaxed mb-8 max-w-md">
+                <p className="text-mocha-600 text-base md:text-lg leading-relaxed mb-8 max-w-md">
                   Freelance Flutter lead · Chirpn (React / RN / Flutter) alumnus · Apps live on App Store with long-term maintenance.
                 </p>
                 <a
@@ -1291,7 +1353,7 @@ const App = () => {
                 className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8 lg:pl-12"
               >
                 <div>
-                  <h4 className="text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Contact me</h4>
+                  <h4 className="font-service text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Contact me</h4>
                   <div className="space-y-5 text-mocha-600 text-base leading-relaxed">
                     <p>
                       <span className="font-semibold text-mocha-800">Email:</span>
@@ -1324,7 +1386,7 @@ const App = () => {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Menu</h4>
+                  <h4 className="font-service text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Menu</h4>
                   <ul className="space-y-3 text-mocha-600 text-base">
                     <li>
                       <a href="#home" className="hover:text-mocha-800 transition-colors">
