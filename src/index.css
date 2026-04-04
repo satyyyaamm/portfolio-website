@@ -2,16 +2,47 @@
 
 @theme {
   --font-service: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Warm brown: a touch lighter & more ochre than cool stone, less “muddy gray” */
+  --color-mocha-50: #f9f6f0;
+  --color-mocha-100: #f0ebe3;
+  --color-mocha-150: #e8e0d4;
+  --color-mocha-200: #e5dfd6;
+  --color-mocha-300: #d4c9bf;
+  --color-mocha-400: #a89888;
+  --color-mocha-500: #8a7a6a;
+  --color-mocha-600: #6f5f4f;
+  --color-mocha-700: #5a4a3d;
+  --color-mocha-800: #3d342c;
 }
 
-/* Clip horizontal overflow from full-bleed sections */
+/*
+ * Body & UI use mocha-* for a cohesive warm brown (not cool gray-brown).
+ */
 html,
 body {
   overflow-x: hidden;
+  background-color: var(--color-mocha-50);
+  color: var(--color-mocha-600);
 }
 
 .social-icon-btn {
-  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-700/90 bg-zinc-800 text-white transition-colors hover:bg-zinc-700;
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-mocha-600/30 bg-white/90 text-mocha-600 transition-colors hover:bg-mocha-100/90 hover:border-mocha-600/45;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center bg-mocha-700 text-white px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-mocha-600 transition-colors;
+}
+
+.btn-primary-sm {
+  @apply bg-mocha-700 text-white px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-mocha-600 active:scale-95;
+}
+
+.btn-primary-md {
+  @apply w-fit bg-mocha-700 text-white px-6 py-2.5 text-sm font-medium rounded-md hover:bg-mocha-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.btn-primary-block {
+  @apply inline-block bg-mocha-700 text-white px-5 py-2.5 text-sm font-medium rounded-md mb-10 hover:bg-mocha-600 transition-colors;
 }
 
 @keyframes tech-marquee {

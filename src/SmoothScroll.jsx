@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import Lenis from 'lenis';
 import { setLenisInstance } from './lib/lenisInstance';
 
@@ -7,9 +7,18 @@ import 'lenis/dist/lenis.css';
 /** Fixed navbar clearance — matches ~py-3 nav + border */
 const NAV_SCROLL_OFFSET = -64;
 
+function forceWindowScrollTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
 export function SmoothScroll({ children }) {
-  /** Full reload without a hash: browsers often restore old scroll (e.g. mid-page). Reset to top. */
-  useEffect(() => {
+  /**
+   * Before paint: disable restoration, drop hash on reload (otherwise #contact persists
+   * and the browser + Lenis jump to the form), and pin scroll to top.
+   */
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       if ('scrollRestoration' in history) {
@@ -18,16 +27,22 @@ export function SmoothScroll({ children }) {
     } catch {
       /* noop */
     }
-    const hash = window.location.hash;
-    if (hash && hash !== '#') return;
 
-    const goTop = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    };
-    goTop();
-    requestAnimationFrame(goTop);
-    const t0 = window.setTimeout(goTop, 0);
-    const t1 = window.setTimeout(goTop, 100);
+    const nav = performance.getEntriesByType('navigation')[0];
+    if (nav?.type === 'reload' && window.location.hash) {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
+
+    forceWindowScrollTop();
+  }, []);
+
+  /** Extra resets after layout (restoration / Lenis timing). */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    forceWindowScrollTop();
+    requestAnimationFrame(forceWindowScrollTop);
+    const t0 = window.setTimeout(forceWindowScrollTop, 0);
+    const t1 = window.setTimeout(forceWindowScrollTop, 100);
     return () => {
       window.clearTimeout(t0);
       window.clearTimeout(t1);
@@ -80,7 +95,7 @@ export function SmoothScroll({ children }) {
 
     const h = window.location.hash;
     if (!h || h === '#') {
-      lenis.scrollTo(0, { immediate: true });
+      lenis.scrollTo(0, { immediate: true, force: true });
     }
 
     requestAnimationFrame(() => {
@@ -89,9 +104,17 @@ export function SmoothScroll({ children }) {
       });
     });
 
+    const onPageshow = (e) => {
+      if (!e.persisted) return;
+      forceWindowScrollTop();
+      lenis.scrollTo(0, { immediate: true, force: true });
+    };
+    window.addEventListener('pageshow', onPageshow);
+
     return () => {
       document.removeEventListener('click', onClickCapture, true);
       window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('pageshow', onPageshow);
       lenis.destroy();
       setLenisInstance(null);
     };

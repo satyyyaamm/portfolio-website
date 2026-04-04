@@ -97,31 +97,33 @@ const sectionProjectRowVariants = {
   },
 };
 
-const Navbar = () => {
+function Navbar() {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-sm border-b border-zinc-900 py-3 px-6">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <a href="#home" className="text-lg font-bold tracking-tight text-white hover:text-zinc-200 transition-colors">
+    <nav className="fixed top-0 w-full z-50 bg-mocha-50/90 backdrop-blur-sm border-b border-mocha-200/90 py-3 px-6">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
+        <a href="#home" className="text-lg font-bold tracking-tight text-mocha-800 hover:text-mocha-700 transition-colors">
           Satyam
         </a>
-        <div className="hidden md:flex gap-6 text-xs font-medium text-zinc-400">
-          <a href="#home" className="hover:text-white transition-colors">Home</a>
-          <a href="#services" className="hover:text-white transition-colors">Services</a>
-          <a href="#projects" className="hover:text-white transition-colors">Projects</a>
-          <a href="#designs" className="hover:text-white transition-colors">Designs</a>
-          <a href="#about" className="hover:text-white transition-colors">About</a>
-          <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+        <div className="hidden md:flex flex-1 justify-center gap-6 text-xs font-medium text-mocha-600">
+          <a href="#home" className="hover:text-mocha-800 transition-colors">Home</a>
+          <a href="#services" className="hover:text-mocha-800 transition-colors">Services</a>
+          <a href="#projects" className="hover:text-mocha-800 transition-colors">Projects</a>
+          <a href="#designs" className="hover:text-mocha-800 transition-colors">Designs</a>
+          <a href="#about" className="hover:text-mocha-800 transition-colors">About</a>
+          <a href="#contact" className="hover:text-mocha-800 transition-colors">Contact</a>
         </div>
-        <a
-          href="#contact"
-          className="border border-zinc-700 px-5 py-1.5 rounded-md text-xs font-medium hover:bg-white hover:text-black transition-all"
-        >
-          Contact
-        </a>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            href="#contact"
+            className="border border-mocha-600/45 px-4 sm:px-5 py-1.5 rounded-md text-xs font-medium text-mocha-600 hover:text-white hover:bg-mocha-700 transition-all shrink-0"
+          >
+            Contact
+          </a>
+        </div>
       </div>
     </nav>
   );
-};
+}
 
 const RESUME_URL = "/Satyam-Tiwari-Resume.pdf";
 const MEDIUM_URL = "https://medium.com/@satyamt5152";
@@ -165,7 +167,7 @@ const techMarqueeItems = [
 ];
 
 const techPillClass =
-  "inline-flex shrink-0 items-center rounded border border-zinc-800/90 bg-zinc-900/70 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-zinc-200 shadow-sm backdrop-blur-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]";
+  "inline-flex shrink-0 items-center rounded border border-mocha-600/25 bg-white/75 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-mocha-600 shadow-sm backdrop-blur-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]";
 
 function TechMarqueePill({ label, staggerIndex }) {
   return (
@@ -206,7 +208,7 @@ function HeroTechMarquee() {
   if (reduced) {
     return (
       <div className="mt-14 w-full max-w-7xl md:mt-20">
-        <p className="mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+        <p className="mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500">
           Technologies I use
         </p>
         <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
@@ -221,7 +223,7 @@ function HeroTechMarquee() {
   }
 
   const edgeFade =
-    "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.2) 8%, rgba(0,0,0,0.75) 20%, black 38%, black 62%, rgba(0,0,0,0.75) 80%, rgba(0,0,0,0.2) 92%, transparent 100%)";
+    "linear-gradient(90deg, transparent 0%, rgba(249,246,240,0.2) 8%, rgba(249,246,240,0.75) 20%, rgb(249,246,240) 38%, rgb(249,246,240) 62%, rgba(249,246,240,0.75) 80%, rgba(249,246,240,0.2) 92%, transparent 100%)";
 
   return (
     <motion.div
@@ -230,7 +232,7 @@ function HeroTechMarquee() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.45, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
     >
-      <p className="mb-6 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+      <p className="mb-6 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500">
         Technologies I use
       </p>
       <div
@@ -263,7 +265,7 @@ function ProjectDetailDialog({ project, onClose }) {
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-5">
       <button
         type="button"
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 backdrop-blur-sm bg-mocha-700/35"
         onClick={onClose}
         aria-label="Close project details"
       />
@@ -271,31 +273,31 @@ function ProjectDetailDialog({ project, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="project-detail-title"
-        className="relative z-10 flex w-full max-w-lg flex-col rounded-t-2xl border border-zinc-800 bg-zinc-950 shadow-2xl sm:rounded-2xl"
+        className="relative z-10 flex w-full max-w-lg flex-col rounded-t-2xl border border-mocha-200 bg-mocha-50 shadow-2xl sm:rounded-2xl"
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 px-5 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-mocha-200/80 px-5 py-4">
           <div className="min-w-0 pr-2">
-            <h2 id="project-detail-title" className="font-service text-xl font-bold tracking-tight text-white">
+            <h2 id="project-detail-title" className="font-service text-xl font-bold tracking-tight text-mocha-800">
               {project.name}
             </h2>
-            <p className="mt-1 text-xs leading-snug text-zinc-500">{project.meta}</p>
+            <p className="mt-1 text-xs leading-snug text-mocha-500">{project.meta}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+            className="shrink-0 rounded-full p-2 text-mocha-500 transition-colors hover:bg-mocha-200 hover:text-mocha-800"
             aria-label="Close"
           >
             <X className="h-5 w-5" strokeWidth={2} aria-hidden />
           </button>
         </div>
         <div className="flex-1 px-5 py-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{project.role}</p>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-300">{project.desc}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-mocha-500">{project.role}</p>
+          <p className="mt-3 text-sm leading-relaxed text-mocha-600">{project.desc}</p>
           {project.highlights?.length > 0 && (
             <>
-              <h3 className="mt-6 text-sm font-semibold text-white">Highlights</h3>
-              <ul className="mt-3 list-disc space-y-2.5 pl-5 text-sm leading-relaxed text-zinc-400 marker:text-zinc-600">
+              <h3 className="mt-6 text-sm font-semibold text-mocha-800">Highlights</h3>
+              <ul className="mt-3 list-disc space-y-2.5 pl-5 text-sm leading-relaxed text-mocha-600 marker:text-mocha-600/70">
                 {project.highlights.map((line, hi) => (
                   <li key={hi}>{line}</li>
                 ))}
@@ -356,7 +358,7 @@ function CoarsePointerAmbientGlow() {
 
   return (
     <motion.div
-      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(88vw,340px)] w-[min(88vw,340px)] rounded-full bg-white/[0.17] blur-[88px] md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)]"
+      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(88vw,340px)] w-[min(88vw,340px)] rounded-full blur-[88px] md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] bg-mocha-600/12"
       style={{ x, y, scale }}
       aria-hidden
     />
@@ -379,6 +381,9 @@ const App = () => {
   const [pointerCoarse, setPointerCoarse] = useState(false);
   const [serviceHoverIndex, setServiceHoverIndex] = useState(null);
   const reducedMotion = useReducedMotion();
+
+  const designCardHoverShadow =
+    "group-hover:shadow-[0_20px_44px_-16px_rgba(61,52,44,0.12)]";
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -568,7 +573,7 @@ const App = () => {
       name: "OSAC GMS (preview)",
       desc: "Garage operations UI: job cards, sales staff workflows, and technician views—web-first Flutter targeting workshops that need clarity under daily load.",
       image: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80",
-      accent: "#292524",
+      accent: "#6f5f4f",
       href: "#",
     },
     {
@@ -595,13 +600,13 @@ const App = () => {
   ];
 
   return (
-    <div className="bg-black text-white font-sans min-h-screen relative overflow-x-hidden">
+    <div className="bg-mocha-50 text-mocha-600 font-sans min-h-screen relative overflow-x-hidden">
       <Navbar />
       {/* Desktop / fine pointer: glow follows cursor */}
       {!reducedMotion && !pointerCoarse && (
         <motion.div
           style={{ x: cursorX, y: cursorY }}
-          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full bg-white/[0.16] blur-[100px]"
+          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-600/10"
           aria-hidden
         />
       )}
@@ -610,33 +615,33 @@ const App = () => {
       {/* Reduced motion: single static glow */}
       {reducedMotion && (
         <div
-          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(80vw,300px)] w-[min(80vw,300px)] rounded-full bg-white/[0.1] blur-[88px] md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px]"
+          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(80vw,300px)] w-[min(80vw,300px)] rounded-full blur-[88px] md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] bg-mocha-600/8"
           aria-hidden
         />
       )}
 
       {/* Hero */}
       <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-zinc-500 mb-6">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-mocha-500 mb-6">
           <MapPin size={14} /><span className="text-xs font-medium">India | Open to Remote</span>
         </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-8xl font-bold max-w-5xl mb-4 tracking-tight leading-[1]">
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-8xl font-bold max-w-5xl mb-4 tracking-tight leading-[1] text-mocha-800">
           I'm Satyam Tiwari <br /> Flutter Developer
         </motion.h1>
-        <p className="text-zinc-400 max-w-2xl text-sm md:text-base mb-10 leading-relaxed">
+        <p className="text-mocha-600 max-w-2xl text-sm md:text-base mb-10 leading-relaxed">
           Product-focused mobile and frontend developer with ~5 years total experience—1.5 years full-time product work and 3.5+ years as an independent freelancer shipping apps customers use every day, from UI through App Store deployment and long-term support.
         </p>
         <div className="flex gap-4">
-          <a href="#contact" className="bg-white text-black px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">
+          <a href="#contact" className="btn-primary-sm">
             Get yours now
           </a>
-          <a href="#projects" className="bg-zinc-900 border border-zinc-800 text-white px-7 py-2.5 rounded-md text-xs font-bold transition-transform active:scale-95">See my work</a>
+          <a href="#projects" className="bg-white border border-mocha-200 text-mocha-800 px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-mocha-50 active:scale-95">See my work</a>
         </div>
         <HeroTechMarquee />
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 px-6 border-t border-zinc-900 relative z-10">
+      <section id="services" className="py-24 px-6 border-t border-mocha-200/80 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
           <motion.div
             variants={sectionHeadStaggerVariants}
@@ -646,13 +651,13 @@ const App = () => {
           >
             <motion.h2
               variants={sectionLineRevealVariants}
-              className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8"
+              className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8 text-mocha-800"
             >
               My Services
             </motion.h2>
             <motion.p
               variants={sectionLineRevealVariants}
-              className="text-zinc-400 max-w-md text-sm mb-8 leading-relaxed"
+              className="text-mocha-600 max-w-md text-sm mb-8 leading-relaxed"
             >
               Aligned with how I work in production: mobile-first delivery, web frontends, backend integrations, Firebase/Mongo, and owning the full lifecycle with founders and stakeholders.
             </motion.p>
@@ -668,12 +673,12 @@ const App = () => {
               <motion.div
                 key={i}
                 variants={sectionListItemFadeUpVariants}
-                className="border-t border-zinc-800 py-8 flex gap-7 items-start hover:bg-zinc-900/40 px-4 transition-all group"
+                className="border-t border-mocha-200 py-8 flex gap-7 items-start hover:bg-mocha-200/50 px-4 transition-all group"
                 onMouseEnter={() => setServiceHoverIndex(i)}
                 onMouseLeave={() => setServiceHoverIndex(null)}
               >
                 <motion.div
-                  className="text-white shrink-0 pt-0.5 inline-flex origin-center will-change-transform"
+                  className="text-mocha-600 shrink-0 pt-0.5 inline-flex origin-center will-change-transform"
                   animate={{
                     rotate:
                       !reducedMotion && serviceHoverIndex === i ? 1080 : 0,
@@ -692,8 +697,8 @@ const App = () => {
                   {s.icon}
                 </motion.div>
                 <div>
-                  <h3 className="font-service text-xl md:text-2xl font-bold tracking-tight mb-2">{s.title}</h3>
-                  <p className="text-zinc-500 text-xs md:text-sm leading-relaxed">{s.desc}</p>
+                  <h3 className="font-service text-xl md:text-2xl font-bold tracking-tight mb-2 text-mocha-800">{s.title}</h3>
+                  <p className="text-mocha-600 text-xs md:text-sm leading-relaxed">{s.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -701,7 +706,7 @@ const App = () => {
         </div>
       </section>
 
-      <section id="projects" className="bg-black py-24 px-6 relative z-10">
+      <section id="projects" className="bg-mocha-100 py-24 px-6 relative z-10 border-t border-mocha-200/70">
         <div className="max-w-7xl mx-auto flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16 xl:gap-20">
           <motion.div
             className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(54%,620px)] xl:w-[min(54%,720px)]"
@@ -711,12 +716,12 @@ const App = () => {
             viewport={{ once: true, amount: 0.28 }}
           >
             <motion.div
-              className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-white/10 shadow-2xl lg:mx-0 lg:max-w-none"
+              className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-white ring-1 ring-mocha-200/90 shadow-xl lg:mx-0 lg:max-w-none"
               style={{
                 aspectRatio: "16 / 9",
                 maxHeight: "min(52vh, calc(100dvh - 7.5rem))",
               }}
-              whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+              whileHover={{ scale: 1.02, boxShadow: "0 25px 50px -12px rgba(28, 25, 23, 0.12)" }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             >
               <motion.img
@@ -734,7 +739,7 @@ const App = () => {
 
           <div className="order-2 min-w-0 flex-1 lg:order-1 lg:max-w-xl">
             <motion.h2
-              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.1] mb-6 md:mb-8"
+              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-mocha-800 leading-[1.1] mb-6 md:mb-8"
               variants={sectionHeadStaggerVariants}
               initial={reducedMotion ? false : 'hidden'}
               whileInView={reducedMotion ? undefined : 'visible'}
@@ -759,7 +764,7 @@ const App = () => {
                   <motion.div
                     className="rounded-lg px-2"
                     initial={false}
-                    whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.055)" }}
+                    whileHover={{ backgroundColor: "rgba(28, 25, 23, 0.05)" }}
                     transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                   >
                     <div className="py-2 md:py-2.5 px-1">
@@ -769,12 +774,12 @@ const App = () => {
                         aria-expanded={activeProject === i}
                         aria-controls={`project-panel-${p.id}`}
                         id={`project-trigger-${p.id}`}
-                        className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
+                        className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/35 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-100 rounded-sm"
                         whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.995 }}
                         transition={{ type: "spring", stiffness: 420, damping: 28 }}
                       >
-                        <h3 className="font-service text-lg md:text-xl font-medium tracking-tight text-white leading-snug">
+                        <h3 className="font-service text-lg md:text-xl font-medium tracking-tight text-mocha-800 leading-snug">
                           {p.name}
                         </h3>
                         <span className="sr-only">{p.meta}</span>
@@ -791,11 +796,11 @@ const App = () => {
                             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
                             className="overflow-hidden"
                           >
-                            <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-400">{p.summary}</p>
+                            <p className="mt-2 max-w-lg text-sm leading-relaxed text-mocha-600">{p.summary}</p>
                             <button
                               type="button"
                               onClick={() => setProjectDetailIndex(i)}
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-white hover:opacity-90 transition-opacity"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-mocha-600 hover:opacity-90 transition-opacity"
                             >
                               Learn more
                               <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
@@ -807,7 +812,7 @@ const App = () => {
                   </motion.div>
                   <div
                     className="w-full shrink-0"
-                    style={{ height: "0.5px", backgroundColor: "#ffffff" }}
+                    style={{ height: "0.5px", backgroundColor: "#d4c9bf" }}
                     role="presentation"
                     aria-hidden
                   />
@@ -818,17 +823,17 @@ const App = () => {
         </div>
       </section>
 
-      <section id="designs" className="bg-zinc-950 py-24 border-t border-zinc-900 relative z-10">
+      <section id="designs" className="bg-mocha-150 py-24 border-t border-mocha-200/80 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           {reducedMotion ? (
-            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]">
+            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-mocha-800 leading-[1.12]">
               More interfaces &amp;
               <br />
               team-era builds
             </h2>
           ) : (
             <motion.h2
-              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-white leading-[1.12]"
+              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-mocha-800 leading-[1.12]"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.45 }}
@@ -851,7 +856,7 @@ const App = () => {
                   className="group flex flex-col transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 motion-reduce:hover:translate-y-0"
                 >
                   <div
-                    className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-white/[0.07] transition-[box-shadow,ring-color] duration-300 group-hover:ring-white/18 group-hover:shadow-[0_22px_48px_-14px_rgba(0,0,0,0.65)] motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-white/[0.07]"
+                    className={`aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-mocha-700/10 group-hover:ring-mocha-700/20 transition-[box-shadow,ring-color] duration-300 ${designCardHoverShadow} motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-mocha-700/10`}
                     style={{ backgroundColor: d.accent }}
                   >
                     <img
@@ -860,14 +865,14 @@ const App = () => {
                       className="max-h-full max-w-full object-contain rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />
                   </div>
-                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">{d.name},</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
+                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name},</h3>
+                  <p className="text-mocha-600 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
                   <a
                     href={d.href}
                     onClick={(e) => {
                       if (d.href === '#') e.preventDefault();
                     }}
-                    className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
+                    className="inline-flex items-center gap-1 text-mocha-600 text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
                   >
                     Learn more
                     <ArrowRight
@@ -896,7 +901,7 @@ const App = () => {
                   className="group flex flex-col will-change-transform"
                 >
                   <div
-                    className="aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-white/[0.07] transition-[box-shadow,ring-color] duration-300 group-hover:ring-white/18 group-hover:shadow-[0_22px_48px_-14px_rgba(0,0,0,0.65)] motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-white/[0.07]"
+                    className={`aspect-[4/3] rounded-xl overflow-hidden flex items-center justify-center p-4 sm:p-6 ring-1 ring-mocha-700/10 group-hover:ring-mocha-700/20 transition-[box-shadow,ring-color] duration-300 ${designCardHoverShadow} motion-reduce:group-hover:shadow-none motion-reduce:group-hover:ring-mocha-700/10`}
                     style={{ backgroundColor: d.accent }}
                   >
                     <img
@@ -905,14 +910,14 @@ const App = () => {
                       className="max-h-full max-w-full object-contain rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />
                   </div>
-                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-white mt-5">{d.name},</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
+                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name},</h3>
+                  <p className="text-mocha-600 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
                   <a
                     href={d.href}
                     onClick={(e) => {
                       if (d.href === '#') e.preventDefault();
                     }}
-                    className="inline-flex items-center gap-1 text-white text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
+                    className="inline-flex items-center gap-1 text-mocha-600 text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
                   >
                     Learn more
                     <ArrowRight
@@ -929,7 +934,7 @@ const App = () => {
       </section>
 
       {/* About */}
-      <section id="about" className="py-24 px-6 border-t border-zinc-900 bg-black relative z-10">
+      <section id="about" className="py-24 px-6 border-t border-mocha-200/80 bg-mocha-50 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-16 items-start">
           <motion.div
             className="relative w-full max-w-[360px] mx-auto lg:mx-0"
@@ -938,8 +943,8 @@ const App = () => {
             whileInView={reducedMotion ? undefined : 'visible'}
             viewport={{ once: true, amount: 0.35 }}
           >
-            <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-zinc-500/80" />
-            <div className="relative z-10 rounded-sm overflow-hidden bg-zinc-900 ring-1 ring-white/10">
+            <div className="absolute -right-5 top-6 h-[92%] w-[92%] rounded-[0_0_42px_0] border border-mocha-300/80" />
+            <div className="relative z-10 rounded-sm overflow-hidden bg-white ring-1 ring-mocha-200/90">
               <img
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=900&q=80"
                 alt="Satyam Tiwari"
@@ -957,25 +962,25 @@ const App = () => {
           >
             <motion.h2
               variants={sectionLineRevealVariants}
-              className="text-3xl md:text-5xl font-bold leading-tight"
+              className="text-3xl md:text-5xl font-bold leading-tight text-mocha-800"
             >
               Satyam Tiwari — Flutter developer with a product-owner lens
             </motion.h2>
             <motion.div
               variants={sectionListStaggerVariants}
-              className="space-y-5 text-zinc-300 text-sm md:text-base leading-relaxed"
+              className="space-y-5 text-mocha-600 text-sm md:text-base leading-relaxed"
             >
               <motion.p variants={sectionListItemFadeUpVariants}>
-                I&apos;m a product-focused mobile and frontend developer with <span className="text-white font-medium">5 years of total experience</span>
-                : about <span className="text-white font-medium">1.5 years</span> in full-time product teams and{' '}
-                <span className="text-white font-medium">3.5+ years</span> as an independent freelancer shipping apps that stay in production.
+                I&apos;m a product-focused mobile and frontend developer with <span className="font-semibold text-mocha-600">5 years of total experience</span>
+                : about <span className="font-semibold text-mocha-600">1.5 years</span> in full-time product teams and{' '}
+                <span className="font-semibold text-mocha-600">3.5+ years</span> as an independent freelancer shipping apps that stay in production.
               </motion.p>
               <motion.p variants={sectionListItemFadeUpVariants}>
                 I&apos;m used to owning products end to end—UI/UX implementation, architecture, testing, App Store and Play releases, compliance, and post-launch support—
                 and working directly with founders to turn requirements into reliable systems.
               </motion.p>
               <motion.p variants={sectionListItemFadeUpVariants}>
-                <span className="text-white font-medium">App Store highlight:</span> four live mobile applications in production, with hands-on experience in App Store Connect,
+                <span className="text-mocha-800 font-medium">App Store highlight:</span> four live mobile applications in production, with hands-on experience in App Store Connect,
                 TestFlight, certificates, provisioning profiles, bundle identifiers, and the review process.
               </motion.p>
             </motion.div>
@@ -985,13 +990,13 @@ const App = () => {
                 href={RESUME_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center bg-white text-black px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-zinc-100 transition-colors"
+                className="btn-primary"
               >
                 Resume
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center bg-zinc-900 border border-zinc-700 text-white px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-zinc-800 transition-colors"
+                className="inline-flex items-center justify-center bg-white border border-mocha-200 text-mocha-800 px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-mocha-50 transition-colors"
               >
                 Hire me
               </a>
@@ -1000,8 +1005,8 @@ const App = () => {
         </div>
       </section>
 
-      <section id="contact" className="relative z-10 border-t border-zinc-900">
-        <div className="bg-zinc-950">
+      <section id="contact" className="relative z-10 border-t border-mocha-200/80">
+        <div className="bg-mocha-150">
           <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 xl:gap-24 items-start">
               <motion.div
@@ -1011,29 +1016,29 @@ const App = () => {
                 whileInView={reducedMotion ? undefined : 'visible'}
                 viewport={{ once: true, amount: 0.35 }}
               >
-                <motion.p variants={sectionLineRevealVariants} className="text-sm text-white mb-4">
+                <motion.p variants={sectionLineRevealVariants} className="text-sm text-mocha-600 mb-4">
                   Contact me
                 </motion.p>
                 <motion.h2
                   variants={sectionLineRevealVariants}
-                  className="text-5xl sm:text-6xl md:text-7xl font-semibold text-white leading-[0.98] tracking-tight mb-6"
+                  className="text-5xl sm:text-6xl md:text-7xl font-semibold text-mocha-800 leading-[0.98] tracking-tight mb-6"
                 >
                   Get in touch
                 </motion.h2>
                 <motion.p
                   variants={sectionLineRevealVariants}
-                  className="text-base md:text-lg text-white/90 leading-relaxed mb-6 max-w-md"
+                  className="text-base md:text-lg text-mocha-600 leading-relaxed mb-6 max-w-md"
                 >
                   For collaborations, freelance mobile work, or product builds—email or call. I typically reply within one business day.
                 </motion.p>
-                <motion.p variants={sectionFadeUpVariants} className="text-sm text-zinc-400 mb-10">
-                  <a href={EMAIL_MAILTO} className="text-white hover:underline underline-offset-2">
+                <motion.p variants={sectionFadeUpVariants} className="text-sm text-mocha-600 mb-10">
+                  <a href={EMAIL_MAILTO} className="text-mocha-600 hover:text-mocha-800 hover:underline underline-offset-2">
                     satyamt5152@gmail.com
                   </a>
-                  <span className="mx-2 text-zinc-600" aria-hidden>
+                  <span className="mx-2 text-mocha-400/70" aria-hidden>
                     ·
                   </span>
-                  <a href={PHONE_TEL} className="text-white hover:underline underline-offset-2">
+                  <a href={PHONE_TEL} className="text-mocha-600 hover:text-mocha-800 hover:underline underline-offset-2">
                     {PHONE_DISPLAY}
                   </a>
                 </motion.p>
@@ -1102,7 +1107,7 @@ const App = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
                     <div>
-                      <label htmlFor="contact-name" className="block text-sm text-white mb-2">
+                      <label htmlFor="contact-name" className="block text-sm text-mocha-600 mb-2">
                         Full name
                       </label>
                       <input
@@ -1110,7 +1115,7 @@ const App = () => {
                         name="name"
                         value={formData.name}
                         disabled={contactFormStatus === 'sending'}
-                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white disabled:opacity-50"
+                        className="w-full bg-transparent border-0 border-b border-mocha-300/90 pb-2.5 text-base text-mocha-800 placeholder:text-mocha-500 focus:outline-none focus:border-mocha-700 disabled:opacity-50"
                         onChange={(e) => {
                           setFormData({ ...formData, name: e.target.value });
                           if (contactFormStatus === 'success' || contactFormStatus === 'error') {
@@ -1121,7 +1126,7 @@ const App = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="contact-email" className="block text-sm text-white mb-2">
+                      <label htmlFor="contact-email" className="block text-sm text-mocha-600 mb-2">
                         Email address
                       </label>
                       <input
@@ -1130,7 +1135,7 @@ const App = () => {
                         type="email"
                         value={formData.email}
                         disabled={contactFormStatus === 'sending'}
-                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white disabled:opacity-50"
+                        className="w-full bg-transparent border-0 border-b border-mocha-300/90 pb-2.5 text-base text-mocha-800 placeholder:text-mocha-500 focus:outline-none focus:border-mocha-700 disabled:opacity-50"
                         onChange={(e) => {
                           setFormData({ ...formData, email: e.target.value });
                           if (contactFormStatus === 'success' || contactFormStatus === 'error') {
@@ -1143,7 +1148,7 @@ const App = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
                     <div>
-                      <label htmlFor="contact-phone" className="block text-sm text-white mb-2">
+                      <label htmlFor="contact-phone" className="block text-sm text-mocha-600 mb-2">
                         Phone Number
                       </label>
                       <input
@@ -1152,7 +1157,7 @@ const App = () => {
                         type="tel"
                         value={formData.phone}
                         disabled={contactFormStatus === 'sending'}
-                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white disabled:opacity-50"
+                        className="w-full bg-transparent border-0 border-b border-mocha-300/90 pb-2.5 text-base text-mocha-800 placeholder:text-mocha-500 focus:outline-none focus:border-mocha-700 disabled:opacity-50"
                         onChange={(e) => {
                           setFormData({ ...formData, phone: e.target.value });
                           if (contactFormStatus === 'success' || contactFormStatus === 'error') {
@@ -1162,7 +1167,7 @@ const App = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="contact-subject" className="block text-sm text-white mb-2">
+                      <label htmlFor="contact-subject" className="block text-sm text-mocha-600 mb-2">
                         Subject
                       </label>
                       <input
@@ -1170,7 +1175,7 @@ const App = () => {
                         name="subject"
                         value={formData.subject}
                         disabled={contactFormStatus === 'sending'}
-                        className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white disabled:opacity-50"
+                        className="w-full bg-transparent border-0 border-b border-mocha-300/90 pb-2.5 text-base text-mocha-800 placeholder:text-mocha-500 focus:outline-none focus:border-mocha-700 disabled:opacity-50"
                         onChange={(e) => {
                           setFormData({ ...formData, subject: e.target.value });
                           if (contactFormStatus === 'success' || contactFormStatus === 'error') {
@@ -1181,7 +1186,7 @@ const App = () => {
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="contact-message" className="block text-sm text-white mb-2">
+                    <label htmlFor="contact-message" className="block text-sm text-mocha-600 mb-2">
                       Write your message here
                     </label>
                     <textarea
@@ -1190,7 +1195,7 @@ const App = () => {
                       rows={5}
                       value={formData.message}
                       disabled={contactFormStatus === 'sending'}
-                      className="w-full bg-transparent border-0 border-b border-white pb-2.5 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-white resize-none min-h-[120px] disabled:opacity-50"
+                      className="w-full bg-transparent border-0 border-b border-mocha-300/90 pb-2.5 text-base text-mocha-800 placeholder:text-mocha-500 focus:outline-none focus:border-mocha-700 resize-none min-h-[120px] disabled:opacity-50"
                       onChange={(e) => {
                         setFormData({ ...formData, message: e.target.value });
                         if (contactFormStatus === 'success' || contactFormStatus === 'error') {
@@ -1201,19 +1206,19 @@ const App = () => {
                     />
                   </div>
                   {contactFormStatus === 'success' && (
-                    <p className="text-sm text-emerald-400" role="status">
+                    <p className="text-sm text-emerald-700" role="status">
                       Thanks — your message was sent. I&apos;ll reply soon.
                     </p>
                   )}
                   {contactFormStatus === 'error' && contactFormError && (
-                    <p className="text-sm text-red-400" role="alert">
+                    <p className="text-sm text-red-700" role="alert">
                       {contactFormError}
                     </p>
                   )}
                   <button
                     type="submit"
                     disabled={contactFormStatus === 'sending'}
-                    className="w-fit bg-zinc-200 text-black px-6 py-2.5 text-sm font-medium rounded-md hover:bg-white transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                    className="btn-primary-md"
                   >
                     {contactFormStatus === 'sending' ? 'Sending…' : 'Send Message'}
                   </button>
@@ -1223,7 +1228,7 @@ const App = () => {
           </div>
         </div>
 
-        <div className="bg-transparent border-t border-zinc-800">
+        <div className="bg-transparent border-t border-mocha-200/80">
           <motion.div
             className="max-w-7xl mx-auto px-6 py-14 md:py-16 lg:px-10"
             variants={sectionHeadStaggerVariants}
@@ -1232,18 +1237,18 @@ const App = () => {
             viewport={{ once: true, amount: 0.2 }}
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-0">
-              <motion.div variants={sectionFadeUpVariants} className="lg:pr-12 lg:border-r border-zinc-700/80">
-                <h3 className="font-service text-4xl md:text-5xl font-semibold text-white tracking-tight mb-5">
+              <motion.div variants={sectionFadeUpVariants} className="lg:pr-12 lg:border-r border-mocha-300/70">
+                <h3 className="font-service text-4xl md:text-5xl font-semibold text-mocha-800 tracking-tight mb-5">
                   Satyam Tiwari
                 </h3>
-                <p className="font-service text-zinc-400 text-base md:text-lg leading-relaxed mb-8 max-w-md">
+                <p className="font-service text-mocha-600 text-base md:text-lg leading-relaxed mb-8 max-w-md">
                   Freelance Flutter lead · Chirpn (React / RN / Flutter) alumnus · Apps live on App Store with long-term maintenance.
                 </p>
                 <a
                   href={RESUME_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-white text-black px-5 py-2.5 text-sm font-medium rounded-md mb-10 hover:bg-zinc-200 transition-colors"
+                  className="btn-primary-block"
                 >
                   Resume
                 </a>
@@ -1286,27 +1291,27 @@ const App = () => {
                 className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8 lg:pl-12"
               >
                 <div>
-                  <h4 className="text-2xl md:text-3xl font-semibold text-white mb-6">Contact me</h4>
-                  <div className="space-y-5 text-zinc-400 text-base leading-relaxed">
+                  <h4 className="text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Contact me</h4>
+                  <div className="space-y-5 text-mocha-600 text-base leading-relaxed">
                     <p>
-                      <span className="font-semibold text-white">Email:</span>
+                      <span className="font-semibold text-mocha-800">Email:</span>
                       <br />
                       <a
                         href={EMAIL_MAILTO}
-                        className="hover:text-white transition-colors underline-offset-2 hover:underline"
+                        className="text-mocha-600 hover:text-mocha-800 transition-colors underline-offset-2 hover:underline"
                       >
                         satyamt5152@gmail.com
                       </a>
                     </p>
                     <p>
-                      <span className="font-semibold text-white">Phone:</span>
+                      <span className="font-semibold text-mocha-800">Phone:</span>
                       <br />
-                      <a href={PHONE_TEL} className="hover:text-white transition-colors underline-offset-2 hover:underline">
+                      <a href={PHONE_TEL} className="text-mocha-600 hover:text-mocha-800 transition-colors underline-offset-2 hover:underline">
                         {PHONE_DISPLAY}
                       </a>
                     </p>
                     <p>
-                      <span className="font-semibold text-white">Address:</span>
+                      <span className="font-semibold text-mocha-800">Address:</span>
                       <br />
                       <span className="mt-1 inline-block max-w-sm">
                         STELLA TOWERS PHASE 1, Stella Towers, D1-104, Moshi
@@ -1319,30 +1324,30 @@ const App = () => {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-2xl md:text-3xl font-semibold text-white mb-6">Menu</h4>
-                  <ul className="space-y-3 text-zinc-400 text-base">
+                  <h4 className="text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Menu</h4>
+                  <ul className="space-y-3 text-mocha-600 text-base">
                     <li>
-                      <a href="#home" className="hover:text-white transition-colors">
+                      <a href="#home" className="hover:text-mocha-800 transition-colors">
                         Home
                       </a>
                     </li>
                     <li>
-                      <a href="#services" className="hover:text-white transition-colors">
+                      <a href="#services" className="hover:text-mocha-800 transition-colors">
                         Services
                       </a>
                     </li>
                     <li>
-                      <a href="#projects" className="hover:text-white transition-colors">
+                      <a href="#projects" className="hover:text-mocha-800 transition-colors">
                         Projects
                       </a>
                     </li>
                     <li>
-                      <a href="#designs" className="hover:text-white transition-colors">
+                      <a href="#designs" className="hover:text-mocha-800 transition-colors">
                         Designs
                       </a>
                     </li>
                     <li>
-                      <a href="#about" className="hover:text-white transition-colors">
+                      <a href="#about" className="hover:text-mocha-800 transition-colors">
                         About me
                       </a>
                     </li>
@@ -1352,8 +1357,8 @@ const App = () => {
             </div>
           </motion.div>
 
-          <footer className="border-t border-zinc-700 px-6 py-6">
-            <p className="text-center text-zinc-400 text-sm leading-relaxed">
+          <footer className="border-t border-mocha-300/60 px-6 py-6">
+            <p className="text-center text-mocha-600 text-sm leading-relaxed">
               Copyright © 2026 Satyam Tiwari - All rights reserved
             </p>
           </footer>
