@@ -969,7 +969,7 @@ const App = () => {
       {!reducedMotion && !pointerCoarse && (
         <motion.div
           style={{ x: cursorX, y: cursorY }}
-          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-600/10"
+          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-600/11"
           aria-hidden
         />
       )}
