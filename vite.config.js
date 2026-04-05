@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
  * Canonical / Open Graph base when `VITE_SITE_URL` is unset.
  * Override in `.env` if your live URL differs (custom domain, different repo name, etc.).
  */
-const FALLBACK_SITE_URL = 'https://satyyyaamm.github.io/my-portfolio'
+const FALLBACK_SITE_URL = 'https://satyyyaamm.vercel.app'
 
 // [https://vitejs.dev/config/](https://vitejs.dev/config/)
 export default defineConfig(({ mode }) => {
