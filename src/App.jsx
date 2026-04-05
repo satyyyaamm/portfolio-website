@@ -1194,7 +1194,7 @@ const App = () => {
         </p>
         <div className="flex gap-4">
           <a href="#contact" className="btn-primary-sm">
-            Get yours now
+            Get in touch
           </a>
           <a href="#projects" className="bg-white border border-stone-300/90 text-mocha-800 px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-stone-50 active:scale-95">See my work</a>
         </div>
