@@ -62,6 +62,13 @@ function aspectRatioCss(w, h) {
 
 const SLIDESHOW_SWIPE_MIN_PX = 50;
 
+/** Slow “breathing” glow: slightly dims / deepens, then eases back—kept gentle so motion is noticeable without grabbing focus. */
+const AMBIENT_BREATHE_TRANSITION = {
+  duration: 6.75,
+  repeat: Infinity,
+  ease: 'easeInOut',
+};
+
 /** Auto-advancing slideshow; optional `onAspectRatioChange` for fluid project preview frames. */
 function ProjectPreviewSlideshow({
   images,
@@ -610,8 +617,9 @@ function CoarsePointerAmbientGlow() {
       const md = window.matchMedia("(min-width: 768px)").matches;
       const leftPct = md ? 0.08 : 0.04;
       const topPct = md ? 0.1 : 0.08;
-      const size = md ? Math.min(0.7 * vw, 380) : Math.min(0.92 * vw, 360);
-      const blurPx = md ? 88 : 76;
+      // Smaller orb + blur on phones so the glow does not wash the whole screen; tablet+ unchanged.
+      const size = md ? Math.min(0.7 * vw, 380) : Math.min(0.52 * vw, 200);
+      const blurPx = md ? 88 : 52;
       const maxScale = 1.17;
       const pad = blurPx + ((maxScale - 1) * size) / 2 + 20;
 
@@ -662,8 +670,14 @@ function CoarsePointerAmbientGlow() {
 
   return (
     <motion.div
-      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(92vw,360px)] w-[min(92vw,360px)] rounded-full blur-[76px] bg-mocha-600/42 md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] md:blur-[88px] md:bg-mocha-600/30"
+      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(52vw,200px)] w-[min(52vw,200px)] rounded-full blur-[52px] bg-mocha-500/32 md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] md:blur-[88px] md:bg-mocha-500/22"
       style={{ x, y, scale }}
+      initial={false}
+      animate={{
+        opacity: [0.76, 1, 0.76],
+        filter: ['brightness(0.9)', 'brightness(1.06)', 'brightness(0.9)'],
+      }}
+      transition={AMBIENT_BREATHE_TRANSITION}
       aria-hidden
     />
   );
@@ -1097,7 +1111,16 @@ const App = () => {
       {!reducedMotion && !pointerCoarse && (
         <motion.div
           style={{ x: cursorX, y: cursorY }}
-          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-600/18"
+          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-500/14"
+          initial={false}
+          animate={{
+            opacity: [0.85, 1, 0.85],
+            filter: ['brightness(0.93)', 'brightness(1.04)', 'brightness(0.93)'],
+          }}
+          transition={{
+            ...AMBIENT_BREATHE_TRANSITION,
+            duration: 7.25,
+          }}
           aria-hidden
         />
       )}
@@ -1106,7 +1129,7 @@ const App = () => {
       {/* Reduced motion: single static glow */}
       {reducedMotion && (
         <div
-          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(88vw,320px)] w-[min(88vw,320px)] rounded-full blur-[76px] bg-mocha-600/32 md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] md:blur-[88px] md:bg-mocha-600/12"
+          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(50vw,180px)] w-[min(50vw,180px)] rounded-full blur-[52px] bg-mocha-500/26 md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] md:blur-[88px] md:bg-mocha-500/10"
           aria-hidden
         />
       )}
