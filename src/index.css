@@ -173,11 +173,8 @@ body {
 
 .tech-marquee-track {
   animation: tech-marquee var(--tech-marquee-duration, 42s) linear infinite;
+  animation-play-state: running;
   will-change: transform;
-}
-
-.tech-marquee-wrap:hover .tech-marquee-track {
-  animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -185,4 +182,14 @@ body {
     animation: none;
     transform: none;
   }
+}
+
+/* Horizontal tech strip: hide scrollbar but keep touch / trackpad scroll */
+.tech-marquee-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+.tech-marquee-scroll::-webkit-scrollbar {
+  display: none;
 }

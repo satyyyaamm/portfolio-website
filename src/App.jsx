@@ -62,13 +62,6 @@ function aspectRatioCss(w, h) {
 
 const SLIDESHOW_SWIPE_MIN_PX = 50;
 
-/** Slow “breathing” glow: slightly dims / deepens, then eases back—kept gentle so motion is noticeable without grabbing focus. */
-const AMBIENT_BREATHE_TRANSITION = {
-  duration: 6.75,
-  repeat: Infinity,
-  ease: 'easeInOut',
-};
-
 /** Auto-advancing slideshow; optional `onAspectRatioChange` for fluid project preview frames. */
 function ProjectPreviewSlideshow({
   images,
@@ -495,15 +488,98 @@ function TechMarqueeStrip({ items }) {
   );
 }
 
+/**
+ * Auto-marquee keeps running (infinite CSS animation) while the outer area scrolls horizontally
+ * so users can swipe/drag without stopping the motion. `animated={false}` for reduced-motion swipe rows.
+ */
+function TechMarqueeScrollable({ edgeFade, animated = true }) {
+  return (
+    <div
+      className="tech-marquee-scroll relative mx-auto w-full max-w-7xl touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain py-2"
+      style={{
+        maskImage: edgeFade,
+        WebkitMaskImage: edgeFade,
+      }}
+      role="region"
+      aria-label={
+        animated
+          ? "Technologies — continuously scrolling; swipe or scroll sideways to move the view"
+          : "Technologies — swipe sideways to see more"
+      }
+      tabIndex={0}
+    >
+      <div className="flex min-h-10 items-center sm:min-h-[2.75rem]">
+        {animated ? (
+          <TechMarqueeStrip items={techMarqueeItems} />
+        ) : (
+          <div className="flex min-h-10 w-max items-center gap-2 sm:min-h-[2.75rem] sm:gap-2.5 pr-10">
+            {techMarqueeItems.map((label) => (
+              <span key={label} className={`${techPillClass} shrink-0`}>
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function useTechMarqueeSwipeMode() {
+  const [swipeMode, setSwipeMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 767px)").matches
+    );
+  });
+
+  useEffect(() => {
+    const sync = () => {
+      setSwipeMode(
+        window.matchMedia("(pointer: coarse)").matches ||
+          window.matchMedia("(max-width: 767px)").matches
+      );
+    };
+    const qCoarse = window.matchMedia("(pointer: coarse)");
+    const qNarrow = window.matchMedia("(max-width: 767px)");
+    qCoarse.addEventListener("change", sync);
+    qNarrow.addEventListener("change", sync);
+    return () => {
+      qCoarse.removeEventListener("change", sync);
+      qNarrow.removeEventListener("change", sync);
+    };
+  }, []);
+
+  return swipeMode;
+}
+
 function HeroTechMarquee({ fadeRgb = "249,246,240" }) {
   const reduced = useReducedMotion();
+  const swipeMode = useTechMarqueeSwipeMode();
+
+  const edgeFade = useMemo(
+    () =>
+      `linear-gradient(90deg, transparent 0%, rgba(${fadeRgb},0.2) 8%, rgba(${fadeRgb},0.75) 20%, rgb(${fadeRgb}) 38%, rgb(${fadeRgb}) 62%, rgba(${fadeRgb},0.75) 80%, rgba(${fadeRgb},0.2) 92%, transparent 100%)`,
+    [fadeRgb]
+  );
+
+  const titleSm = "mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500";
+  const titleLg = "mb-6 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500";
+
+  if (reduced && swipeMode) {
+    return (
+      <div className="mt-14 w-full max-w-7xl md:mt-20">
+        <p className={titleSm}>Technologies I use</p>
+        <TechMarqueeScrollable edgeFade={edgeFade} animated={false} />
+      </div>
+    );
+  }
 
   if (reduced) {
     return (
       <div className="mt-14 w-full max-w-7xl md:mt-20">
-        <p className="mb-5 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500">
-          Technologies I use
-        </p>
+        <p className={titleSm}>Technologies I use</p>
         <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {techMarqueeItems.map((label) => (
             <span key={label} className={techPillClass}>
@@ -515,29 +591,15 @@ function HeroTechMarquee({ fadeRgb = "249,246,240" }) {
     );
   }
 
-  const edgeFade = `linear-gradient(90deg, transparent 0%, rgba(${fadeRgb},0.2) 8%, rgba(${fadeRgb},0.75) 20%, rgb(${fadeRgb}) 38%, rgb(${fadeRgb}) 62%, rgba(${fadeRgb},0.75) 80%, rgba(${fadeRgb},0.2) 92%, transparent 100%)`;
-
   return (
     <motion.div
-      className="tech-marquee-wrap mt-14 w-full md:mt-20"
+      className="mt-14 w-full md:mt-20"
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.45, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
     >
-      <p className="mb-6 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500">
-        Technologies I use
-      </p>
-      <div
-        className="relative w-full max-w-7xl mx-auto overflow-hidden py-2"
-        style={{
-          maskImage: edgeFade,
-          WebkitMaskImage: edgeFade,
-        }}
-      >
-        <div className="flex min-h-10 items-center sm:min-h-[2.75rem]">
-          <TechMarqueeStrip items={techMarqueeItems} />
-        </div>
-      </div>
+      <p className={titleLg}>Technologies I use</p>
+      <TechMarqueeScrollable edgeFade={edgeFade} />
     </motion.div>
   );
 }
@@ -672,12 +734,6 @@ function CoarsePointerAmbientGlow() {
     <motion.div
       className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(52vw,200px)] w-[min(52vw,200px)] rounded-full blur-[52px] bg-mocha-500/32 md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] md:blur-[88px] md:bg-mocha-500/22"
       style={{ x, y, scale }}
-      initial={false}
-      animate={{
-        opacity: [0.76, 1, 0.76],
-        filter: ['brightness(0.9)', 'brightness(1.06)', 'brightness(0.9)'],
-      }}
-      transition={AMBIENT_BREATHE_TRANSITION}
       aria-hidden
     />
   );
@@ -1112,15 +1168,6 @@ const App = () => {
         <motion.div
           style={{ x: cursorX, y: cursorY }}
           className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-500/14"
-          initial={false}
-          animate={{
-            opacity: [0.85, 1, 0.85],
-            filter: ['brightness(0.93)', 'brightness(1.04)', 'brightness(0.93)'],
-          }}
-          transition={{
-            ...AMBIENT_BREATHE_TRANSITION,
-            duration: 7.25,
-          }}
           aria-hidden
         />
       )}
