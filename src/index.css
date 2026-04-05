@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* Keyboard: skip past fixed nav */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  background-color: var(--color-mocha-800);
+  color: var(--color-mocha-50);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15);
+  outline: none;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  outline: 2px solid var(--color-mocha-600);
+  outline-offset: 2px;
+}
+
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-service: "DM Sans", ui-sans-serif, system-ui, sans-serif;

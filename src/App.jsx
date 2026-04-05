@@ -383,7 +383,10 @@ const sectionProjectRowVariants = {
 
 function Navbar() {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-mocha-50/90 backdrop-blur-sm border-b border-mocha-200/90 py-3 px-6">
+    <nav
+      className="fixed top-0 w-full z-50 bg-mocha-50/90 backdrop-blur-sm border-b border-mocha-200/90 py-3 px-6"
+      aria-label="Primary"
+    >
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
         <a href="#home" className="font-service text-lg font-bold tracking-tight text-mocha-800 hover:text-mocha-700 transition-colors">
           Satyam
@@ -1162,7 +1165,15 @@ const App = () => {
 
   return (
     <div className="bg-mocha-50 text-mocha-600 font-sans min-h-screen relative overflow-x-hidden">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Navbar />
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="relative outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/35 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-50"
+      >
       {/* Desktop / fine pointer: glow follows cursor */}
       {!reducedMotion && !pointerCoarse && (
         <motion.div
@@ -1678,6 +1689,9 @@ const App = () => {
                 viewport={{ once: true, amount: 0.2, margin: '0px 0px -40px 0px' }}
               >
                 <form onSubmit={handleContactSubmit} className="relative space-y-10">
+                  <p className="text-xs leading-relaxed text-mocha-500 max-w-md">
+                    Submissions are delivered through Web3Forms; I use your details only to respond to this message.
+                  </p>
                   <p className="sr-only" aria-live="polite">
                     {contactFormStatus === 'success' && 'Message sent successfully.'}
                     {contactFormStatus === 'error' && contactFormError}
@@ -1954,7 +1968,9 @@ const App = () => {
           </footer>
         </div>
       </section>
-      
+
+      </main>
+
       {projectDetailIndex !== null && projects[projectDetailIndex] && (
         <ProjectDetailDialog project={projects[projectDetailIndex]} onClose={() => setProjectDetailIndex(null)} />
       )}
