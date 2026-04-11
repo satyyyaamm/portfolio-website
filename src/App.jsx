@@ -47,6 +47,7 @@ import uj2 from './assets/uj/IMG_0189.PNG';
 import uj3 from './assets/uj/IMG_0190.PNG';
 import uj4 from './assets/uj/IMG_0191.PNG';
 import uj5 from './assets/uj/IMG_0192.PNG';
+import mobiurja1 from './assets/mobiurja/mobiurja1.png';
 import aboutPortrait from './assets/satyam.png';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
@@ -219,7 +220,7 @@ function ProjectPreviewSlideshow({
     : 'w-2 bg-mocha-400/50 hover:bg-mocha-500/70';
   const imgClass = isCard
     ? 'max-h-full max-w-full object-contain object-center rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100 pointer-events-none'
-    : 'max-h-full max-w-full object-contain object-center pointer-events-none';
+    : 'max-h-full max-w-full object-contain object-center rounded-2xl pointer-events-none';
 
   return (
     <div className="relative h-full min-h-0 w-full">
@@ -1147,7 +1148,7 @@ const App = () => {
       {
         name: "Mobiurja",
         desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
-        image: "https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&w=1200&q=80",
+        image: mobiurja1,
         accent: "#1e3a5f",
         href: "#",
       },
@@ -1288,7 +1289,7 @@ const App = () => {
             viewport={{ once: true, amount: 0.28 }}
           >
             <motion.div
-              className="mx-auto w-full max-w-4xl lg:mx-0 lg:max-w-none"
+              className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl lg:mx-0 lg:max-w-none"
               style={{
                 aspectRatio: projects[activeProject].gallery?.length
                   ? projectGalleryAspect
@@ -1312,7 +1313,7 @@ const App = () => {
                   transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                   src={projects[activeProject].image}
                   alt={projects[activeProject].name}
-                  className="h-full w-full min-h-0 object-contain object-center"
+                  className="h-full w-full min-h-0 rounded-2xl object-contain object-center"
                   loading="eager"
                 />
               )}
