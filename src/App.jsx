@@ -48,6 +48,8 @@ import uj3 from './assets/uj/IMG_0190.PNG';
 import uj4 from './assets/uj/IMG_0191.PNG';
 import uj5 from './assets/uj/IMG_0192.PNG';
 import mobiurja1 from './assets/mobiurja/mobiurja1.png';
+import puri1 from './assets/puri/puri1.png';
+import puri2 from './assets/puri/puri2.png';
 import aboutPortrait from './assets/satyam.png';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
@@ -55,6 +57,7 @@ const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
 const WOOPDO_GALLERY = [woopdo1, woopdo2, woopdo3, woopdo4];
 const WAYA_WAYA_GALLERY = [waya1, waya2, waya3, waya4, waya5, waya6];
 const UJ_WAYFINDER_GALLERY = [uj1, uj2, uj3, uj4, uj5];
+const PURI_GALLERY = [puri1, puri2];
 
 function aspectRatioCss(w, h) {
   if (!w || !h) return '16 / 9';
@@ -1150,6 +1153,14 @@ const App = () => {
         desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
         image: mobiurja1,
         accent: "#1e3a5f",
+        href: "#",
+      },
+      {
+        name: "Puri",
+        desc: "Medical device companion app: capture and review diagnostic strips (urinalysis / rapid tests), step-based flows (Select → Add → Review), and clear result panels for clinical readability on mobile.",
+        image: puri1,
+        gallery: PURI_GALLERY,
+        accent: "#1d4ed8",
         href: "#",
       },
       {
