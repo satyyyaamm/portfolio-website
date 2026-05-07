@@ -48,6 +48,10 @@ import uj3 from './assets/uj/IMG_0190.PNG';
 import uj4 from './assets/uj/IMG_0191.PNG';
 import uj5 from './assets/uj/IMG_0192.PNG';
 import mobiurja1 from './assets/mobiurja/mobiurja1.png';
+import nanda1 from './assets/nanda/nanda1.png';
+import nanda2 from './assets/nanda/nanda2.png';
+import nanda3 from './assets/nanda/nanda3.png';
+import nanda4 from './assets/nanda/nanda4.png';
 import puri1 from './assets/puri/puri1.png';
 import puri2 from './assets/puri/puri2.png';
 import aboutPortrait from './assets/satyam.png';
@@ -58,6 +62,7 @@ const WOOPDO_GALLERY = [woopdo1, woopdo2, woopdo3, woopdo4];
 const WAYA_WAYA_GALLERY = [waya1, waya2, waya3, waya4, waya5, waya6];
 const UJ_WAYFINDER_GALLERY = [uj1, uj2, uj3, uj4, uj5];
 const PURI_GALLERY = [puri1, puri2];
+const NANDA_GALLERY = [nanda1, nanda2, nanda3, nanda4];
 
 function aspectRatioCss(w, h) {
   if (!w || !h) return '16 / 9';
@@ -1126,6 +1131,23 @@ const App = () => {
       ],
       image: sa1,
       gallery: SAFE_AGAIN_GALLERY,
+      href: "#",
+    },
+    {
+      id: 4,
+      name: "Nanda Enterprise",
+      meta: "Business operations platform",
+      role: "Product and engineering execution",
+      summary:
+        "A business operations platform focused on reducing manual coordination across daily workflows. The core problem was fragmented updates and delayed decisions when teams tracked requests over calls and chats. The app brings requests, status updates, and approvals into one place so teams can see work state quickly and move tasks forward without back-and-forth.",
+      desc: "Operations software that centralizes request tracking, status visibility, and approval steps. It solves fragmented communication and unclear ownership by giving teams one source of truth for day-to-day execution.",
+      highlights: [
+        "Unified request intake and status tracking so teams stop juggling calls, chat threads, and spreadsheets.",
+        "Clear handoffs and ownership visibility to reduce follow-ups and missed actions.",
+        "Faster approvals and decision cycles through a single workflow view.",
+      ],
+      image: nanda1,
+      gallery: NANDA_GALLERY,
       href: "#",
     },
   ];
