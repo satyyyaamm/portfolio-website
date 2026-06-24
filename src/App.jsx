@@ -54,6 +54,13 @@ import nanda3 from './assets/nanda/nanda3.png';
 import nanda4 from './assets/nanda/nanda4.png';
 import puri1 from './assets/puri/puri1.png';
 import puri2 from './assets/puri/puri2.png';
+import picksy1 from './assets/picksy/picksy1.png';
+import picksy2 from './assets/picksy/picksy2.png';
+import picksy3 from './assets/picksy/picksy3.png';
+import picksyVideo from './assets/picksy/picksy.mp4';
+import nextoffer1 from './assets/nextoffer/nextoffer1.png';
+import nextoffer2 from './assets/nextoffer/nextoffer2.png';
+import nextoffer3 from './assets/nextoffer/nextoffer3.png';
 import aboutPortrait from './assets/satyam.png';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
@@ -63,6 +70,8 @@ const WAYA_WAYA_GALLERY = [waya1, waya2, waya3, waya4, waya5, waya6];
 const UJ_WAYFINDER_GALLERY = [uj1, uj2, uj3, uj4, uj5];
 const PURI_GALLERY = [puri1, puri2];
 const NANDA_GALLERY = [nanda1, nanda2, nanda3, nanda4];
+const PICKSY_GALLERY = [picksy1, picksy2, picksy3];
+const NEXTOFFER_GALLERY = [nextoffer1, nextoffer2, nextoffer3];
 
 function aspectRatioCss(w, h) {
   if (!w || !h) return '16 / 9';
@@ -71,59 +80,100 @@ function aspectRatioCss(w, h) {
 
 const SLIDESHOW_SWIPE_MIN_PX = 50;
 
-/** Auto-advancing slideshow; optional `onAspectRatioChange` for fluid project preview frames. */
+/** Auto-advancing slideshow; optional video as first slide, then images. */
 function ProjectPreviewSlideshow({
   images,
+  video,
+  videoPoster,
   projectName,
   reducedMotion,
   onAspectRatioChange,
   variant = 'default',
   showDots = true,
 }) {
+  const hasVideo = Boolean(video);
+  const slideCount = (hasVideo ? 1 : 0) + images.length;
+  const isVideoSlide = (i) => hasVideo && i === 0;
   const [index, setIndex] = useState(0);
   const [dimsByIndex, setDimsByIndex] = useState({});
   const onAspectRef = useRef(onAspectRatioChange);
+  const videoRef = useRef(null);
   const pointerStartRef = useRef(null);
   const suppressClickRef = useRef(false);
   const suppressClickTimeoutRef = useRef(null);
   const isCard = variant === 'card';
-  const multi = images.length > 1;
+  const multi = slideCount > 1;
 
   useLayoutEffect(() => {
     onAspectRef.current = onAspectRatioChange;
   });
 
   useEffect(() => {
+    if (!hasVideo) return;
+    const el = document.createElement('video');
+    const onMeta = () => {
+      const w = el.videoWidth;
+      const h = el.videoHeight;
+      if (!w || !h) return;
+      setDimsByIndex((prev) => ({ ...prev, 0: { w, h } }));
+    };
+    el.addEventListener('loadedmetadata', onMeta);
+    el.src = video;
+    return () => {
+      el.removeEventListener('loadedmetadata', onMeta);
+      el.removeAttribute('src');
+      el.load();
+    };
+  }, [video, hasVideo]);
+
+  useEffect(() => {
     let cancelled = false;
     images.forEach((src, i) => {
+      const slideIndex = hasVideo ? i + 1 : i;
       const img = new Image();
       img.onload = () => {
         if (cancelled) return;
         const w = img.naturalWidth;
         const h = img.naturalHeight;
         if (!w || !h) return;
-        setDimsByIndex((prev) => ({ ...prev, [i]: { w, h } }));
+        setDimsByIndex((prev) => ({ ...prev, [slideIndex]: { w, h } }));
       };
       img.src = src;
     });
     return () => {
       cancelled = true;
     };
-  }, [images]);
+  }, [images, hasVideo]);
 
   useLayoutEffect(() => {
     if (!onAspectRef.current) return;
     const d = dimsByIndex[index];
+    if (isVideoSlide(index) && !d?.w) {
+      onAspectRef.current('9 / 16');
+      return;
+    }
     onAspectRef.current(aspectRatioCss(d?.w, d?.h));
-  }, [index, dimsByIndex]);
+  }, [index, dimsByIndex, hasVideo]);
 
   useEffect(() => {
-    if (reducedMotion || images.length <= 1) return;
+    const el = videoRef.current;
+    if (!el || !hasVideo) return;
+    if (isVideoSlide(index)) {
+      if (!reducedMotion) {
+        el.play().catch(() => {});
+      }
+    } else {
+      el.pause();
+    }
+  }, [index, reducedMotion, hasVideo]);
+
+  useEffect(() => {
+    if (reducedMotion || slideCount <= 1) return;
     const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % images.length);
+      setIndex((i) => (i + 1) % slideCount);
     }, 5500);
     return () => window.clearInterval(id);
-  }, [images.length, reducedMotion]);
+  }, [slideCount, reducedMotion]);
 
   useEffect(
     () => () => {
@@ -183,9 +233,9 @@ function ProjectPreviewSlideshow({
 
     scheduleSuppressClickClear();
     if (dx < 0) {
-      setIndex((i) => (i + 1) % images.length);
+      setIndex((i) => (i + 1) % slideCount);
     } else {
-      setIndex((i) => (i - 1 + images.length) % images.length);
+      setIndex((i) => (i - 1 + slideCount) % slideCount);
     }
   };
 
@@ -229,6 +279,23 @@ function ProjectPreviewSlideshow({
   const imgClass = isCard
     ? 'max-h-full max-w-full object-contain object-center rounded-md shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100 pointer-events-none'
     : 'max-h-full max-w-full object-contain object-center rounded-2xl pointer-events-none';
+  const videoClass = isCard
+    ? 'max-h-full max-w-full object-contain object-center rounded-md shadow-lg pointer-events-auto'
+    : 'max-h-full max-w-full object-contain object-center rounded-2xl pointer-events-auto';
+
+  const handleVideoMeta = (e) => {
+    const el = e.currentTarget;
+    const w = el.videoWidth;
+    const h = el.videoHeight;
+    if (!w || !h) return;
+    setDimsByIndex((prev) => ({ ...prev, 0: { w, h } }));
+  };
+
+  const slideLabel = (i) => {
+    if (isVideoSlide(i)) return 'demo video';
+    const shot = hasVideo ? i : i + 1;
+    return `screenshot ${shot} of ${images.length}`;
+  };
 
   return (
     <div className="relative h-full min-h-0 w-full">
@@ -239,45 +306,66 @@ function ProjectPreviewSlideshow({
         aria-label={
           multi
             ? showDots
-              ? `${projectName} screenshots, ${index + 1} of ${images.length}. Swipe horizontally or use the dots.`
-              : `${projectName} screenshots, ${index + 1} of ${images.length}. Swipe horizontally to change.`
+              ? `${projectName} preview, ${index + 1} of ${slideCount}. Swipe horizontally or use the dots.`
+              : `${projectName} preview, ${index + 1} of ${slideCount}. Swipe horizontally to change.`
             : undefined
         }
-        onPointerDown={handlePointerDown}
+        onPointerDownCapture={handlePointerDown}
         onPointerUp={handlePointerUpOrCancel}
         onPointerCancel={handlePointerUpOrCancel}
         onLostPointerCapture={handleLostPointerCapture}
         onClick={handleStageClick}
       >
         <AnimatePresence mode="wait" initial={false}>
-          <motion.img
-            key={index}
-            data-slide-index={index}
-            src={images[index]}
-            alt={`${projectName} — screenshot ${index + 1} of ${images.length}`}
-            draggable={false}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
-            className={imgClass}
-            onLoad={handleImgLoad}
-          />
+          {isVideoSlide(index) ? (
+            <motion.video
+              key="video"
+              ref={videoRef}
+              src={video}
+              poster={videoPoster}
+              controls
+              playsInline
+              muted
+              loop
+              autoPlay={!reducedMotion}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+              className={videoClass}
+              onLoadedMetadata={handleVideoMeta}
+              aria-label={`${projectName} demo video`}
+            />
+          ) : (
+            <motion.img
+              key={index}
+              data-slide-index={index}
+              src={images[hasVideo ? index - 1 : index]}
+              alt={`${projectName} — ${slideLabel(index)}`}
+              draggable={false}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+              className={imgClass}
+              onLoad={handleImgLoad}
+            />
+          )}
         </AnimatePresence>
       </div>
-      {showDots && images.length > 1 && (
+      {showDots && slideCount > 1 && (
         <div
           className={`absolute ${dotWrapBottom} left-0 right-0 flex justify-center gap-1.5 px-2 sm:gap-2`}
           role="tablist"
-          aria-label="Screenshot slides"
+          aria-label="Project preview slides"
         >
-          {images.map((_, i) => (
+          {Array.from({ length: slideCount }, (_, i) => (
             <button
               key={i}
               type="button"
               role="tab"
               aria-selected={i === index}
-              aria-label={`Show screenshot ${i + 1}`}
+              aria-label={isVideoSlide(i) ? 'Show demo video' : `Show screenshot ${hasVideo ? i : i + 1}`}
               onClick={() => setIndex(i)}
               className={`h-2 rounded-full transition-all duration-300 ${
                 i === index ? dotActive : dotIdle
@@ -669,6 +757,19 @@ function ProjectDetailDialog({ project, onClose }) {
                 ))}
               </ul>
             </>
+          )}
+          {project.video && (
+            <div className="mt-6 overflow-hidden rounded-xl border border-mocha-200/80 bg-mocha-100">
+              <video
+                src={project.video}
+                poster={project.image}
+                className="w-full object-contain"
+                controls
+                playsInline
+                preload="metadata"
+                aria-label={`${project.name} demo video`}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -1085,6 +1186,41 @@ const App = () => {
     },
     {
       id: 1,
+      name: "Picksy",
+      meta: "Social decision-making · Mobile · 2025 · Concept",
+      role: "Product design & mobile UX",
+      summary:
+        "A group decision app for nights when nobody can agree: create or join a room, swipe on movies, restaurants, or activities, and surface matches the whole group liked. Rooms support invites, mood and filter setup, real-time presence, and in-room chat so plans move from “maybe” to a shortlist fast.",
+      desc: "Social swipe-and-match app for groups choosing what to watch, eat, or do together—room lobbies, category filters, Tinder-style voting, group matches, chat, and profile stats in a dark neon UI built for friends deciding together.",
+      highlights: [
+        "Multi-category rooms (movies, restaurants, activities) with mood presets, genre/platform filters, and shareable room codes.",
+        "Swipe flow with like, maybe, and pass—plus social proof showing what friends in the room already picked.",
+        "Group match celebrations, watchlist/history, and integrated chat to lock in plans without leaving the app.",
+      ],
+      image: picksy2,
+      gallery: PICKSY_GALLERY,
+      video: picksyVideo,
+      href: "#",
+    },
+    {
+      id: 2,
+      name: "NextOffer.ai",
+      meta: "AI job search · Next.js · 2026 · Live",
+      role: "Founder & full-stack developer",
+      summary:
+        "Resume-matched job discovery with compatibility scores on every listing, plus ATS-ready application kits—tailored resume, cover letter, and cold email—from one workflow. Users upload a resume, filter roles by workplace, level, and salary, then generate personalised outreach so applications are tuned to each role instead of generic copy-paste.",
+      desc: "AI-powered job hunt platform: resume-tailored search with per-role compatibility scores, multi-source job aggregation, LinkedIn profile analysis, and one-click ATS application kits—landing, dashboard, and optimiser flows deployed on Firebase.",
+      highlights: [
+        "Job search dashboard with saved profile, skill tags, and filters for remote/hybrid, experience level, salary, and job sources (JSearch, Jooble, Adzuna).",
+        "LinkedIn optimiser: PDF upload or paste-in analysis with scored sections, strengths, and prioritised improvement list.",
+        "Application kit generation and freemium pricing (Free, Weekly Sprint, Monthly Pro) with Google sign-in.",
+      ],
+      image: nextoffer1,
+      gallery: NEXTOFFER_GALLERY,
+      href: "https://nextoffer-ai.web.app",
+    },
+    {
+      id: 3,
       name: "Waya Waya",
       meta: "Mall rewards & discovery · Flutter · Nov 2021 – Present · Live",
       role: "Lead mobile developer",
@@ -1101,7 +1237,7 @@ const App = () => {
       href: "#",
     },
     {
-      id: 2,
+      id: 4,
       name: "UJ WayFinder",
       meta: "Campus navigation · Flutter · Nov 2021 – Present · Live",
       role: "Lead mobile developer",
@@ -1117,7 +1253,7 @@ const App = () => {
       href: "#",
     },
     {
-      id: 3,
+      id: 5,
       name: "Safe Again",
       meta: "Women’s safety · Flutter + Firebase · Mid 2023 – Mid 2025 · Live",
       role: "Lead developer",
@@ -1134,7 +1270,7 @@ const App = () => {
       href: "#",
     },
     {
-      id: 4,
+      id: 6,
       name: "Nanda Enterprise",
       meta: "Business operations platform",
       role: "Product and engineering execution",
@@ -1324,16 +1460,19 @@ const App = () => {
             <motion.div
               className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl lg:mx-0 lg:max-w-none"
               style={{
-                aspectRatio: projects[activeProject].gallery?.length
-                  ? projectGalleryAspect
-                  : '16 / 9',
+                aspectRatio:
+                  projects[activeProject].gallery?.length || projects[activeProject].video
+                    ? projectGalleryAspect
+                    : '16 / 9',
                 maxHeight: 'min(64vh, calc(100dvh - 5.5rem))',
               }}
             >
-              {projects[activeProject].gallery?.length ? (
+              {projects[activeProject].gallery?.length || projects[activeProject].video ? (
                 <ProjectPreviewSlideshow
                   key={activeProject}
-                  images={projects[activeProject].gallery}
+                  images={projects[activeProject].gallery ?? []}
+                  video={projects[activeProject].video}
+                  videoPoster={projects[activeProject].image}
                   projectName={projects[activeProject].name}
                   reducedMotion={reducedMotion}
                   onAspectRatioChange={setProjectGalleryAspect}
