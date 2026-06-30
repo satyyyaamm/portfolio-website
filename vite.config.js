@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
  * Canonical / Open Graph base when `VITE_SITE_URL` is unset.
  * Override via env if you use www or a different deploy URL.
  */
-const FALLBACK_SITE_URL = 'https://buildwithsatyam.in'
+const FALLBACK_SITE_URL = 'https://www.buildwithsatyam.in'
 const FALLBACK_GA_ID = 'G-RGB7SXQS6T'
 
 // [https://vitejs.dev/config/](https://vitejs.dev/config/)
