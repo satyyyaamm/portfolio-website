@@ -17,7 +17,6 @@ export function Analytics() {
     initAnalytics();
 
     const onNavigate = () => trackPageView();
-    onNavigate();
 
     window.addEventListener('hashchange', onNavigate);
     window.addEventListener('popstate', onNavigate);

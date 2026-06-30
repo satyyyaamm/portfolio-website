@@ -7,11 +7,13 @@ import tailwindcss from '@tailwindcss/vite'
  * Override via env if you use www or a different deploy URL.
  */
 const FALLBACK_SITE_URL = 'https://buildwithsatyam.in'
+const FALLBACK_GA_ID = 'G-RGB7SXQS6T'
 
 // [https://vitejs.dev/config/](https://vitejs.dev/config/)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const siteUrl = (env.VITE_SITE_URL || FALLBACK_SITE_URL).trim().replace(/\/$/, '')
+  const gaId = (env.VITE_GA_MEASUREMENT_ID || FALLBACK_GA_ID).trim()
 
   return {
     plugins: [
@@ -20,7 +22,9 @@ export default defineConfig(({ mode }) => {
       {
         name: 'html-site-url',
         transformIndexHtml(html) {
-          return html.replaceAll('%SITE_URL%', siteUrl)
+          return html
+            .replaceAll('%SITE_URL%', siteUrl)
+            .replaceAll('%GA_MEASUREMENT_ID%', gaId)
         },
       },
     ],

@@ -9,10 +9,15 @@ function getGtag() {
   return typeof window.gtag === 'function' ? window.gtag : null;
 }
 
-/** Load GA4 and disable auto page views — we track SPA/hash navigation manually. */
+/** Use gtag from index.html when present; otherwise inject for local dev. */
 export function initAnalytics() {
   if (!isAnalyticsEnabled() || typeof window === 'undefined') return;
   if (window.__portfolioAnalyticsInit) return;
+
+  if (typeof window.gtag === 'function') {
+    window.__portfolioAnalyticsInit = true;
+    return;
+  }
 
   const script = document.createElement('script');
   script.async = true;
@@ -24,10 +29,7 @@ export function initAnalytics() {
     window.dataLayer.push(arguments);
   };
   window.gtag('js', new Date());
-  window.gtag('config', GA_ID, {
-    send_page_view: false,
-    anonymize_ip: true,
-  });
+  window.gtag('config', GA_ID, { anonymize_ip: true });
 
   window.__portfolioAnalyticsInit = true;
 }
