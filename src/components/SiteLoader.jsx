@@ -3,10 +3,10 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { SiteReadyContext } from '../context/SiteReadyContext.jsx';
 
 const MIN_LOAD_MS = 1800;
-const SPLIT_DURATION = 0.9;
+const SPLIT_DURATION = 1.65;
 const SPLIT_EASE = [0.76, 0, 0.24, 1];
 /** Pause after the split begins before hero / page animations run. */
-export const SITE_ANIMATION_DELAY_MS = 520;
+export const SITE_ANIMATION_DELAY_MS = 780;
 
 export function SiteLoader({ children }) {
   const reducedMotion = useReducedMotion();
