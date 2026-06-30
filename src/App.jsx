@@ -16,7 +16,6 @@ import {
   Server, 
   ArrowRight, 
   Cpu, 
-  MapPin, 
   X,
   Briefcase,
   Mail,
@@ -63,6 +62,11 @@ import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
 import aboutPortrait from './assets/satyam.png';
 import { trackEvent } from './lib/analytics.js';
+import { handleSectionLinkClick } from './lib/scrollToSection.js';
+import { HeroPhone } from './components/HeroPhone.jsx';
+import { FaqSection } from './components/FaqSection.jsx';
+import { AboutPortrait } from './components/AboutPortrait.jsx';
+import { scrollRevealProps, useSiteAnimationsEnabled } from './context/SiteReadyContext.jsx';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
 const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
@@ -73,6 +77,14 @@ const PURI_GALLERY = [puri1, puri2];
 const NANDA_GALLERY = [nanda1, nanda2, nanda3, nanda4];
 const PICKSY_GALLERY = [picksy1, picksy2, picksy3];
 const NEXTOFFER_GALLERY = [nextoffer1, nextoffer2, nextoffer3];
+
+/** Fixed site theme — off-white, near-black, blue accent (ui-ux-pro-max) */
+const SITE_THEME = {
+  marqueeFadeRgb: '250,250,250',
+  designCardHoverShadow:
+    'group-hover:shadow-[0_20px_44px_-16px_rgba(9,9,11,0.08)]',
+  designAccent1: '#2563EB',
+};
 
 function aspectRatioCss(w, h) {
   if (!w || !h) return '16 / 9';
@@ -383,6 +395,72 @@ function designCardSlides(d) {
   return d.gallery?.length ? d.gallery : [d.image];
 }
 
+function projectStatusLabel(meta) {
+  const token = meta.split(' · ').pop()?.trim();
+  if (!token) return null;
+  const known = ['Live', 'Concept', 'Pre-production'];
+  return known.includes(token) ? token : null;
+}
+
+function projectMetaSubtitle(meta) {
+  const parts = meta.split(' · ').filter(Boolean);
+  const status = projectStatusLabel(meta);
+  const withoutStatus = status ? parts.slice(0, -1) : parts;
+  return withoutStatus.join(' · ');
+}
+
+const PROJECT_STATUS_STYLES = {
+  Live: 'bg-emerald-50 text-emerald-800 ring-emerald-200/80',
+  Concept: 'bg-amber-50 text-amber-900 ring-amber-200/80',
+  'Pre-production': 'bg-mocha-100 text-mocha-700 ring-mocha-200/80',
+};
+
+function projectCategory(meta) {
+  return meta.split(' · ')[0] || meta;
+}
+
+function ProjectStatusBadge({ meta }) {
+  const status = projectStatusLabel(meta);
+  if (!status) return null;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${PROJECT_STATUS_STYLES[status] ?? 'bg-mocha-100 text-mocha-600 ring-mocha-200/80'}`}
+    >
+      {status}
+    </span>
+  );
+}
+
+function WorkProjectPreview({ src, alt, frame = 'mobile' }) {
+  if (frame === 'web') {
+    return (
+      <div className="work-project-card__media work-project-card__media--web">
+        <div className="work-project-card__browser">
+          <div className="work-project-card__browser-bar" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="work-project-card__browser-screen">
+            <img src={src} alt={alt} className="work-project-card__shot" loading="lazy" decoding="async" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="work-project-card__media work-project-card__media--mobile">
+      <div className="work-project-card__phone" aria-hidden>
+        <div className="work-project-card__phone-island" />
+        <div className="work-project-card__phone-screen">
+          <img src={src} alt={alt} className="work-project-card__shot" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DesignCardPreview({ design, reducedMotion, designCardHoverShadow }) {
   const slides = designCardSlides(design);
   return (
@@ -480,29 +558,52 @@ const sectionProjectRowVariants = {
 };
 
 function Navbar() {
+  const navLink = (hash, label) => (
+    <a
+      href={hash}
+      onClick={(e) => handleSectionLinkClick(e, hash)}
+      className="hover:text-mocha-800 transition-colors"
+    >
+      {label}
+    </a>
+  );
+
   return (
     <nav
-      className="fixed top-0 w-full z-50 bg-mocha-50/90 backdrop-blur-sm border-b border-mocha-200/90 py-3 px-6"
+      className="fixed top-0 w-full z-50 bg-mocha-50/55 backdrop-blur-md border-b border-mocha-200/45 py-3 px-6"
       aria-label="Primary"
     >
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
-        <a href="#home" className="font-service text-lg font-bold tracking-tight text-mocha-800 hover:text-mocha-700 transition-colors">
+        <a
+          href="#home"
+          onClick={(e) => handleSectionLinkClick(e, 'home')}
+          className="flex items-center gap-2.5 font-service text-lg font-bold tracking-tight text-mocha-800 hover:text-mocha-700 transition-colors shrink-0"
+        >
+          <img
+            src={aboutPortrait}
+            alt=""
+            className="h-8 w-8 rounded-full object-cover object-center ring-1 ring-mocha-300/80"
+            decoding="async"
+            width={32}
+            height={32}
+          />
           Satyam
         </a>
         <div className="hidden md:flex flex-1 justify-center gap-6 text-xs font-medium text-mocha-600">
-          <a href="#home" className="hover:text-mocha-800 transition-colors">Home</a>
-          <a href="#services" className="hover:text-mocha-800 transition-colors">Services</a>
-          <a href="#projects" className="hover:text-mocha-800 transition-colors">Projects</a>
-          <a href="#designs" className="hover:text-mocha-800 transition-colors">Designs</a>
-          <a href="#about" className="hover:text-mocha-800 transition-colors">About</a>
-          <a href="#contact" className="hover:text-mocha-800 transition-colors">Contact</a>
+          {navLink('#home', 'Home')}
+          {navLink('#services', 'Approach')}
+          {navLink('#work', 'Work')}
+          {navLink('#about', 'Story')}
+          {navLink('#faq', 'FAQ')}
+          {navLink('#contact', 'Contact')}
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="#contact"
-            className="border border-mocha-600/45 px-4 sm:px-5 py-1.5 rounded-md text-xs font-medium text-mocha-600 hover:text-white hover:bg-mocha-700 transition-all shrink-0"
+            onClick={(e) => handleSectionLinkClick(e, 'contact')}
+            className="border border-mocha-600/45 px-4 sm:px-5 py-1.5 rounded-md text-xs font-medium text-mocha-600 hover:text-white hover:bg-accent transition-all shrink-0"
           >
-            Contact
+            Say hello
           </a>
         </div>
       </div>
@@ -522,6 +623,25 @@ const UPWORK_URL =
 const EMAIL_MAILTO = "mailto:satyamt5152@gmail.com";
 const PHONE_DISPLAY = "+91 87933 80992";
 const PHONE_TEL = "tel:+918793380992";
+
+function SocialLinks({ className = '' }) {
+  return (
+    <div className={`flex flex-wrap items-center gap-2.5 ${className}`}>
+      <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="GitHub">
+        <Github size={16} strokeWidth={1.75} />
+      </a>
+      <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="LinkedIn">
+        <Linkedin size={16} strokeWidth={1.75} />
+      </a>
+      <a href={MEDIUM_URL} target="_blank" rel="noopener noreferrer" className="social-icon-btn" aria-label="Medium">
+        <MediumIcon className="h-4 w-4" />
+      </a>
+      <a href={EMAIL_MAILTO} className="social-icon-btn" aria-label="Email">
+        <Mail size={16} strokeWidth={1.75} />
+      </a>
+    </div>
+  );
+}
 
 const techMarqueeItems = [
   "Flutter",
@@ -556,15 +676,17 @@ const techMarqueeItems = [
 const techPillClass =
   "inline-flex shrink-0 items-center rounded border border-mocha-600/25 bg-white/75 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-mocha-600 shadow-sm backdrop-blur-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]";
 
-function TechMarqueePill({ label, staggerIndex }) {
+function TechMarqueePill({ label, staggerIndex, animating }) {
+  const hidden = { opacity: 0, y: 18, scale: 0.92 };
+  const visible = { opacity: 1, y: 0, scale: 1 };
   return (
     <motion.span
       className={techPillClass}
-      initial={{ opacity: 0, y: 18, scale: 0.92 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={hidden}
+      animate={animating ? visible : hidden}
       transition={{
-        delay: 0.14 + staggerIndex * 0.034,
-        type: "spring",
+        delay: animating ? 0.14 + staggerIndex * 0.034 : 0,
+        type: 'spring',
         stiffness: 440,
         damping: 26,
         mass: 0.85,
@@ -575,15 +697,15 @@ function TechMarqueePill({ label, staggerIndex }) {
   );
 }
 
-function TechMarqueeStrip({ items }) {
+function TechMarqueeStrip({ items, animating }) {
   const doubled = [...items, ...items];
   return (
     <div
       className="tech-marquee-track flex w-max gap-2 sm:gap-2.5"
-      style={{ "--tech-marquee-duration": "48s" }}
+      style={{ '--tech-marquee-duration': '48s' }}
     >
       {doubled.map((label, i) => (
-        <TechMarqueePill key={`${label}-${i}`} label={label} staggerIndex={i} />
+        <TechMarqueePill key={`${label}-${i}`} label={label} staggerIndex={i} animating={animating} />
       ))}
     </div>
   );
@@ -593,7 +715,7 @@ function TechMarqueeStrip({ items }) {
  * Auto-marquee keeps running (infinite CSS animation) while the outer area scrolls horizontally
  * so users can swipe/drag without stopping the motion. `animated={false}` for reduced-motion swipe rows.
  */
-function TechMarqueeScrollable({ edgeFade, animated = true }) {
+function TechMarqueeScrollable({ edgeFade, animated = true, animating = true }) {
   return (
     <div
       className="tech-marquee-scroll relative mx-auto w-full max-w-7xl touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain py-2"
@@ -611,7 +733,7 @@ function TechMarqueeScrollable({ edgeFade, animated = true }) {
     >
       <div className="flex min-h-10 items-center sm:min-h-[2.75rem]">
         {animated ? (
-          <TechMarqueeStrip items={techMarqueeItems} />
+          <TechMarqueeStrip items={techMarqueeItems} animating={animating} />
         ) : (
           <div className="flex min-h-10 w-max items-center gap-2 sm:min-h-[2.75rem] sm:gap-2.5 pr-10">
             {techMarqueeItems.map((label) => (
@@ -655,8 +777,9 @@ function useTechMarqueeSwipeMode() {
   return swipeMode;
 }
 
-function HeroTechMarquee({ fadeRgb = "249,246,240" }) {
+function HeroTechMarquee({ fadeRgb = '249,246,240' }) {
   const reduced = useReducedMotion();
+  const animating = useSiteAnimationsEnabled();
   const swipeMode = useTechMarqueeSwipeMode();
 
   const edgeFade = useMemo(
@@ -696,95 +819,173 @@ function HeroTechMarquee({ fadeRgb = "249,246,240" }) {
     <motion.div
       className="mt-14 w-full md:mt-20"
       initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.45, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+      animate={animating ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ delay: animating ? 0.45 : 0, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
     >
       <p className={titleLg}>Technologies I use</p>
-      <TechMarqueeScrollable edgeFade={edgeFade} />
+      <TechMarqueeScrollable edgeFade={edgeFade} animating={animating} />
     </motion.div>
   );
 }
 
 function ProjectDetailDialog({ project, onClose }) {
   useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
   if (!project) return null;
 
+  const hasLiveLink = project.href && project.href !== '#';
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-5">
+    <motion.div
+      className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       <button
         type="button"
-        className="absolute inset-0 backdrop-blur-sm bg-mocha-700/35"
+        className="absolute inset-0 bg-mocha-950/50 backdrop-blur-[2px]"
         onClick={onClose}
-        aria-label="Close project details"
+        aria-label="Close case study"
       />
-      <div
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-labelledby="project-detail-title"
-        className="relative z-10 flex w-full max-w-lg flex-col rounded-t-2xl border border-mocha-200 bg-mocha-50 shadow-2xl sm:rounded-2xl"
+        initial={{ opacity: 0, y: 28 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="case-study-modal relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-mocha-200/90 bg-mocha-50 shadow-2xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-mocha-200/80 px-5 py-4">
-          <div className="min-w-0 pr-2">
-            <h2 id="project-detail-title" className="font-service text-xl font-bold tracking-tight text-mocha-800">
+        <div className="case-study-modal__header">
+          <div className="min-w-0 flex-1 pr-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <ProjectStatusBadge meta={project.meta} />
+              <span className="text-[11px] font-medium text-mocha-500">{project.role}</span>
+            </div>
+            <h2 id="project-detail-title" className="font-service text-xl sm:text-2xl font-bold tracking-tight text-mocha-800">
               {project.name}
             </h2>
-            <p className="mt-1 text-xs leading-snug text-mocha-500">{project.meta}</p>
+            <p className="mt-1 text-xs sm:text-sm text-mocha-500 leading-relaxed">
+              {projectMetaSubtitle(project.meta)}
+            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-full p-2 text-mocha-500 transition-colors hover:bg-mocha-200 hover:text-mocha-800"
+            className="shrink-0 rounded-full p-2 text-mocha-500 transition-colors hover:bg-mocha-200 hover:text-mocha-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/35"
             aria-label="Close"
           >
             <X className="h-5 w-5" strokeWidth={2} aria-hidden />
           </button>
         </div>
-        <div className="flex-1 px-5 py-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mocha-500">{project.role}</p>
-          <p className="mt-3 text-sm leading-relaxed text-mocha-600">{project.desc}</p>
-          {project.highlights?.length > 0 && (
-            <>
-              <h3 className="mt-6 text-sm font-semibold text-mocha-800">Highlights</h3>
-              <ul className="mt-3 list-disc space-y-2.5 pl-5 text-sm leading-relaxed text-mocha-600 marker:text-mocha-600/70">
-                {project.highlights.map((line, hi) => (
-                  <li key={hi}>{line}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {project.video && (
-            <div className="mt-6 overflow-hidden rounded-xl border border-mocha-200/80 bg-mocha-100">
-              <video
-                src={project.video}
-                poster={project.image}
-                className="w-full object-contain"
-                controls
-                playsInline
-                preload="metadata"
-                aria-label={`${project.name} demo video`}
-              />
-            </div>
+
+        <div className="case-study-modal__body">
+          <div className="case-study-modal__preview">
+            <img
+              src={project.image}
+              alt=""
+              className="max-h-[min(42vh,280px)] w-full object-contain object-center"
+              decoding="async"
+            />
+          </div>
+
+          <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
+            <section>
+              <h3 className="case-study-modal__label">Overview</h3>
+              <p className="mt-2 text-sm sm:text-[15px] leading-relaxed text-mocha-600">{project.desc}</p>
+            </section>
+
+            {project.highlights?.length > 0 && (
+              <section>
+                <h3 className="case-study-modal__label">Key deliverables</h3>
+                <ul className="mt-3 space-y-2">
+                  {project.highlights.map((line, hi) => (
+                    <li
+                      key={hi}
+                      className="flex gap-3 rounded-lg border border-mocha-200/80 bg-white px-3.5 py-3 text-sm leading-relaxed text-mocha-600"
+                    >
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-mocha-600" aria-hidden />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {project.video && (
+              <section>
+                <h3 className="case-study-modal__label">Demo</h3>
+                <div className="mt-3 overflow-hidden rounded-xl border border-mocha-200/80 bg-mocha-100">
+                  <video
+                    src={project.video}
+                    poster={project.image}
+                    className="max-h-[min(50vh,420px)] w-full object-contain"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    aria-label={`${project.name} demo video`}
+                  />
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+
+        <div className="case-study-modal__footer">
+          <button type="button" onClick={onClose} className="case-study-modal__btn-secondary">
+            Close
+          </button>
+          {hasLiveLink && (
+            <a
+              href={project.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="case-study-modal__btn-primary"
+              onClick={() =>
+                trackEvent('click_outbound', {
+                  link_url: project.href,
+                  link_text: `${project.name} case study`,
+                })
+              }
+            >
+              Visit live site
+              <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            </a>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 /** Coarse pointer: drift the hero glow between random points near each screen corner (no fixed loop). */
 function CoarsePointerAmbientGlow() {
+  const animating = useSiteAnimationsEnabled();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const scale = useMotionValue(1);
 
   useEffect(() => {
+    if (!animating) return undefined;
+
     let cancelled = false;
 
     const randomTarget = () => {
@@ -842,11 +1043,13 @@ function CoarsePointerAmbientGlow() {
     };
     // MotionValues are stable for the lifetime of this component
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [animating]);
+
+  if (!animating) return null;
 
   return (
     <motion.div
-      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(52vw,200px)] w-[min(52vw,200px)] rounded-full blur-[52px] bg-mocha-500/32 md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] md:blur-[88px] md:bg-mocha-500/22"
+      className="pointer-events-none fixed left-[4%] top-[8%] z-[1] h-[min(52vw,200px)] w-[min(52vw,200px)] rounded-full blur-[52px] bg-accent/16 md:left-[8%] md:top-[10%] md:h-[min(70vw,380px)] md:w-[min(70vw,380px)] md:blur-[88px] md:bg-accent/12"
       style={{ x, y, scale }}
       aria-hidden
     />
@@ -974,14 +1177,9 @@ function DesignImageLightbox({ title, images, onClose }) {
 }
 
 const App = () => {
-  const [activeProject, setActiveProject] = useState(0);
-  const [projectGalleryAspect, setProjectGalleryAspect] = useState('16 / 9');
   const [projectDetailIndex, setProjectDetailIndex] = useState(null);
   const [designLightbox, setDesignLightbox] = useState(null);
 
-  useEffect(() => {
-    setProjectGalleryAspect('16 / 9');
-  }, [activeProject]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -993,69 +1191,10 @@ const App = () => {
   const [contactFormError, setContactFormError] = useState('');
   const [contactHoneypot, setContactHoneypot] = useState('');
   const [pointerCoarse, setPointerCoarse] = useState(false);
-  const [serviceHoverIndex, setServiceHoverIndex] = useState(null);
-  const [huePhase, setHuePhase] = useState('brown');
   const reducedMotion = useReducedMotion();
+  const animating = useSiteAnimationsEnabled();
 
-  const themeMotion = useMemo(() => {
-    if (huePhase === 'green') {
-      return {
-        marqueeFadeRgb: '243,247,244',
-        designCardHoverShadow:
-          'group-hover:shadow-[0_20px_44px_-16px_rgba(47,61,52,0.12)]',
-        rowHoverBg: 'rgba(47, 61, 52, 0.05)',
-        designAccent1: '#556b5c',
-      };
-    }
-    if (huePhase === 'slate') {
-      return {
-        marqueeFadeRgb: '242,245,248',
-        designCardHoverShadow:
-          'group-hover:shadow-[0_20px_44px_-16px_rgba(47,55,66,0.12)]',
-        rowHoverBg: 'rgba(47, 55, 66, 0.05)',
-        designAccent1: '#556070',
-      };
-    }
-    return {
-      marqueeFadeRgb: '249,246,240',
-      designCardHoverShadow:
-        'group-hover:shadow-[0_20px_44px_-16px_rgba(61,52,44,0.12)]',
-      rowHoverBg: 'rgba(28, 25, 23, 0.05)',
-      designAccent1: '#6f5f4f',
-    };
-  }, [huePhase]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = huePhase;
-  }, [huePhase]);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setHuePhase('brown');
-      document.documentElement.dataset.theme = 'brown';
-      return;
-    }
-    let cancelled = false;
-    let tid;
-    const scheduleNext = () => {
-      tid = window.setTimeout(() => {
-        if (cancelled) return;
-        setHuePhase((p) => {
-          if (p === 'brown') return 'green';
-          if (p === 'green') return 'slate';
-          return 'brown';
-        });
-        scheduleNext();
-      }, 14000 + Math.random() * 4000);
-    };
-    scheduleNext();
-    return () => {
-      cancelled = true;
-      window.clearTimeout(tid);
-    };
-  }, [reducedMotion]);
-
-  const designCardHoverShadow = themeMotion.designCardHoverShadow;
+  const designCardHoverShadow = SITE_THEME.designCardHoverShadow;
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -1077,7 +1216,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (reducedMotion || pointerCoarse) return;
+    if (reducedMotion || pointerCoarse || !animating) return;
     const handleMouseMove = (e) => {
       mouseX.set(e.clientX - 200);
       mouseY.set(e.clientY - 200);
@@ -1086,7 +1225,7 @@ const App = () => {
     return () => window.removeEventListener("mousemove", handleMouseMove);
     // mouseX / mouseY are stable MotionValue instances from useMotionValue
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reducedMotion, pointerCoarse]);
+  }, [reducedMotion, pointerCoarse, animating]);
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -1136,34 +1275,34 @@ const App = () => {
 
   const services = [
     {
-      title: "Mobile (Flutter & React Native)",
-      icon: <Smartphone size={32} strokeWidth={1.5} />,
-      desc: "Cross-platform iOS & Android apps with strong performance, offline patterns, and App Store / Play Store delivery—including TestFlight, certificates, and review cycles.",
+      title: 'Mobile development',
+      icon: Smartphone,
+      desc: 'Cross-platform iOS and Android in Flutter—one codebase, polished UX, and builds ready for store submission.',
     },
     {
-      title: "Frontend (Next.js & React)",
-      icon: <Layout size={32} strokeWidth={1.5} />,
-      desc: "Reusable UI, dashboards, and responsive flows in Next.js and React—routing, server and client components, and performance-minded delivery alongside designers and backend teams.",
+      title: 'Web interfaces',
+      icon: Layout,
+      desc: 'Dashboards, marketing sites, and admin tools in Next.js and React, aligned with the mobile product experience.',
     },
     {
-      title: "Backend & data",
-      icon: <Server size={32} strokeWidth={1.5} />,
-      desc: "Node.js and Django services, MongoDB, and Firebase (auth, storage, messaging, dynamic links) with clear APIs and production-minded data modeling.",
+      title: 'Backend & APIs',
+      icon: Server,
+      desc: 'Auth, data models, and integrations on Firebase, MongoDB, and Node or Django—structured for production load.',
     },
     {
-      title: "Product ownership",
-      icon: <Cpu size={32} strokeWidth={1.5} />,
-      desc: "End-to-end ownership: architecture, UI/UX implementation, testing, deployment, and long-term maintenance—translating founder requirements into reliable systems.",
+      title: 'Technical ownership',
+      icon: Cpu,
+      desc: 'Architecture, implementation, QA, and release planning from first prototype through post-launch maintenance.',
     },
     {
-      title: "App Store & release ops",
-      icon: <Briefcase size={32} strokeWidth={1.5} />,
-      desc: "Hands-on with App Store Connect, provisioning, bundle IDs, beta distribution, and staying aligned with Apple review guidelines for live apps.",
+      title: 'Store distribution',
+      icon: Briefcase,
+      desc: 'Certificates, provisioning, review prep, TestFlight, and Play Console—the full path from build to live.',
     },
     {
-      title: "Tools & collaboration",
-      icon: <Globe size={32} strokeWidth={1.5} />,
-      desc: "Git, GitHub, CI/CD basics, Figma, Jira, Trello, and Notion—comfortable with international clients, async communication, and structured delivery.",
+      title: 'Remote collaboration',
+      icon: Globe,
+      desc: 'Async updates, clear documentation, and Figma-to-code handoffs for founders and teams across time zones.',
     },
   ];
 
@@ -1174,7 +1313,7 @@ const App = () => {
       meta: "Garage Management · Flutter · Aug 2025 – Present · Pre-production",
       role: "Sole developer & technical owner",
       summary:
-        "End-to-end garage management for workshops: quotations, invoices, and job cards linked to vehicle registration, plus a task diary that routes work to technicians and ramps. Technician flows cover assigned jobs, check-in/out, breaks, and time-on-task. Admin covers staff, inventory, workshop resources, and templates so teams can spin up jobs quickly. Built in Flutter with Riverpod and GoRouter; finance modules are still in active development ahead of wider production rollout.",
+        "A workshop tool taking shape—quotations, job cards, and technician diaries in one place so garages spend less time chasing paper and more time on the floor.",
       desc: "Full-scale garage management for automotive service centers: quotations, invoices, job cards tied to vehicle registration, technician time tracking, admin configuration, and finance (in progress)—built in Flutter with modular architecture.",
       highlights: [
         "Sales workflows: quotations, invoices, job cards (VRM-linked), task diary assigning jobs to technicians and ramps.",
@@ -1184,6 +1323,7 @@ const App = () => {
       ],
       image: gms1,
       gallery: GMS_GALLERY,
+      previewFrame: 'web',
       href: "#",
     },
     {
@@ -1192,7 +1332,7 @@ const App = () => {
       meta: "Social decision-making · Mobile · 2025 · Concept",
       role: "Product design & mobile UX",
       summary:
-        "A group decision app for nights when nobody can agree: create or join a room, swipe on movies, restaurants, or activities, and surface matches the whole group liked. Rooms support invites, mood and filter setup, real-time presence, and in-room chat so plans move from “maybe” to a shortlist fast.",
+        "For nights when nobody can agree—swipe on movies, food, or plans with friends until the group finds a match worth leaving the couch for.",
       desc: "Social swipe-and-match app for groups choosing what to watch, eat, or do together—room lobbies, category filters, Tinder-style voting, group matches, chat, and profile stats in a dark neon UI built for friends deciding together.",
       highlights: [
         "Multi-category rooms (movies, restaurants, activities) with mood presets, genre/platform filters, and shareable room codes.",
@@ -1200,8 +1340,10 @@ const App = () => {
         "Group match celebrations, watchlist/history, and integrated chat to lock in plans without leaving the app.",
       ],
       image: picksy2,
+      previewImage: picksy3,
       gallery: PICKSY_GALLERY,
       video: picksyVideo,
+      previewFrame: 'mobile',
       href: "#",
     },
     {
@@ -1210,7 +1352,7 @@ const App = () => {
       meta: "AI job search · Next.js · 2026 · Live",
       role: "Founder & full-stack developer",
       summary:
-        "Resume-matched job discovery with compatibility scores on every listing, plus ATS-ready application kits—tailored resume, cover letter, and cold email—from one workflow. Users upload a resume, filter roles by workplace, level, and salary, then generate personalised outreach so applications are tuned to each role instead of generic copy-paste.",
+        "A job search companion that reads your resume, scores each role, and helps you send applications that actually sound like you—not a template.",
       desc: "AI-powered job hunt platform: resume-tailored search with per-role compatibility scores, multi-source job aggregation, LinkedIn profile analysis, and one-click ATS application kits—landing, dashboard, and optimiser flows deployed on Firebase.",
       highlights: [
         "Job search dashboard with saved profile, skill tags, and filters for remote/hybrid, experience level, salary, and job sources (JSearch, Jooble, Adzuna).",
@@ -1219,6 +1361,7 @@ const App = () => {
       ],
       image: nextoffer1,
       gallery: NEXTOFFER_GALLERY,
+      previewFrame: 'web',
       href: "https://nextoffer-ai.web.app",
     },
     {
@@ -1227,7 +1370,7 @@ const App = () => {
       meta: "Mall rewards & discovery · Flutter · Nov 2021 – Present · Live",
       role: "Lead mobile developer",
       summary:
-        "Consumer-facing mall discovery and rewards for multiple malls in South Africa: authentication, mall and store browsing, regional offers, and an offline-first layer using local SQL with sync to remote data. Users earn points when they enter participating malls and can redeem rewards through partner vouchers. The app shares scalable architecture patterns with UJ WayFinder, with differences driven by configuration rather than a forked codebase.",
+        "Mall discovery and rewards across South Africa—browse stores, collect points when you walk in, and redeem offers even when the signal drops.",
       desc: "Consumer mall app used across malls in South Africa: discovery, offers, and a location-based rewards system with offline-first local storage.",
       highlights: [
         "Authentication, mall selection, stores, and regional offers.",
@@ -1236,6 +1379,7 @@ const App = () => {
       ],
       image: waya1,
       gallery: WAYA_WAYA_GALLERY,
+      previewFrame: 'mobile',
       href: "#",
     },
     {
@@ -1244,7 +1388,7 @@ const App = () => {
       meta: "Campus navigation · Flutter · Nov 2021 – Present · Live",
       role: "Lead mobile developer",
       summary:
-        "Campus wayfinding for universities across South Africa: students pick a college or university, then use in-app maps and routes to reach lecture halls, labs, and venues. BLE beacons support proximity-aware indoor guidance where GPS alone is not enough. The product reuses the same Flutter foundation as Waya Waya, optimized through configuration so both apps stay maintainable while serving different domains.",
+        "Campus wayfinding for students—pick your university, follow indoor routes, and let beacons nudge you when GPS alone isn't enough.",
       desc: "Wayfinding for university campuses in South Africa: college selection, maps, routes, and BLE proximity for accurate indoor guidance.",
       highlights: [
         "Map rendering and indoor navigation logic with BLE beacon integration.",
@@ -1252,6 +1396,7 @@ const App = () => {
       ],
       image: uj1,
       gallery: UJ_WAYFINDER_GALLERY,
+      previewFrame: 'mobile',
       href: "#",
     },
     {
@@ -1260,7 +1405,7 @@ const App = () => {
       meta: "Women’s safety · Flutter + Firebase · Mid 2023 – Mid 2025 · Live",
       role: "Lead developer",
       summary:
-        "Real-time safety and community assistance: users can broadcast distress to nearby verified responders, with acceptance flows that create private signal groups and history for follow-up. A community module supports posts, messaging, and location-aware discovery of people and content. Backend is Firebase (Firestore, auth, messaging) with deliberately separated collections for signals, chats, community, and profiles. Push notifications cover emergencies, signal updates, and community activity.",
+        "A safety network for real moments—broadcast distress to verified people nearby, build private signal groups, and stay connected through community when it matters.",
       desc: "Real-time safety app: distress signals to nearby verified users, private signal groups, community posts, messaging, and push notifications—with scalable Firestore modeling.",
       highlights: [
         "Emergency broadcast, acceptance flows, and signal history for accountability.",
@@ -1269,6 +1414,7 @@ const App = () => {
       ],
       image: sa1,
       gallery: SAFE_AGAIN_GALLERY,
+      previewFrame: 'mobile',
       href: "#",
     },
     {
@@ -1277,7 +1423,7 @@ const App = () => {
       meta: "Business operations platform",
       role: "Product and engineering execution",
       summary:
-        "A business operations platform focused on reducing manual coordination across daily workflows. The core problem was fragmented updates and delayed decisions when teams tracked requests over calls and chats. The app brings requests, status updates, and approvals into one place so teams can see work state quickly and move tasks forward without back-and-forth.",
+        "Operations software for teams tired of chasing updates in calls and chats—one place to see requests, status, and who owns what next.",
       desc: "Operations software that centralizes request tracking, status visibility, and approval steps. It solves fragmented communication and unclear ownership by giving teams one source of truth for day-to-day execution.",
       highlights: [
         "Unified request intake and status tracking so teams stop juggling calls, chat threads, and spreadsheets.",
@@ -1286,6 +1432,7 @@ const App = () => {
       ],
       image: nanda1,
       gallery: NANDA_GALLERY,
+      previewFrame: 'web',
       href: "#",
     },
   ];
@@ -1294,45 +1441,54 @@ const App = () => {
     () => [
       {
         name: "OSAC GMS",
-        desc: "Garage operations UI: job cards, sales staff workflows, and technician views—web-first Flutter targeting workshops that need clarity under daily load.",
+        desc: "Garage operations under daily pressure—job cards, sales flows, and technician views designed to stay clear when the workshop is loud.",
         image: gms1,
         gallery: GMS_GALLERY,
-        accent: themeMotion.designAccent1,
+        accent: SITE_THEME.designAccent1,
         href: "#",
       },
       {
         name: "Safe Again",
-        desc: "Safety-first UX: emergency signal paths, verified-user matching, and community surfaces designed for speed and trust under stress.",
+        desc: "Safety UX built for speed—emergency paths, verified matching, and community surfaces that stay calm when stress is high.",
         image: sa1,
         gallery: SAFE_AGAIN_GALLERY,
+        previewFrame: 'mobile',
         accent: "#3f3f46",
         href: "#",
       },
       {
         name: "Mobiurja",
-        desc: "On-demand petrol delivery (Chirpn IT Solutions): contributed to frontend and mobile flows—user journeys, dashboards, and performance-minded UI for a live fuel-delivery platform.",
+        desc: "On-demand fuel delivery—I helped shape mobile and web flows so ordering petrol feels as simple as ordering dinner.",
         image: mobiurja1,
+        previewFrame: 'mobile',
         accent: "#1e3a5f",
         href: "#",
       },
       {
         name: "Puri",
-        desc: "Medical device companion app: capture and review diagnostic strips (urinalysis / rapid tests), step-based flows (Select → Add → Review), and clear result panels for clinical readability on mobile.",
+        desc: "A clinical companion app—capture test strips, walk through clear steps, and read results without squinting at a tiny screen.",
         image: puri1,
         gallery: PURI_GALLERY,
+        previewFrame: 'mobile',
         accent: "#1d4ed8",
         href: "#",
       },
       {
         name: "Woopdo",
-        desc: "Real-world connection app: guided partner activities (“woops”), prompts, and social discovery—mobile UI and flows for timed, in-person experiences in beta.",
+        desc: "An app for real-world connection—guided activities, prompts, and discovery for people who want to meet offline, not just swipe.",
         image: woopdo1,
         gallery: WOOPDO_GALLERY,
+        previewFrame: 'mobile',
         accent: "#0f766e",
         href: "#",
       },
     ],
-    [themeMotion.designAccent1]
+    []
+  );
+
+  const journeyDesigns = useMemo(
+    () => creativeDesigns.filter((d) => !projects.some((p) => p.name === d.name)),
+    [creativeDesigns, projects]
   );
 
   return (
@@ -1347,421 +1503,312 @@ const App = () => {
         className="relative outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/35 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-50"
       >
       {/* Desktop / fine pointer: glow follows cursor */}
-      {!reducedMotion && !pointerCoarse && (
+      {!reducedMotion && animating && !pointerCoarse && (
         <motion.div
           style={{ x: cursorX, y: cursorY }}
-          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-mocha-500/14"
+          className="pointer-events-none fixed top-0 left-0 z-[1] h-[400px] w-[400px] rounded-full blur-[100px] bg-accent/10"
           aria-hidden
         />
       )}
       {/* Touch / coarse pointer: random corner-to-corner drift */}
-      {!reducedMotion && pointerCoarse && <CoarsePointerAmbientGlow />}
+      {!reducedMotion && animating && pointerCoarse && <CoarsePointerAmbientGlow />}
       {/* Reduced motion: single static glow */}
       {reducedMotion && (
         <div
-          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(50vw,180px)] w-[min(50vw,180px)] rounded-full blur-[52px] bg-mocha-500/26 md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] md:blur-[88px] md:bg-mocha-500/10"
+          className="pointer-events-none fixed left-[10%] top-[16%] z-[1] h-[min(50vw,180px)] w-[min(50vw,180px)] rounded-full blur-[52px] bg-accent/14 md:left-[15%] md:top-[18%] md:h-[360px] md:w-[360px] md:blur-[88px] md:bg-accent/8"
           aria-hidden
         />
       )}
 
       {/* Hero */}
-      <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-16 px-6 text-center relative z-10">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-mocha-500 mb-6">
-          <MapPin size={14} /><span className="text-xs font-medium">India | Open to Remote</span>
-        </motion.div>
-        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="font-service text-5xl md:text-8xl font-bold max-w-5xl mb-4 tracking-tight leading-[1] text-mocha-800">
-          I'm Satyam Tiwari <br /> Flutter Developer
-        </motion.h1>
-        <p className="text-mocha-600 max-w-2xl text-sm md:text-base mb-10 leading-relaxed">
-          Product-focused mobile and frontend developer with ~5 years total experience—1.5 years full-time product work and 3.5+ years as an independent freelancer shipping apps customers use every day, from UI through App Store deployment and long-term support.
-        </p>
-        <div className="flex gap-4">
-          <a href="#contact" className="btn-primary-sm">
-            Get in touch
-          </a>
-          <a href="#projects" className="bg-white border border-stone-300/90 text-mocha-800 px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-stone-50 active:scale-95">See my work</a>
+      <section id="home" className="min-h-screen flex flex-col items-center justify-center pt-20 pb-12 px-6 relative z-10">
+        <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-12 lg:gap-16 xl:gap-20 items-center">
+          <div className="order-2 lg:order-1 text-center lg:text-left">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={animating ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+              className="flex items-center justify-center lg:justify-start gap-2 text-mocha-500 mb-6"
+            >
+              <span className="text-xs font-medium">Available for enquiries</span>
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={animating ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ delay: animating ? 0.1 : 0 }}
+              className="font-service text-5xl md:text-6xl xl:text-7xl font-bold max-w-3xl mb-4 tracking-tight leading-[1.02] text-mocha-800 mx-auto lg:mx-0"
+            >
+              I build <span className="text-accent">mobile apps</span> people use every day.
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={animating ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ delay: animating ? 0.18 : 0 }}
+              className="text-mocha-600 max-w-xl text-sm md:text-base mb-10 leading-relaxed mx-auto lg:mx-0"
+            >
+              I&apos;m <strong className="font-semibold text-mocha-800">Satyam</strong> — a developer who turns quiet ideas into apps people actually keep on their home screen. Five years in, I&apos;m still most alive somewhere between a sketch and a ship date.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={animating ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+              transition={{ delay: animating ? 0.26 : 0 }}
+              className="flex flex-wrap gap-4 justify-center lg:justify-start"
+            >
+              <a href="#work" className="btn-primary-sm">
+                See my work
+              </a>
+              <a href="#contact" className="bg-white border border-mocha-200 text-mocha-800 px-7 py-2.5 rounded-md text-xs font-bold transition-transform hover:bg-mocha-100 active:scale-95">
+                Say hello
+              </a>
+            </motion.div>
+          </div>
+
+          <div className="order-1 lg:order-2 flex justify-center lg:justify-end lg:pr-10 w-full">
+            <HeroPhone />
+          </div>
         </div>
-        <HeroTechMarquee fadeRgb={themeMotion.marqueeFadeRgb} />
+        <HeroTechMarquee fadeRgb={SITE_THEME.marqueeFadeRgb} />
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 px-6 border-t border-mocha-200/80 relative z-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <section id="services" className="py-24 md:py-28 px-6 border-t border-mocha-200/80 relative z-10">
+        <div className="max-w-7xl mx-auto">
           <motion.div
+            className="mb-14 md:mb-16 max-w-3xl"
             variants={sectionHeadStaggerVariants}
-            initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'visible'}
-            viewport={{ once: true, amount: 0.4 }}
+            {...scrollRevealProps(animating, reducedMotion)}
           >
+            <motion.p
+              variants={sectionLineRevealVariants}
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500 mb-4"
+            >
+              Approach
+            </motion.p>
             <motion.h2
               variants={sectionLineRevealVariants}
-              className="font-service text-5xl md:text-6xl font-bold tracking-tight mb-8 text-mocha-800"
+              className="font-service text-4xl sm:text-5xl font-bold tracking-tight text-mocha-800 leading-[1.08] mb-5"
             >
-              My Services
+              From architecture to App Store
             </motion.h2>
             <motion.p
               variants={sectionLineRevealVariants}
-              className="text-mocha-600 max-w-md text-sm mb-8 leading-relaxed"
+              className="text-mocha-600 text-sm md:text-base leading-relaxed"
             >
-              Aligned with how I work in production: mobile-first delivery, web frontends, backend integrations, Firebase/Mongo, and owning the full lifecycle with founders and stakeholders.
+              I work as a hands-on product engineer—owning mobile, web, and backend layers so founders and teams can move from concept to production without gaps between design, code, and release.
             </motion.p>
           </motion.div>
+
           <motion.div
-            className="space-y-0"
-            variants={sectionListStaggerVariants}
-            initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'visible'}
-            viewport={{ once: true, amount: 0.2 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5"
+            variants={sectionCardStaggerVariants}
+            {...scrollRevealProps(animating, reducedMotion, {
+              once: true,
+              amount: 0.12,
+              margin: '0px 0px -48px 0px',
+            })}
           >
-            {services.map((s, i) => (
-              <motion.div
-                key={i}
-                variants={sectionListItemFadeUpVariants}
-                className="border-t border-mocha-200 py-8 flex gap-7 items-start hover:bg-mocha-200/50 px-4 transition-all group"
-                onMouseEnter={() => setServiceHoverIndex(i)}
-                onMouseLeave={() => setServiceHoverIndex(null)}
-              >
-                <motion.div
-                  className="text-mocha-600 shrink-0 pt-0.5 inline-flex origin-center will-change-transform"
-                  animate={{
-                    rotate:
-                      !reducedMotion && serviceHoverIndex === i ? 1080 : 0,
-                  }}
-                  transition={
-                    !reducedMotion && serviceHoverIndex === i
-                      ? {
-                          type: 'spring',
-                          stiffness: 280,
-                          damping: 16,
-                          mass: 0.55,
-                        }
-                      : { duration: 0 }
-                  }
+            {services.map((service, i) => {
+              const Icon = service.icon;
+              return (
+                <motion.article
+                  key={service.title}
+                  variants={sectionCardItemVariants}
+                  className="approach-card"
                 >
-                  {s.icon}
-                </motion.div>
-                <div>
-                  <h3 className="font-service text-xl md:text-2xl font-bold tracking-tight mb-2 text-mocha-800">{s.title}</h3>
-                  <p className="text-mocha-600 text-xs md:text-sm leading-relaxed">{s.desc}</p>
+                  <div className="approach-card__head">
+                    <span className="approach-card__index" aria-hidden>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="approach-card__icon" aria-hidden>
+                      <Icon size={18} strokeWidth={1.75} />
+                    </span>
+                  </div>
+                  <h3 className="approach-card__title">{service.title}</h3>
+                  <p className="approach-card__desc">{service.desc}</p>
+                </motion.article>
+              );
+            })}
+          </motion.div>
+        </div>
+      </section>
+
+      <section id="work" className="py-24 md:py-28 px-6 relative z-10 border-t border-mocha-200/80">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="mb-14 md:mb-16 max-w-3xl"
+            variants={sectionHeadStaggerVariants}
+            {...scrollRevealProps(animating, reducedMotion)}
+          >
+            <motion.p
+              variants={sectionLineRevealVariants}
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500 mb-4"
+            >
+              Selected work
+            </motion.p>
+            <motion.h2
+              variants={sectionLineRevealVariants}
+              className="font-service text-4xl sm:text-5xl font-bold tracking-tight text-mocha-800 leading-[1.08] mb-5"
+            >
+              Products shipped end to end
+            </motion.h2>
+            <motion.p
+              variants={sectionLineRevealVariants}
+              className="text-mocha-600 text-sm md:text-base leading-relaxed"
+            >
+              Cross-platform apps for retail, campus navigation, safety, and founder-led products—owned from system design and UI through store release and ongoing maintenance.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5"
+            variants={sectionCardStaggerVariants}
+            {...scrollRevealProps(animating, reducedMotion, {
+              once: true,
+              amount: 0.08,
+              margin: '0px 0px -48px 0px',
+            })}
+          >
+            {projects.map((project, i) => (
+              <motion.article key={project.id} variants={sectionCardItemVariants} className="work-project-card">
+                <WorkProjectPreview
+                  src={project.previewImage ?? project.image}
+                  alt={project.name}
+                  frame={project.previewFrame ?? 'mobile'}
+                />
+                <div className="work-project-card__body">
+                  <div className="work-project-card__meta">
+                    <span className="work-project-card__category">{projectCategory(project.meta)}</span>
+                    <ProjectStatusBadge meta={project.meta} />
+                  </div>
+                  <h3 className="work-project-card__title">{project.name}</h3>
+                  <p className="work-project-card__role">{project.role}</p>
+                  <p className="work-project-card__summary">{project.summary}</p>
+                  <div className="work-project-card__actions">
+                    {project.href && project.href !== '#' && (
+                      <a
+                        href={project.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="work-project-card__link"
+                        onClick={() =>
+                          trackEvent('click_outbound', {
+                            link_url: project.href,
+                            link_text: project.name,
+                          })
+                        }
+                      >
+                        Live site
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjectDetailIndex(i);
+                        trackEvent('project_detail_open', { project_name: project.name });
+                      }}
+                      className="work-project-card__cta"
+                    >
+                      Case study
+                      <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                    </button>
+                  </div>
                 </div>
-              </motion.div>
+              </motion.article>
             ))}
           </motion.div>
-        </div>
-      </section>
 
-      <section id="projects" className="bg-mocha-100 py-24 px-6 relative z-10 border-t border-mocha-200/70">
-        <div className="max-w-7xl mx-auto flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16 xl:gap-20">
-          <motion.div
-            className="order-1 w-full shrink-0 lg:order-2 lg:w-[min(62%,760px)] xl:w-[min(64%,880px)]"
-            variants={sectionFadeUpVariants}
-            initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'visible'}
-            viewport={{ once: true, amount: 0.28 }}
-          >
-            <motion.div
-              className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl lg:mx-0 lg:max-w-none"
-              style={{
-                aspectRatio:
-                  projects[activeProject].gallery?.length || projects[activeProject].video
-                    ? projectGalleryAspect
-                    : '16 / 9',
-                maxHeight: 'min(64vh, calc(100dvh - 5.5rem))',
-              }}
-            >
-              {projects[activeProject].gallery?.length || projects[activeProject].video ? (
-                <ProjectPreviewSlideshow
-                  key={activeProject}
-                  images={projects[activeProject].gallery ?? []}
-                  video={projects[activeProject].video}
-                  videoPoster={projects[activeProject].image}
-                  projectName={projects[activeProject].name}
-                  reducedMotion={reducedMotion}
-                  onAspectRatioChange={setProjectGalleryAspect}
-                />
-              ) : (
-                <motion.img
-                  key={activeProject}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                  src={projects[activeProject].image}
-                  alt={projects[activeProject].name}
-                  className="h-full w-full min-h-0 rounded-2xl object-contain object-center"
-                  loading="eager"
-                />
-              )}
-            </motion.div>
-          </motion.div>
+          {journeyDesigns.length > 0 && (
+            <div className="mt-20 md:mt-24 pt-14 md:pt-16 border-t border-mocha-200/80">
+              <div className="mb-10 md:mb-12 max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-mocha-500 mb-3">
+                  Additional contributions
+                </p>
+                <p className="text-sm md:text-base text-mocha-600 leading-relaxed">
+                  Product and interface work with teams across healthcare, on-demand delivery, and social experiences.
+                </p>
+              </div>
 
-          <div className="order-2 min-w-0 flex-1 lg:order-1 lg:max-w-xl">
-            <motion.h2
-              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-mocha-800 leading-[1.1] mb-6 md:mb-8"
-              variants={sectionHeadStaggerVariants}
-              initial={reducedMotion ? false : 'hidden'}
-              whileInView={reducedMotion ? undefined : 'visible'}
-              viewport={{ once: true, amount: 0.45 }}
-            >
-              <motion.span className="block" variants={sectionLineRevealVariants}>
-                Selected projects &amp;
-              </motion.span>
-              <motion.span className="block" variants={sectionLineRevealVariants}>
-                shipped apps
-              </motion.span>
-            </motion.h2>
-            <motion.div
-              className="pr-0 lg:pr-2"
-              variants={sectionListStaggerVariants}
-              initial={reducedMotion ? false : 'hidden'}
-              whileInView={reducedMotion ? undefined : 'visible'}
-              viewport={{ once: true, amount: 0.12, margin: '0px 0px -32px 0px' }}
-            >
-              {projects.map((p, i) => (
-                <motion.div key={p.id} variants={sectionProjectRowVariants}>
-                  <motion.div
-                    className="rounded-lg px-2"
-                    initial={false}
-                    whileHover={{ backgroundColor: themeMotion.rowHoverBg }}
-                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5"
+                variants={sectionCardStaggerVariants}
+                {...scrollRevealProps(animating, reducedMotion, {
+                  once: true,
+                  amount: 0.08,
+                  margin: '0px 0px -48px 0px',
+                })}
+              >
+                {journeyDesigns.map((design) => (
+                  <motion.article
+                    key={design.name}
+                    variants={sectionCardItemVariants}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${design.name} — open full-size images`}
+                    onClick={() =>
+                      setDesignLightbox({ title: design.name, images: designCardSlides(design) })
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setDesignLightbox({ title: design.name, images: designCardSlides(design) });
+                      }
+                    }}
+                    className="work-project-card work-project-card--interactive"
                   >
-                    <div className="py-2 md:py-2.5 px-1">
-                      <motion.button
-                        type="button"
-                        onClick={() => {
-                          setActiveProject(i);
-                          trackEvent('project_select', { project_name: p.name });
-                        }}
-                        aria-expanded={activeProject === i}
-                        aria-controls={`project-panel-${p.id}`}
-                        id={`project-trigger-${p.id}`}
-                        className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/35 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-100 rounded-sm"
-                        whileHover={{ x: 4 }}
-                        whileTap={{ scale: 0.995 }}
-                        transition={{ type: "spring", stiffness: 420, damping: 28 }}
-                      >
-                        <h3 className="font-service text-lg md:text-xl font-medium tracking-tight text-mocha-800 leading-snug">
-                          {p.name}
-                        </h3>
-                        <span className="sr-only">{p.meta}</span>
-                      </motion.button>
-                      <AnimatePresence initial={false}>
-                        {activeProject === i && (
-                          <motion.div
-                            id={`project-panel-${p.id}`}
-                            role="region"
-                            aria-labelledby={`project-trigger-${p.id}`}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-                            className="overflow-hidden"
-                          >
-                            <p className="mt-2 max-w-lg text-sm leading-relaxed text-mocha-600">{p.summary}</p>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProjectDetailIndex(i);
-                                trackEvent('project_detail_open', { project_name: p.name });
-                              }}
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-mocha-600 hover:opacity-90 transition-opacity"
-                            >
-                              Learn more
-                              <ArrowRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                    <WorkProjectPreview
+                      src={design.image}
+                      alt={design.name}
+                      frame={design.previewFrame ?? 'mobile'}
+                    />
+                    <div className="work-project-card__body">
+                      <h3 className="work-project-card__title">{design.name}</h3>
+                      <p className="work-project-card__summary">{design.desc}</p>
+                      <span className="work-project-card__cta work-project-card__cta--text">
+                        View screens
+                        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                      </span>
                     </div>
-                  </motion.div>
-                  <div
-                    className="h-px w-full shrink-0 bg-mocha-300/90"
-                    role="presentation"
-                    aria-hidden
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <section id="designs" className="bg-mocha-150 py-24 border-t border-mocha-200/80 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          {reducedMotion ? (
-            <h2 className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-mocha-800 leading-[1.12]">
-              More interfaces &amp;
-              <br />
-              team-era builds
-            </h2>
-          ) : (
-            <motion.h2
-              className="font-service text-4xl sm:text-5xl md:text-[2.75rem] font-bold tracking-tight text-mocha-800 leading-[1.12]"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.45 }}
-              variants={sectionHeadStaggerVariants}
-            >
-              <motion.span className="block" variants={sectionLineRevealVariants}>
-                More interfaces &amp;
-              </motion.span>
-              <motion.span className="block" variants={sectionLineRevealVariants}>
-                team-era builds
-              </motion.span>
-            </motion.h2>
-          )}
-
-          {reducedMotion ? (
-            <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-              {creativeDesigns.map((d) => (
-                <article
-                  key={d.name}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${d.name} — open full-size images`}
-                  onClick={() =>
-                    setDesignLightbox({ title: d.name, images: designCardSlides(d) })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setDesignLightbox({ title: d.name, images: designCardSlides(d) });
-                    }
-                  }}
-                  className="group flex cursor-pointer flex-col rounded-lg transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1 motion-reduce:hover:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-150"
-                >
-                  <DesignCardPreview
-                    design={d}
-                    reducedMotion={reducedMotion}
-                    designCardHoverShadow={designCardHoverShadow}
-                  />
-                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name}</h3>
-                  <p className="text-mocha-600 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
-                  <a
-                    href={d.href}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (d.href === '#') e.preventDefault();
-                    }}
-                    className="inline-flex items-center gap-1 text-mocha-600 text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
-                  >
-                    Learn more
-                    <ArrowRight
-                      className="w-4 h-4 shrink-0 transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                  </a>
-                </article>
-              ))}
+                  </motion.article>
+                ))}
+              </motion.div>
             </div>
-          ) : (
-            <motion.div
-              className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.12, margin: '0px 0px -48px 0px' }}
-              variants={sectionCardStaggerVariants}
-            >
-              {creativeDesigns.map((d) => (
-                <motion.article
-                  key={d.name}
-                  variants={sectionCardItemVariants}
-                  whileHover={{ y: -6 }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 26 }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${d.name} — open full-size images`}
-                  onClick={() =>
-                    setDesignLightbox({ title: d.name, images: designCardSlides(d) })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setDesignLightbox({ title: d.name, images: designCardSlides(d) });
-                    }
-                  }}
-                  className="group flex cursor-pointer flex-col will-change-transform rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-mocha-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-mocha-150"
-                >
-                  <DesignCardPreview
-                    design={d}
-                    reducedMotion={reducedMotion}
-                    designCardHoverShadow={designCardHoverShadow}
-                  />
-                  <h3 className="font-service text-lg sm:text-xl font-bold tracking-tight text-mocha-800 mt-5">{d.name}</h3>
-                  <p className="text-mocha-600 text-sm leading-relaxed mt-2 flex-1">{d.desc}</p>
-                  <a
-                    href={d.href}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (d.href === '#') e.preventDefault();
-                    }}
-                    className="inline-flex items-center gap-1 text-mocha-600 text-sm font-medium mt-4 transition-[opacity,gap] duration-300 hover:opacity-90 group-hover:gap-2"
-                  >
-                    Learn more
-                    <ArrowRight
-                      className="w-4 h-4 shrink-0 transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                  </a>
-                </motion.article>
-              ))}
-            </motion.div>
           )}
         </div>
       </section>
 
       {/* About */}
       <section id="about" className="py-24 px-6 border-t border-mocha-200/80 bg-mocha-50 relative z-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,480px)_1fr] gap-16 items-start">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,300px)_1fr] gap-12 lg:gap-16 items-start">
           <motion.div
-            className="relative mx-auto flex w-full max-w-[min(100%,440px)] justify-center lg:mx-0 lg:max-w-none lg:justify-start"
+            className="relative mx-auto flex w-full max-w-[min(100%,280px)] justify-center lg:mx-0 lg:max-w-none lg:justify-start"
             variants={sectionFadeUpVariants}
-            initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'visible'}
-            viewport={{ once: true, amount: 0.35 }}
+            {...scrollRevealProps(animating, reducedMotion, { once: true, amount: 0.35 })}
           >
-            <div className="relative aspect-square w-full max-w-[360px] sm:max-w-[400px] md:max-w-[440px] rounded-full ring-2 ring-mocha-600 ring-offset-4 ring-offset-mocha-50">
-              <div className="h-full w-full overflow-hidden rounded-full">
-                <img
-                  src={aboutPortrait}
-                  alt="Satyam Tiwari"
-                  className="h-full w-full object-cover object-center select-none"
-                  decoding="async"
-                />
-              </div>
-            </div>
+            <AboutPortrait src={aboutPortrait} alt="Satyam Tiwari" animating={animating} />
           </motion.div>
 
           <motion.div
             className="max-w-3xl flex flex-col gap-8"
             variants={sectionHeadStaggerVariants}
-            initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'visible'}
-            viewport={{ once: true, amount: 0.28 }}
+            {...scrollRevealProps(animating, reducedMotion, { once: true, amount: 0.28 })}
           >
             <motion.h2
               variants={sectionLineRevealVariants}
               className="font-service text-3xl md:text-5xl font-bold leading-tight text-mocha-800"
             >
-              Satyam Tiwari — Flutter developer with a product-owner lens
+              The path so far
             </motion.h2>
             <motion.div
               variants={sectionListStaggerVariants}
               className="space-y-5 text-mocha-600 text-sm md:text-base leading-relaxed"
             >
               <motion.p variants={sectionListItemFadeUpVariants}>
-                I&apos;m a product-focused mobile and frontend developer with <span className="font-semibold text-mocha-600">5 years of total experience</span>
-                : about <span className="font-semibold text-mocha-600">1.5 years</span> in full-time product teams and{' '}
-                <span className="font-semibold text-mocha-600">3.5+ years</span> as an independent freelancer shipping apps that stay in production.
+                I don&apos;t remember the first app I tried to build—I remember not wanting to stop. What began as late-night tinkering turned into a rhythm: ship something real, watch how people use it, then make it better.
               </motion.p>
               <motion.p variants={sectionListItemFadeUpVariants}>
-                I&apos;m used to owning products end to end—UI/UX implementation, architecture, testing, App Store and Play releases, compliance, and post-launch support—
-                and working directly with founders to turn requirements into reliable systems.
+                That&apos;s carried me through mall apps across South Africa, a safety product for moments that can&apos;t wait, and long stretches beside founders as a freelancer—from the first sketch through App Store review to the quieter months of keeping an app steady in the wild.
               </motion.p>
               <motion.p variants={sectionListItemFadeUpVariants}>
-                <span className="text-mocha-800 font-medium">App Store highlight:</span> four live mobile applications in production, with hands-on experience in App Store Connect,
-                TestFlight, certificates, provisioning profiles, bundle identifiers, and the review process.
+                The apps I admire don&apos;t ask for attention. They simply work—until using them feels obvious. That&apos;s the feeling I chase in every project.
               </motion.p>
             </motion.div>
 
@@ -1772,112 +1819,80 @@ const App = () => {
                 rel="noopener noreferrer"
                 className="btn-primary"
               >
-                Resume
+                Read my resume
               </a>
               <a
                 href={UPWORK_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center bg-white border border-stone-300/90 text-mocha-800 px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-stone-50 transition-colors"
+                className="inline-flex items-center justify-center bg-white border border-mocha-200 text-mocha-800 px-6 py-2.5 text-sm font-semibold rounded-sm hover:bg-mocha-100 transition-colors"
               >
-                Hire me
+                Let&apos;s work together
               </a>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
+      <FaqSection animating={animating} reducedMotion={reducedMotion} />
+
       <section id="contact" className="relative z-10 border-t border-mocha-200/80">
-        <div className="bg-mocha-150">
+        <div className="bg-mocha-150/80">
           <div className="max-w-7xl mx-auto px-6 py-16 md:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 xl:gap-24 items-start">
               <motion.div
                 className="max-w-lg"
                 variants={sectionHeadStaggerVariants}
-                initial={reducedMotion ? false : 'hidden'}
-                whileInView={reducedMotion ? undefined : 'visible'}
-                viewport={{ once: true, amount: 0.35 }}
+                {...scrollRevealProps(animating, reducedMotion, { once: true, amount: 0.35 })}
               >
                 <motion.p variants={sectionLineRevealVariants} className="text-sm text-mocha-600 mb-4">
-                  Contact me
+                  If you&apos;re reading this
                 </motion.p>
                 <motion.h2
                   variants={sectionLineRevealVariants}
                   className="font-service text-5xl sm:text-6xl md:text-7xl font-semibold text-mocha-800 leading-[0.98] tracking-tight mb-6"
                 >
-                  Get in touch
+                  Let&apos;s talk
                 </motion.h2>
                 <motion.p
                   variants={sectionLineRevealVariants}
                   className="text-base md:text-lg text-mocha-600 leading-relaxed mb-6 max-w-md"
                 >
-                  For collaborations, freelance mobile work, or product builds—email or call. I typically reply within one business day.
+                  Have an idea taking shape, or an app that needs a steady hand? I&apos;d love to hear what you&apos;re building. I usually reply within a day.
                 </motion.p>
                 <motion.p variants={sectionFadeUpVariants} className="text-sm text-mocha-600 mb-10">
-                  <a href={EMAIL_MAILTO} className="text-mocha-600 hover:text-mocha-800 hover:underline underline-offset-2">
+                  <a href={EMAIL_MAILTO} className="hover:text-mocha-800 hover:underline underline-offset-2 transition-colors">
                     satyamt5152@gmail.com
                   </a>
                   <span className="mx-2 text-mocha-400/70" aria-hidden>
                     ·
                   </span>
-                  <a href={PHONE_TEL} className="text-mocha-600 hover:text-mocha-800 hover:underline underline-offset-2">
+                  <a href={PHONE_TEL} className="hover:text-mocha-800 hover:underline underline-offset-2 transition-colors">
                     {PHONE_DISPLAY}
                   </a>
                 </motion.p>
-                <motion.div variants={sectionFadeUpVariants} className="flex flex-wrap items-center gap-3">
-                  <a
-                    href={GITHUB_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon-btn"
-                    aria-label="GitHub"
-                  >
-                    <Github size={16} strokeWidth={1.75} />
-                  </a>
-                  <a
-                    href={LINKEDIN_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon-btn"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin size={16} strokeWidth={1.75} />
-                  </a>
-                  <a
-                    href={MEDIUM_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon-btn"
-                    aria-label="Medium"
-                  >
-                    <MediumIcon className="h-4 w-4" />
-                  </a>
-                  <a
-                    href={EMAIL_MAILTO}
-                    className="social-icon-btn"
-                    aria-label="Email"
-                  >
-                    <Mail size={16} strokeWidth={1.75} />
-                  </a>
+                <motion.div variants={sectionFadeUpVariants}>
+                  <SocialLinks />
                 </motion.div>
               </motion.div>
 
               <motion.div
                 className="min-w-0"
                 variants={sectionFadeUpVariants}
-                initial={reducedMotion ? false : 'hidden'}
-                whileInView={reducedMotion ? undefined : 'visible'}
-                viewport={{ once: true, amount: 0.2, margin: '0px 0px -40px 0px' }}
+                {...scrollRevealProps(animating, reducedMotion, {
+                  once: true,
+                  amount: 0.2,
+                  margin: '0px 0px -40px 0px',
+                })}
               >
                 <form onSubmit={handleContactSubmit} className="relative space-y-10">
                   <p className="text-xs leading-relaxed text-mocha-500 max-w-md">
-                    Submissions are delivered through Web3Forms; I use your details only to respond to this message.
+                    Your note comes straight to me—I&apos;ll only use your details to reply.
                   </p>
                   <p className="sr-only" aria-live="polite">
                     {contactFormStatus === 'success' && 'Message sent successfully.'}
                     {contactFormStatus === 'error' && contactFormError}
                   </p>
-                  {/* Honeypot — Web3Forms ignores bots that fill this */}
                   <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
                     <label htmlFor="contact-website">Website</label>
                     <input
@@ -1934,7 +1949,7 @@ const App = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
                     <div>
                       <label htmlFor="contact-phone" className="block text-sm text-mocha-600 mb-2">
-                        Phone Number
+                        Phone number
                       </label>
                       <input
                         id="contact-phone"
@@ -1972,7 +1987,7 @@ const App = () => {
                   </div>
                   <div>
                     <label htmlFor="contact-message" className="block text-sm text-mocha-600 mb-2">
-                      Write your message here
+                      Tell me about your project
                     </label>
                     <textarea
                       id="contact-message"
@@ -2000,12 +2015,8 @@ const App = () => {
                       {contactFormError}
                     </p>
                   )}
-                  <button
-                    type="submit"
-                    disabled={contactFormStatus === 'sending'}
-                    className="btn-primary-md"
-                  >
-                    {contactFormStatus === 'sending' ? 'Sending…' : 'Send Message'}
+                  <button type="submit" disabled={contactFormStatus === 'sending'} className="btn-primary-md">
+                    {contactFormStatus === 'sending' ? 'Sending…' : 'Send a note'}
                   </button>
                 </form>
               </motion.div>
@@ -2013,148 +2024,25 @@ const App = () => {
           </div>
         </div>
 
-        <div className="bg-transparent border-t border-mocha-200/80">
-          <motion.div
-            className="max-w-7xl mx-auto px-6 py-14 md:py-16 lg:px-10"
-            variants={sectionHeadStaggerVariants}
-            initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'visible'}
-            viewport={{ once: true, amount: 0.2 }}
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-0">
-              <motion.div variants={sectionFadeUpVariants} className="lg:pr-12 lg:border-r border-mocha-300/70">
-                <h3 className="font-service text-4xl md:text-5xl font-semibold text-mocha-800 tracking-tight mb-5">
-                  Satyam Tiwari
-                </h3>
-                <p className="text-mocha-600 text-base md:text-lg leading-relaxed mb-8 max-w-md">
-                  Freelance Flutter lead · Chirpn (React / RN / Flutter) alumnus · Apps live on App Store with long-term maintenance.
-                </p>
-                <a
-                  href={RESUME_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary-block"
-                >
-                  Resume
-                </a>
-                <div className="flex flex-wrap items-center gap-3">
-                  <a
-                    href={GITHUB_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon-btn"
-                    aria-label="GitHub"
-                  >
-                    <Github size={16} strokeWidth={1.75} />
-                  </a>
-                  <a
-                    href={LINKEDIN_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon-btn"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin size={16} strokeWidth={1.75} />
-                  </a>
-                  <a
-                    href={MEDIUM_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="social-icon-btn"
-                    aria-label="Medium"
-                  >
-                    <MediumIcon className="h-4 w-4" />
-                  </a>
-                  <a href={EMAIL_MAILTO} className="social-icon-btn" aria-label="Email">
-                    <Mail size={16} strokeWidth={1.75} />
-                  </a>
-                </div>
-              </motion.div>
-
-              <motion.div
-                variants={sectionFadeUpVariants}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-10 lg:gap-8 lg:pl-12"
-              >
-                <div>
-                  <h4 className="font-service text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Contact me</h4>
-                  <div className="space-y-5 text-mocha-600 text-base leading-relaxed">
-                    <p>
-                      <span className="font-semibold text-mocha-800">Email:</span>
-                      <br />
-                      <a
-                        href={EMAIL_MAILTO}
-                        className="text-mocha-600 hover:text-mocha-800 transition-colors underline-offset-2 hover:underline"
-                      >
-                        satyamt5152@gmail.com
-                      </a>
-                    </p>
-                    <p>
-                      <span className="font-semibold text-mocha-800">Phone:</span>
-                      <br />
-                      <a href={PHONE_TEL} className="text-mocha-600 hover:text-mocha-800 transition-colors underline-offset-2 hover:underline">
-                        {PHONE_DISPLAY}
-                      </a>
-                    </p>
-                    <p>
-                      <span className="font-semibold text-mocha-800">Address:</span>
-                      <br />
-                      <span className="mt-1 inline-block max-w-sm">
-                        STELLA TOWERS PHASE 1, Stella Towers, D1-104, Moshi
-                        <br />
-                        Alandi Rd, Dudulgaon, Pimpri-Chinchwad, Moshi
-                        <br />
-                        Pune — 412105
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-service text-2xl md:text-3xl font-semibold text-mocha-800 mb-6">Menu</h4>
-                  <ul className="space-y-3 text-mocha-600 text-base">
-                    <li>
-                      <a href="#home" className="hover:text-mocha-800 transition-colors">
-                        Home
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#services" className="hover:text-mocha-800 transition-colors">
-                        Services
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#projects" className="hover:text-mocha-800 transition-colors">
-                        Projects
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#designs" className="hover:text-mocha-800 transition-colors">
-                        Designs
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#about" className="hover:text-mocha-800 transition-colors">
-                        About me
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <footer className="border-t border-mocha-300/60 px-6 py-6">
-            <p className="text-center text-mocha-600 text-sm leading-relaxed">
-              Copyright © 2026 Satyam Tiwari - All rights reserved
-            </p>
-          </footer>
-        </div>
+        <footer className="border-t border-mocha-200/80 px-6 py-3">
+          <p className="text-center text-mocha-600 text-xs leading-normal">
+            Copyright © {new Date().getFullYear()} Satyam Tiwari — All rights reserved
+          </p>
+        </footer>
       </section>
+
 
       </main>
 
-      {projectDetailIndex !== null && projects[projectDetailIndex] && (
-        <ProjectDetailDialog project={projects[projectDetailIndex]} onClose={() => setProjectDetailIndex(null)} />
-      )}
+      <AnimatePresence>
+        {projectDetailIndex !== null && projects[projectDetailIndex] && (
+          <ProjectDetailDialog
+            key={projects[projectDetailIndex].id}
+            project={projects[projectDetailIndex]}
+            onClose={() => setProjectDetailIndex(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {designLightbox && (
         <DesignImageLightbox
