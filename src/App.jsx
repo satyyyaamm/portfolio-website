@@ -62,6 +62,7 @@ import nextoffer1 from './assets/nextoffer/nextoffer1.png';
 import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
 import aboutPortrait from './assets/satyam.png';
+import { trackEvent } from './lib/analytics.js';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
 const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
@@ -1122,6 +1123,7 @@ const App = () => {
         setContactFormStatus('success');
         setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
         setContactHoneypot('');
+        trackEvent('contact_form_submit', { method: 'web3forms' });
       } else {
         setContactFormStatus('error');
         setContactFormError(typeof data.message === 'string' ? data.message : 'Something went wrong. Try again or email directly.');
@@ -1525,7 +1527,10 @@ const App = () => {
                     <div className="py-2 md:py-2.5 px-1">
                       <motion.button
                         type="button"
-                        onClick={() => setActiveProject(i)}
+                        onClick={() => {
+                          setActiveProject(i);
+                          trackEvent('project_select', { project_name: p.name });
+                        }}
                         aria-expanded={activeProject === i}
                         aria-controls={`project-panel-${p.id}`}
                         id={`project-trigger-${p.id}`}
@@ -1554,7 +1559,10 @@ const App = () => {
                             <p className="mt-2 max-w-lg text-sm leading-relaxed text-mocha-600">{p.summary}</p>
                             <button
                               type="button"
-                              onClick={() => setProjectDetailIndex(i)}
+                              onClick={() => {
+                                setProjectDetailIndex(i);
+                                trackEvent('project_detail_open', { project_name: p.name });
+                              }}
                               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-mocha-600 hover:opacity-90 transition-opacity"
                             >
                               Learn more
