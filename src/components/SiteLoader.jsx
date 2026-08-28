@@ -2,32 +2,27 @@ import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { SiteReadyContext } from '../context/SiteReadyContext.jsx';
 
-const MIN_LOAD_MS = 1800;
-const SPLIT_DURATION = 1.65;
-const SPLIT_EASE = [0.76, 0, 0.24, 1];
-/** Pause after the split begins before hero / page animations run. */
-export const SITE_ANIMATION_DELAY_MS = 780;
+const MIN_LOAD_MS = 1700;
+const REVEAL_MS = 1.1;
+const EASE = [0.22, 1, 0.36, 1];
 
 export function SiteLoader({ children }) {
   const reducedMotion = useReducedMotion();
   const [phase, setPhase] = useState(reducedMotion ? 'done' : 'loading');
   const [animationsEnabled, setAnimationsEnabled] = useState(Boolean(reducedMotion));
   const isActive = phase !== 'done';
-  const splitting = phase === 'splitting';
-  const siteReady = phase !== 'loading';
+  const exiting = phase === 'exiting';
 
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion) return undefined;
+    import('@shadergradient/react').catch(() => {});
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion || phase === 'exiting' || phase === 'done') {
       setAnimationsEnabled(true);
-      return undefined;
     }
-    if (!siteReady) {
-      setAnimationsEnabled(false);
-      return undefined;
-    }
-    const tid = window.setTimeout(() => setAnimationsEnabled(true), SITE_ANIMATION_DELAY_MS);
-    return () => window.clearTimeout(tid);
-  }, [siteReady, reducedMotion]);
+  }, [phase, reducedMotion]);
 
   useEffect(() => {
     if (!isActive) return undefined;
@@ -41,67 +36,60 @@ export function SiteLoader({ children }) {
     let cancelled = false;
     const started = performance.now();
 
-    const beginSplit = () => {
+    const finish = () => {
       const remain = MIN_LOAD_MS - (performance.now() - started);
       window.setTimeout(() => {
-        if (!cancelled) setPhase('splitting');
+        if (!cancelled) setPhase('exiting');
       }, Math.max(0, remain));
     };
 
-    if (document.readyState === 'complete') beginSplit();
-    else window.addEventListener('load', beginSplit, { once: true });
+    if (document.readyState === 'complete') finish();
+    else window.addEventListener('load', finish, { once: true });
 
     return () => {
       cancelled = true;
-      window.removeEventListener('load', beginSplit);
+      window.removeEventListener('load', finish);
     };
   }, [reducedMotion]);
 
   return (
     <SiteReadyContext.Provider value={animationsEnabled}>
-      {/* Keep children in a stable wrapper so App never remounts after the split */}
       <div className="site-loader-main" {...(isActive ? { inert: true } : {})}>
         {children}
       </div>
 
       {isActive && (
-        <div
+        <motion.div
           className="site-loader-overlay"
           role="status"
           aria-live="polite"
-          aria-label={splitting ? 'Opening site' : 'Loading portfolio'}
+          aria-label={exiting ? 'Opening site' : 'Loading portfolio'}
+          initial={{ opacity: 1 }}
+          animate={{ opacity: exiting ? 0 : 1 }}
+          transition={{ duration: exiting ? REVEAL_MS : 0.3, ease: EASE }}
+          onAnimationComplete={() => {
+            if (exiting) setPhase('done');
+          }}
         >
-          <motion.div
-            className="site-loader-panel site-loader-panel--left"
-            initial={false}
-            animate={{ x: splitting ? '-100%' : '0%' }}
-            transition={{ duration: SPLIT_DURATION, ease: SPLIT_EASE }}
-            onAnimationComplete={() => {
-              if (splitting) setPhase('done');
-            }}
-          />
-          <motion.div
-            className="site-loader-panel site-loader-panel--right"
-            initial={false}
-            animate={{ x: splitting ? '100%' : '0%' }}
-            transition={{ duration: SPLIT_DURATION, ease: SPLIT_EASE }}
-          />
-
-          {!splitting && (
-            <div className="site-loader-content">
-              <p className="site-loader-eyebrow">Portfolio</p>
-              <p className="site-loader-name">Satyam Tiwari</p>
+          {!exiting && (
+            <motion.div
+              className="site-loader-content"
+              initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: EASE }}
+            >
+              <p className="site-loader-label">Loading</p>
               <div className="site-loader-progress" aria-hidden>
                 <motion.span
                   className="site-loader-progress__bar"
                   initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 0.92 }}
-                  transition={{ duration: MIN_LOAD_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: MIN_LOAD_MS / 1000, ease: EASE }}
                 />
               </div>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       )}
     </SiteReadyContext.Provider>
   );

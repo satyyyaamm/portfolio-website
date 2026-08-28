@@ -1,9 +1,9 @@
-/** Fixed navbar clearance — matches nav height + border */
+/** Fixed navbar clearance */
 export const NAV_SCROLL_MARGIN = '4.75rem';
 
 /**
- * Scroll to an in-page section by id or hash. Updates the URL hash for sharing / analytics.
- * @param {string} idOrHash — e.g. "work" or "#work"
+ * Navigate to a journey card by id/hash.
+ * Dispatches `portfolio:navigate` for the card journey engine.
  */
 export function scrollToSection(idOrHash) {
   if (typeof window === 'undefined') return false;
@@ -12,19 +12,21 @@ export function scrollToSection(idOrHash) {
   const id = hash.slice(1);
   if (!id || /[/.]/.test(id)) return false;
 
-  const el = document.getElementById(id);
-  if (!el) return false;
+  const alias = {
+    services: 'build',
+    faq: 'faq',
+    home: 'home',
+    work: 'work',
+    journey: 'journey',
+    build: 'build',
+  };
+  const targetHash = `#${alias[id] ?? id}`;
 
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({
-    behavior: reducedMotion ? 'auto' : 'smooth',
-    block: 'start',
-  });
-
-  if (window.location.hash !== hash) {
-    window.history.pushState(null, '', hash);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-  }
+  window.dispatchEvent(
+    new CustomEvent('portfolio:navigate', {
+      detail: { hash: targetHash, id: targetHash.slice(1) },
+    })
+  );
 
   return true;
 }

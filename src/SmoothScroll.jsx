@@ -2,11 +2,7 @@ import { useEffect, useLayoutEffect } from 'react';
 import { setLenisInstance } from './lib/lenisInstance';
 import { scrollToSection } from './lib/scrollToSection';
 
-function forceWindowScrollTop() {
-  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-}
-
-/** Hash navigation — native smooth scroll with scroll-margin offset for the fixed nav. */
+/** Hash → journey navigation. Document scroll drives the card track. */
 export function SmoothScroll({ children }) {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
@@ -22,8 +18,6 @@ export function SmoothScroll({ children }) {
     if (nav?.type === 'reload' && window.location.hash) {
       history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     }
-
-    forceWindowScrollTop();
   }, []);
 
   useEffect(() => {
@@ -49,14 +43,6 @@ export function SmoothScroll({ children }) {
       if (hash) scrollToSection(hash);
     };
     window.addEventListener('popstate', onPopState);
-
-    if (!window.location.hash || window.location.hash === '#') {
-      forceWindowScrollTop();
-    } else {
-      requestAnimationFrame(() => {
-        scrollToSection(window.location.hash);
-      });
-    }
 
     return () => {
       document.removeEventListener('click', onClickCapture, true);
