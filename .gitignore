@@ -6,7 +6,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.env.local
+# Env — keep secrets out of git. `.env.example` is the only env file that may be tracked.
+.env
+.env.*
+!.env.example
+secrets.json
+credentials.json
+serviceAccount*.json
+*.pem
+*.p12
+
 node_modules
 .venv-bg
 dist
@@ -23,4 +32,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vercel CLI link (project/org IDs) — never commit
 .vercel
+
+# OS junk that sometimes sneaks into public/
+**/.DS_Store
