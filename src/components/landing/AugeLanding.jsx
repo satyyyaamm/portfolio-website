@@ -129,6 +129,8 @@ export function AugeLanding({
 
   const [hoverIndex, setHoverIndex] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLink, setDrawerLink] = useState(null);
   /** Project chrome (name / View) only after 0.5s hover and strip fully at rest */
   const [stripIdle, setStripIdle] = useState(true);
   const [hoverHeld, setHoverHeld] = useState(false);
@@ -574,6 +576,82 @@ export function AugeLanding({
 
           <footer className="auge-footer">
             <p>© {new Date().getFullYear()} Satyam Tiwari</p>
+          </footer>
+
+          <div className="auge-corner">
+            <div
+              className={`auge-drawer${drawerOpen ? ' is-open' : ''}`}
+              onPointerEnter={() => setDrawerOpen(true)}
+              onPointerLeave={() => {
+                setDrawerOpen(false);
+                setDrawerLink(null);
+              }}
+              onFocus={() => setDrawerOpen(true)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setDrawerOpen(false);
+                  setDrawerLink(null);
+                }
+              }}
+            >
+              <div className="auge-drawer__panel" id="auge-drawer-menu">
+                <nav className="auge-drawer__nav" aria-label="Site">
+                  <button
+                    type="button"
+                    className="auge-drawer__link"
+                    onPointerEnter={() => setDrawerLink('works')}
+                    onPointerLeave={() => setDrawerLink(null)}
+                    onFocus={() => setDrawerLink('works')}
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      windowRef.current?.scrollIntoView?.({ block: 'nearest' });
+                    }}
+                  >
+                    <span className="auge-drawer__label">
+                      <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
+                    </span>
+                    <span className="auge-sr">Works</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="auge-drawer__link"
+                    onPointerEnter={() => setDrawerLink('about')}
+                    onPointerLeave={() => setDrawerLink(null)}
+                    onFocus={() => setDrawerLink('about')}
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setMenuOpen(true);
+                    }}
+                  >
+                    <span className="auge-drawer__label">
+                      <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
+                    </span>
+                    <span className="auge-sr">About</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="auge-drawer__link"
+                    onPointerEnter={() => setDrawerLink('talk')}
+                    onPointerLeave={() => setDrawerLink(null)}
+                    onFocus={() => setDrawerLink('talk')}
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setMenuOpen(true);
+                    }}
+                  >
+                    <span className="auge-drawer__label">
+                      <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
+                    </span>
+                    <span className="auge-sr">Let's talk</span>
+                  </button>
+                </nav>
+                <span className="auge-drawer__bars" aria-hidden>
+                  <span />
+                  <span />
+                </span>
+              </div>
+            </div>
+
             <nav className="auge-footer__links" aria-label="Social links">
               {socialItems.map((item) => (
                 <a
@@ -586,19 +664,7 @@ export function AugeLanding({
                 </a>
               ))}
             </nav>
-          </footer>
-
-          <button
-            type="button"
-            className="auge-menu-btn"
-            aria-expanded={menuOpen}
-            aria-controls="auge-menu"
-            onClick={() => setMenuOpen(true)}
-          >
-            <span />
-            <span />
-            <span className="auge-sr">Open menu</span>
-          </button>
+          </div>
       </div>
 
       {menuOpen ? (
