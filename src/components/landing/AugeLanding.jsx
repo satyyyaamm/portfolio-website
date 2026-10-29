@@ -8,6 +8,10 @@ const LOOP_COPIES = 4;
 /** px per second — cards enter tall on the right and shrink as they travel left */
 const SPEED = 160;
 const GAP = 0;
+/** Fixed lean (deg) while the strip is moving from user input — not scaled by scroll amount */
+const SCROLL_SKEW = 8;
+/** Auto-scroll only soft-stops after the pointer rests on a card this long */
+const HOVER_PAUSE_MS = 500;
 
 function projectKind(project) {
   const raw = project.meta?.split('·')[0]?.trim() || project.role || 'Project';
@@ -104,9 +108,12 @@ export function AugeLanding({
   const railRef = useRef(null);
   const windowRef = useRef(null);
   const stageRef = useRef(null);
+  const lowerRef = useRef(null);
   const offsetRef = useRef(0);
   const setWidthRef = useRef(0);
   const hoverRef = useRef(null);
+  const hoverSinceRef = useRef(0);
+  const hoverBrakeStartedRef = useRef(false);
   const rafRef = useRef(0);
   const lastTsRef = useRef(0);
   const focusRef = useRef(0);
@@ -115,9 +122,18 @@ export function AugeLanding({
   const autoDirRef = useRef(-1);
   const dragRef = useRef({ active: false, x: 0, moved: false });
   const resumeAutoAtRef = useRef(0);
+  const skewRef = useRef(0);
+  const skewTargetRef = useRef(0);
+  /** Skew only from real wheel/drag — not from hover soft-brake coast. */
+  const skewArmedRef = useRef(false);
 
   const [hoverIndex, setHoverIndex] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  /** Project chrome (name / View) only after 0.5s hover and strip fully at rest */
+  const [stripIdle, setStripIdle] = useState(true);
+  const [hoverHeld, setHoverHeld] = useState(false);
+  const stripIdleRef = useRef(true);
+  const hoverHeldRef = useRef(false);
 
   const wrapOffset = (value) => {
     const setW = setWidthRef.current;
@@ -129,14 +145,35 @@ export function AugeLanding({
   };
 
   const paintTransform = () => {
+    const skew = `${skewRef.current.toFixed(3)}deg`;
     if (railRef.current) {
-      railRef.current.style.transform = `translate3d(${offsetRef.current}px,0,0)`;
+      railRef.current.style.transform = `translate3d(${offsetRef.current}px,0,0) skewX(${skew})`;
+    }
+    if (lowerRef.current) {
+      lowerRef.current.style.transform = `skewX(${skew})`;
     }
   };
 
   const nudgeOffset = (deltaPx) => {
     offsetRef.current = wrapOffset(offsetRef.current + deltaPx);
     paintTransform();
+  };
+
+  /** Constant skew while interacting — direction only, same lean whether soft or hard scroll. */
+  const setScrollSkew = (direction, { arm = false } = {}) => {
+    if (arm) skewArmedRef.current = true;
+    if (!direction) {
+      skewTargetRef.current = 0;
+      return;
+    }
+    if (!skewArmedRef.current) return;
+    // Lean opposite travel so motion reads as a fast pass.
+    skewTargetRef.current = direction > 0 ? -SCROLL_SKEW : SCROLL_SKEW;
+  };
+
+  const disarmSkew = () => {
+    skewArmedRef.current = false;
+    skewTargetRef.current = 0;
   };
 
   const loop = useMemo(() => {
@@ -211,6 +248,8 @@ export function AugeLanding({
   useLayoutEffect(() => {
     measureSetWidth();
     offsetRef.current = 0;
+    skewRef.current = 0;
+    skewTargetRef.current = 0;
     paintTransform();
     paintHeights();
     const onResize = () => {
@@ -233,14 +272,15 @@ export function AugeLanding({
       const raw = normalizeWheelDelta(event);
       if (!raw) return;
       event.preventDefault();
-      // Soft impulse — avoid 1:1 pixel jumps that make the strip feel hyper.
-      const impulse = -raw * 0.42;
+      // Stronger wheel response — more travel per scroll tick, with a longer coast.
+      const impulse = -raw * 0.82;
       nudgeOffset(impulse);
       if (impulse !== 0) autoDirRef.current = impulse > 0 ? 1 : -1;
       userVelocityRef.current = Math.max(
-        -620,
-        Math.min(620, userVelocityRef.current * 0.55 + impulse * 3.2)
+        -980,
+        Math.min(980, userVelocityRef.current * 0.5 + impulse * 4.4)
       );
+      setScrollSkew(impulse !== 0 ? Math.sign(impulse) : autoDirRef.current, { arm: true });
       resumeAutoAtRef.current = performance.now() + 900;
     };
 
@@ -268,6 +308,7 @@ export function AugeLanding({
       nudgeOffset(dx);
       if (dx !== 0) autoDirRef.current = dx > 0 ? 1 : -1;
       userVelocityRef.current = Math.max(-720, Math.min(720, dx * 16));
+      if (dx !== 0) setScrollSkew(Math.sign(dx), { arm: true });
     };
 
     const endDrag = (event) => {
@@ -276,6 +317,7 @@ export function AugeLanding({
       if (userVelocityRef.current !== 0) {
         autoDirRef.current = userVelocityRef.current > 0 ? 1 : -1;
       }
+      // Ease skew back once the drag ends — coast still carries velocity briefly.
       resumeAutoAtRef.current = performance.now() + 1200;
       try {
         win.releasePointerCapture?.(event.pointerId);
@@ -298,6 +340,9 @@ export function AugeLanding({
 
   useEffect(() => {
     if (reducedMotion) {
+      skewRef.current = 0;
+      skewTargetRef.current = 0;
+      paintTransform();
       paintHeights();
       return undefined;
     }
@@ -307,13 +352,48 @@ export function AugeLanding({
       const dt = Math.min(48, ts - lastTsRef.current) / 1000;
       lastTsRef.current = ts;
 
-      if (!menuOpen && !dragRef.current.active) {
+      // Pause only after resting on a card ≥0.5s. Mid-scroll on a card still skews.
+      const hoverLongEnough =
+        Boolean(hoverRef.current) && ts - hoverSinceRef.current >= HOVER_PAUSE_MS;
+      if (hoverLongEnough !== hoverHeldRef.current) {
+        hoverHeldRef.current = hoverLongEnough;
+        setHoverHeld(hoverLongEnough);
+      }
+      const hoveringIdle =
+        hoverLongEnough &&
+        !dragRef.current.active &&
+        !skewArmedRef.current &&
+        Math.abs(userVelocityRef.current) <= 6;
+
+      if (hoveringIdle) {
+        if (!hoverBrakeStartedRef.current) {
+          hoverBrakeStartedRef.current = true;
+          if (Math.abs(userVelocityRef.current) < 6) {
+            userVelocityRef.current = autoDirRef.current * SPEED;
+          }
+        }
+        disarmSkew();
+        let delta = userVelocityRef.current * dt;
+        userVelocityRef.current *= Math.pow(0.012, dt);
+        if (Math.abs(userVelocityRef.current) < 5) {
+          userVelocityRef.current = 0;
+        }
+        if (delta !== 0) nudgeOffset(delta);
+      } else if (!menuOpen && !dragRef.current.active) {
         let delta = userVelocityRef.current * dt;
         userVelocityRef.current *= Math.pow(0.0008, dt);
 
-        if (Math.abs(userVelocityRef.current) < 6) {
+        if (Math.abs(userVelocityRef.current) > 6) {
+          if (skewArmedRef.current) {
+            setScrollSkew(Math.sign(userVelocityRef.current));
+          } else {
+            setScrollSkew(0);
+          }
+        } else {
           userVelocityRef.current = 0;
-          if (ts >= resumeAutoAtRef.current) {
+          disarmSkew();
+          // Keep auto-driving through brief card passes; hold only after a held hover.
+          if (!hoverLongEnough && ts >= resumeAutoAtRef.current) {
             delta += autoDirRef.current * SPEED * dt;
           }
         }
@@ -321,6 +401,29 @@ export function AugeLanding({
         if (delta !== 0) {
           nudgeOffset(delta);
         }
+      } else if (dragRef.current.active) {
+        setScrollSkew(autoDirRef.current, { arm: true });
+      }
+
+      // Snappy on (~10–15°), quick straighten when scroll stops.
+      const skewEase = skewTargetRef.current === 0
+        ? 1 - Math.pow(0.00008, dt)
+        : 1 - Math.pow(0.000015, dt);
+      skewRef.current += (skewTargetRef.current - skewRef.current) * skewEase;
+      if (Math.abs(skewRef.current) < 0.05 && skewTargetRef.current === 0) {
+        skewRef.current = 0;
+      }
+      paintTransform();
+
+      const idle =
+        !dragRef.current.active &&
+        Math.abs(userVelocityRef.current) < 6 &&
+        !skewArmedRef.current &&
+        Math.abs(skewRef.current) < 0.15 &&
+        skewTargetRef.current === 0;
+      if (idle !== stripIdleRef.current) {
+        stripIdleRef.current = idle;
+        setStripIdle(idle);
       }
 
       paintHeights();
@@ -352,111 +455,150 @@ export function AugeLanding({
   return (
     <div className="auge-track">
       <div className="auge-stage" ref={stageRef}>
-        <div
-          className="auge-rail-window"
-          ref={windowRef}
-          onPointerLeave={() => {
-            hoverRef.current = null;
-            setHoverIndex(null);
-          }}
-        >
-          <div className="auge-rail" ref={railRef} aria-label="Projects">
-            {loop.map((item) => {
-              const hot = hoverIndex === item.projectIndex && hoverRef.current === item.key;
-              const width = cardWidthFor(item.projectIndex, typeof window !== 'undefined' ? window.innerWidth : 1200);
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  data-card
-                  data-project-index={item.projectIndex}
-                  className={`auge-card${hot ? ' is-hot' : ''}`}
-                  style={{ width: `${width}px` }}
-                  onMouseEnter={() => {
-                    hoverRef.current = item.key;
-                    setHoverIndex(item.projectIndex);
-                  }}
-                  onPointerEnter={() => {
-                    hoverRef.current = item.key;
-                    setHoverIndex(item.projectIndex);
-                  }}
-                  onMouseLeave={() => {
-                    if (hoverRef.current === item.key) {
-                      hoverRef.current = null;
-                      setHoverIndex(null);
-                    }
-                  }}
-                  onFocus={() => {
-                    hoverRef.current = item.key;
-                    setHoverIndex(item.projectIndex);
-                  }}
-                  onBlur={() => {
-                    if (hoverRef.current === item.key) {
-                      hoverRef.current = null;
-                      setHoverIndex(null);
-                    }
-                  }}
-                  onClick={(event) => {
-                    if (dragRef.current.moved) {
-                      event.preventDefault();
-                      dragRef.current.moved = false;
-                      return;
-                    }
-                    onOpenProject?.(item.projectIndex);
-                  }}
+          <div
+            className="auge-rail-window"
+            ref={windowRef}
+            onPointerLeave={() => {
+              if (hoverRef.current && hoverBrakeStartedRef.current) {
+                resumeAutoAtRef.current = performance.now() + 400;
+              }
+              hoverRef.current = null;
+              hoverSinceRef.current = 0;
+              hoverBrakeStartedRef.current = false;
+              hoverHeldRef.current = false;
+              setHoverHeld(false);
+              setHoverIndex(null);
+            }}
+          >
+            <div className="auge-rail" ref={railRef} aria-label="Projects">
+              {loop.map((item) => {
+                const hot =
+                  stripIdle &&
+                  hoverHeld &&
+                  hoverIndex === item.projectIndex &&
+                  hoverRef.current === item.key;
+                const width = cardWidthFor(item.projectIndex, typeof window !== 'undefined' ? window.innerWidth : 1200);
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    data-card
+                    data-project-index={item.projectIndex}
+                    className={`auge-card${hot ? ' is-hot' : ''}`}
+                    style={{ width: `${width}px` }}
+                    onMouseEnter={() => {
+                      hoverRef.current = item.key;
+                      hoverSinceRef.current = performance.now();
+                      hoverBrakeStartedRef.current = false;
+                      hoverHeldRef.current = false;
+                      setHoverHeld(false);
+                      setHoverIndex(item.projectIndex);
+                    }}
+                    onPointerEnter={() => {
+                      hoverRef.current = item.key;
+                      hoverSinceRef.current = performance.now();
+                      hoverBrakeStartedRef.current = false;
+                      hoverHeldRef.current = false;
+                      setHoverHeld(false);
+                      setHoverIndex(item.projectIndex);
+                    }}
+                    onMouseLeave={() => {
+                      if (hoverRef.current === item.key) {
+                        const wasPaused = hoverBrakeStartedRef.current;
+                        hoverRef.current = null;
+                        hoverSinceRef.current = 0;
+                        hoverBrakeStartedRef.current = false;
+                        hoverHeldRef.current = false;
+                        setHoverHeld(false);
+                        setHoverIndex(null);
+                        if (wasPaused) {
+                          resumeAutoAtRef.current = performance.now() + 450;
+                        }
+                      }
+                    }}
+                    onFocus={() => {
+                      hoverRef.current = item.key;
+                      hoverSinceRef.current = performance.now();
+                      hoverBrakeStartedRef.current = false;
+                      hoverHeldRef.current = false;
+                      setHoverHeld(false);
+                      setHoverIndex(item.projectIndex);
+                    }}
+                    onBlur={() => {
+                      if (hoverRef.current === item.key) {
+                        const wasPaused = hoverBrakeStartedRef.current;
+                        hoverRef.current = null;
+                        hoverSinceRef.current = 0;
+                        hoverBrakeStartedRef.current = false;
+                        hoverHeldRef.current = false;
+                        setHoverHeld(false);
+                        setHoverIndex(null);
+                        if (wasPaused) {
+                          resumeAutoAtRef.current = performance.now() + 450;
+                        }
+                      }
+                    }}
+                    onClick={(event) => {
+                      if (dragRef.current.moved) {
+                        event.preventDefault();
+                        dragRef.current.moved = false;
+                        return;
+                      }
+                      onOpenProject?.(item.projectIndex);
+                    }}
+                  >
+                    <img src={item.project.image} alt="" />
+                    <span className="auge-card__view">View project</span>
+                    <span className="auge-card__meta">
+                      <span className="auge-card__name">
+                        <Scramble text={item.project.name} active={hot} />
+                      </span>
+                      <span className="auge-card__kind">
+                        <Scramble text={projectKind(item.project)} active={hot} />
+                      </span>
+                    </span>
+                    <span className="auge-sr">{`View ${item.project.name}`}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="auge-lower" ref={lowerRef}>
+            <h1 className="auge-word">Satyam</h1>
+            <div className="auge-copy">
+              <p className="auge-copy__label">Satyam Tiwari©</p>
+              <p className="auge-copy__body">{ABOUT_PARAGRAPH}</p>
+            </div>
+          </div>
+
+          <footer className="auge-footer">
+            <p>© {new Date().getFullYear()} Satyam Tiwari</p>
+            <nav className="auge-footer__links" aria-label="Social links">
+              {socialItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.href.startsWith('mailto:') ? undefined : '_blank'}
+                  rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
                 >
-                  <img src={item.project.image} alt="" />
-                  <span className="auge-card__view">View project</span>
-                  <span className="auge-card__meta">
-                    <span className="auge-card__name">
-                      <Scramble text={item.project.name} active={hot} />
-                    </span>
-                    <span className="auge-card__kind">
-                      <Scramble text={projectKind(item.project)} active={hot} />
-                    </span>
-                  </span>
-                  <span className="auge-sr">{`View ${item.project.name}`}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          </footer>
 
-        <div className="auge-lower">
-          <h1 className="auge-word">Satyam</h1>
-          <div className="auge-copy">
-            <p className="auge-copy__label">Satyam Tiwari©</p>
-            <p className="auge-copy__body">{ABOUT_PARAGRAPH}</p>
-          </div>
-        </div>
-
-        <footer className="auge-footer">
-          <p>© {new Date().getFullYear()} Satyam Tiwari</p>
-          <nav className="auge-footer__links" aria-label="Social links">
-            {socialItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith('mailto:') ? undefined : '_blank'}
-                rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-        </footer>
-
-        <button
-          type="button"
-          className="auge-menu-btn"
-          aria-expanded={menuOpen}
-          aria-controls="auge-menu"
-          onClick={() => setMenuOpen(true)}
-        >
-          <span />
-          <span />
-          <span className="auge-sr">Open menu</span>
-        </button>
+          <button
+            type="button"
+            className="auge-menu-btn"
+            aria-expanded={menuOpen}
+            aria-controls="auge-menu"
+            onClick={() => setMenuOpen(true)}
+          >
+            <span />
+            <span />
+            <span className="auge-sr">Open menu</span>
+          </button>
       </div>
 
       {menuOpen ? (
