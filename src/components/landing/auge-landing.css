@@ -41,6 +41,7 @@
   width: max-content;
   will-change: transform;
   transform: translate3d(0, 0, 0);
+  transform-origin: 50% 50%;
 }
 
 .auge-card {
@@ -103,9 +104,9 @@
   pointer-events: none;
 }
 
+/* Only .is-hot (strip idle + pointer on card) — never :hover alone, avoids skew jitter */
 .auge-card.is-hot .auge-card__view,
-.auge-card:hover .auge-card__view,
-.auge-card:focus-visible .auge-card__view {
+.auge-card.is-hot:focus-visible .auge-card__view {
   opacity: 1;
   transform: none;
 }
@@ -120,8 +121,7 @@
 }
 
 .auge-card.is-hot .auge-card__meta,
-.auge-card:hover .auge-card__meta,
-.auge-card:focus-visible .auge-card__meta {
+.auge-card.is-hot:focus-visible .auge-card__meta {
   opacity: 1;
 }
 
@@ -152,60 +152,77 @@
 }
 
 .auge-lower {
+  --auge-word-size: clamp(4.6rem, 14.6vw, 13.5rem);
+  --auge-word-lh: 0.76;
+  --auge-word-h: calc(var(--auge-word-size) * var(--auge-word-lh));
   position: absolute;
   left: 0;
   right: 0;
   top: min(62vh, calc(100dvh - 12rem));
-  bottom: 3.25rem;
+  bottom: 5.75rem;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(15rem, 0.7fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 1fr);
   align-items: end;
-  column-gap: 3vw;
-  padding-right: 1.75rem;
+  column-gap: 4.5vw;
+  padding: 0 3rem 1.65rem 2.35rem;
   pointer-events: none;
+  will-change: transform;
+  transform-origin: 40% 100%;
+  transform: skewX(0deg);
 }
 
 .auge-word {
   margin: 0;
   align-self: end;
-  font-size: clamp(4.6rem, 14.6vw, 13.5rem);
+  font-size: var(--auge-word-size);
   font-weight: 700;
   letter-spacing: -0.055em;
-  line-height: 0.76;
+  line-height: var(--auge-word-lh);
   text-transform: uppercase;
   user-select: none;
 }
 
 .auge-copy {
-  align-self: center;
-  width: min(26rem, 100%);
-  margin-bottom: 8vh;
+  align-self: end;
+  justify-self: start;
+  box-sizing: border-box;
+  width: min(34rem, 100%);
+  height: var(--auge-word-h);
+  margin: 0 0 0 1.5vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.4rem;
   pointer-events: auto;
 }
 
 .auge-copy__label {
-  margin: 0 0 0.9rem;
-  font-size: 13px;
+  margin: 0;
+  flex-shrink: 0;
+  font-size: clamp(0.8rem, calc(var(--auge-word-h) * 0.2), 1.375rem);
   font-weight: 500;
   letter-spacing: 0.02em;
-  line-height: 1.3;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
 .auge-copy__body {
   margin: 0;
-  max-width: 28rem;
-  font-size: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: none;
+  font-size: clamp(0.8rem, calc(var(--auge-word-h) * 0.2), 1.375rem);
   font-weight: 400;
-  line-height: 1.45;
+  line-height: 1.35;
+  overflow: hidden;
 }
 
 .auge-footer {
   position: absolute;
-  left: 1.15rem;
-  right: 1.15rem;
-  bottom: max(1.35rem, env(safe-area-inset-bottom, 0px));
+  left: 2.35rem;
+  right: 3rem;
+  bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
   z-index: 4;
   display: flex;
   align-items: flex-end;
@@ -231,9 +248,13 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.35rem 0.15rem;
-  max-width: 46%;
+  gap: 0.4rem 0.2rem;
+  max-width: 52%;
   padding-right: 4.2rem;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
 }
 
 .auge-footer__links a:not(:last-child)::after {
@@ -245,8 +266,8 @@
 
 .auge-menu-btn {
   position: absolute;
-  right: 1.15rem;
-  bottom: max(2.85rem, calc(1.5rem + env(safe-area-inset-bottom, 0px)));
+  right: 3rem;
+  bottom: max(3.1rem, calc(1.75rem + env(safe-area-inset-bottom, 0px)));
   z-index: 5;
   display: grid;
   gap: 6px;
@@ -428,12 +449,8 @@
 }
 
 @media (max-width: 1100px) {
-  .auge-word {
-    font-size: clamp(3.8rem, 12vw, 9rem);
-  }
-
-  .auge-copy {
-    margin-bottom: 3vh;
+  .auge-lower {
+    --auge-word-size: clamp(3.8rem, 12vw, 9rem);
   }
 }
 
@@ -443,24 +460,19 @@
   }
 
   .auge-lower {
+    --auge-word-size: clamp(3.4rem, 20vw, 7rem);
     grid-template-columns: 1fr;
     align-items: end;
     top: min(48vh, calc(100dvh - 15rem));
-    padding-right: 1rem;
-    padding-left: 0;
-  }
-
-  .auge-word {
-    font-size: clamp(3.4rem, 20vw, 7rem);
+    bottom: 5rem;
+    padding: 0 1.65rem 1.15rem 1.4rem;
   }
 
   .auge-copy {
-    margin-bottom: 0.5rem;
+    width: min(34rem, 100%);
+    height: auto;
+    min-height: var(--auge-word-h);
     padding-right: 4.5rem;
-  }
-
-  .auge-copy__body {
-    font-size: 15px;
   }
 
   .auge-overlay__grid {
@@ -468,13 +480,15 @@
     gap: 2rem;
   }
 
+
   .auge-footer__links {
     max-width: 58%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auge-rail {
+  .auge-rail,
+  .auge-lower {
     transform: none !important;
   }
 }
