@@ -1,0 +1,480 @@
+/* Single-screen landing — infinite project strip + static about copy. */
+
+.auge-track {
+  position: relative;
+  min-height: 100dvh;
+  background: #edeee5;
+}
+
+.auge-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: #edeee5;
+  color: #000;
+  font-family: var(--font-sans);
+}
+
+.auge-rail-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: min(68vh, calc(100dvh - 11rem));
+  z-index: 2;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.auge-rail-window:active {
+  cursor: grabbing;
+}
+
+.auge-rail {
+  display: flex;
+  align-items: flex-start; /* keep tops locked — height reduction comes from the bottom */
+  gap: 0;
+  height: 100%;
+  width: max-content;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.auge-card {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #d9daca;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: visible;
+  transform-origin: top center;
+  /* Height is driven by horizontal position each frame, all cards together. */
+  transition: none;
+}
+
+.auge-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.auge-card.is-hot,
+.auge-card:hover,
+.auge-card:focus-visible {
+  z-index: 2;
+}
+
+.auge-card:focus {
+  outline: none;
+}
+
+.auge-card:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 3px;
+}
+
+.auge-card__view {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 7px 10px;
+  background: #fdf48b;
+  color: #000;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.auge-card.is-hot .auge-card__view,
+.auge-card:hover .auge-card__view,
+.auge-card:focus-visible .auge-card__view {
+  opacity: 1;
+  transform: none;
+}
+
+.auge-card__meta {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  min-width: 10rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auge-card.is-hot .auge-card__meta,
+.auge-card:hover .auge-card__meta,
+.auge-card:focus-visible .auge-card__meta {
+  opacity: 1;
+}
+
+.auge-card__name,
+.auge-card__kind,
+.auge-copy__label {
+  font-variant-ligatures: none;
+}
+
+.auge-card__name {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.auge-card__kind {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: #333;
+}
+
+.auge-lower {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: min(62vh, calc(100dvh - 12rem));
+  bottom: 3.25rem;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(15rem, 0.7fr);
+  align-items: end;
+  column-gap: 3vw;
+  padding-right: 1.75rem;
+  pointer-events: none;
+}
+
+.auge-word {
+  margin: 0;
+  align-self: end;
+  font-size: clamp(4.6rem, 14.6vw, 13.5rem);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.76;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.auge-copy {
+  align-self: center;
+  width: min(26rem, 100%);
+  margin-bottom: 8vh;
+  pointer-events: auto;
+}
+
+.auge-copy__label {
+  margin: 0 0 0.9rem;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.auge-copy__body {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.auge-footer {
+  position: absolute;
+  left: 1.15rem;
+  right: 1.15rem;
+  bottom: max(1.35rem, env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.auge-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.auge-footer a:hover {
+  background: #fdf48b;
+}
+
+.auge-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem 0.15rem;
+  max-width: 46%;
+  padding-right: 4.2rem;
+}
+
+.auge-footer__links a:not(:last-child)::after {
+  content: "|";
+  margin-left: 0.4rem;
+  color: #000;
+  background: transparent;
+}
+
+.auge-menu-btn {
+  position: absolute;
+  right: 1.15rem;
+  bottom: max(2.85rem, calc(1.5rem + env(safe-area-inset-bottom, 0px)));
+  z-index: 5;
+  display: grid;
+  gap: 6px;
+  place-content: center;
+  width: 54px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  background: #000;
+  cursor: pointer;
+}
+
+.auge-menu-btn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #edeee5;
+}
+
+.auge-menu-btn:hover {
+  background: #111;
+}
+
+.auge-menu-btn:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 3px;
+}
+
+.auge-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: auto;
+  background: #edeee5;
+  color: #000;
+  padding: max(1.5rem, 6vh) 1.5rem 3rem;
+}
+
+.auge-overlay__bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2rem;
+}
+
+.auge-overlay__close {
+  height: 40px;
+  padding: 8px 16px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background: transparent;
+  color: #000;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auge-overlay__close:hover {
+  background: #fdf48b;
+}
+
+.auge-overlay__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 3rem 4rem;
+  max-width: 68rem;
+  margin: 0 auto;
+}
+
+.auge-overlay h2 {
+  margin: 0 0 0.8rem;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.auge-overlay p {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.auge-overlay__links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 1.25rem 0 1.5rem;
+}
+
+.auge-overlay__links a {
+  color: #000;
+  font-size: 16px;
+  text-underline-offset: 3px;
+}
+
+.auge-overlay__links a:hover {
+  background: #fdf48b;
+}
+
+.auge-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 28rem;
+}
+
+.auge-form label {
+  display: block;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.auge-form input,
+.auge-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background: #edeee5;
+  color: #000;
+  font: inherit;
+  font-size: 16px;
+}
+
+.auge-form input:focus,
+.auge-form textarea:focus {
+  outline: 1px solid #000;
+  outline-offset: 2px;
+}
+
+.auge-form textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+.auge-form__error {
+  margin: 0;
+  color: #b42318;
+  font-size: 14px;
+}
+
+.auge-form button {
+  align-self: flex-start;
+  height: 40px;
+  padding: 8px 16px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  background: #000;
+  color: #edeee5;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auge-form button:hover:not(:disabled) {
+  background: #fdf48b;
+  color: #000;
+}
+
+.auge-form button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auge-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1100px) {
+  .auge-word {
+    font-size: clamp(3.8rem, 12vw, 9rem);
+  }
+
+  .auge-copy {
+    margin-bottom: 3vh;
+  }
+}
+
+@media (max-width: 720px) {
+  .auge-rail-window {
+    height: min(52vh, calc(100dvh - 14rem));
+  }
+
+  .auge-lower {
+    grid-template-columns: 1fr;
+    align-items: end;
+    top: min(48vh, calc(100dvh - 15rem));
+    padding-right: 1rem;
+    padding-left: 0;
+  }
+
+  .auge-word {
+    font-size: clamp(3.4rem, 20vw, 7rem);
+  }
+
+  .auge-copy {
+    margin-bottom: 0.5rem;
+    padding-right: 4.5rem;
+  }
+
+  .auge-copy__body {
+    font-size: 15px;
+  }
+
+  .auge-overlay__grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .auge-footer__links {
+    max-width: 58%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auge-rail {
+    transform: none !important;
+  }
+}
