@@ -15,14 +15,14 @@ const ShaderGradientLazy = lazy(async () => {
 /** Your ShaderGradient base mesh. */
 export const USER_SHADER = {
   animate: 'on',
-  brightness: 0.8,
+  brightness: 1.15,
   cAzimuthAngle: 270,
   cDistance: 0.5,
   cPolarAngle: 180,
   cameraZoom: 5,
-  color1: '#73bfc4',
-  color2: '#ff810a',
-  color3: '#8da0ce',
+  color1: '#EDEEE5',
+  color2: '#FDF48B',
+  color3: '#D9DACA',
   envPreset: 'city',
   fov: 20,
   grain: 'on',
@@ -30,28 +30,28 @@ export const USER_SHADER = {
   positionX: -0.1,
   positionY: 0,
   positionZ: 0,
-  reflection: 0.4,
+  reflection: 0.08,
   rotationX: 0,
   rotationY: 130,
   rotationZ: 70,
   shader: 'defaults',
   type: 'sphere',
-  uAmplitude: 3.2,
-  uDensity: 0.8,
-  uFrequency: 5.5,
-  uSpeed: 0.4,
-  uStrength: 0.3,
+  uAmplitude: 1.1,
+  uDensity: 0.6,
+  uFrequency: 3.2,
+  uSpeed: 0.16,
+  uStrength: 0.16,
   wireframe: false,
 };
 
 /** Soft chapter tints — interpolated by scroll progress. */
 const CHAPTER_PALETTES = [
-  { color1: '#73bfc4', color2: '#ff810a', color3: '#8da0ce' }, // intro
-  { color1: '#8da0ce', color2: '#c4a0e8', color3: '#ff810a' }, // journey
-  { color1: '#5eb8d4', color2: '#73bfc4', color3: '#8da0ce' }, // projects
-  { color1: '#6ec4b8', color2: '#73bfc4', color3: '#a8d4c0' }, // build
-  { color1: '#9b8ec4', color2: '#8da0ce', color3: '#c4b5fd' }, // story
-  { color1: '#d4b896', color2: '#ff810a', color3: '#8da0ce' }, // contact
+  { color1: '#EDEEE5', color2: '#FDF48B', color3: '#D9DACA' },
+  { color1: '#FBF0B7', color2: '#EDEEE5', color3: '#C4C6B7' },
+  { color1: '#EDEEE5', color2: '#F9E96D', color3: '#E5E7EB' },
+  { color1: '#FDF48B', color2: '#EDEEE5', color3: '#D9DACA' },
+  { color1: '#EDEEE5', color2: '#C4C6B7', color3: '#FBF0B7' },
+  { color1: '#F9E96D', color2: '#EDEEE5', color3: '#D9DACA' },
 ];
 
 function lerpColor(a, b, t) {
@@ -91,7 +91,7 @@ function StaticFallback({ colors }) {
           radial-gradient(ellipse 85% 75% at 40% 35%, ${colors.color1} 0%, transparent 55%),
           radial-gradient(ellipse 70% 60% at 70% 70%, ${colors.color2} 0%, transparent 50%),
           radial-gradient(ellipse 55% 50% at 25% 80%, ${colors.color3} 0%, transparent 45%),
-          #0a0a0b`,
+          #EDEEE5`,
       }}
       aria-hidden
     />
@@ -147,7 +147,7 @@ function LiveShader({ colors, isMobile, onReady }) {
           brightness={USER_SHADER.brightness}
           envPreset={USER_SHADER.envPreset}
           grain={USER_SHADER.grain}
-          grainBlending={0.5}
+          grainBlending={0.18}
           positionX={USER_SHADER.positionX}
           positionY={USER_SHADER.positionY}
           positionZ={USER_SHADER.positionZ}

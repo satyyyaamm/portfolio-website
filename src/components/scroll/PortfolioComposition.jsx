@@ -6,7 +6,6 @@ import { ScrollTypewriter } from './ScrollTypewriter.jsx';
 import { SocialDock } from './SocialDock.jsx';
 import { SCENE, beatRange, projectRange } from '../../lib/scrollTimeline.js';
 import { useMagneticHover } from '../interaction/useMagneticHover.js';
-import { projectTheme } from '../../lib/projectThemes.js';
 import { ABOUT_PARAGRAPH } from '../../lib/slides.js';
 import { TECH_WORDS } from '../../lib/techStack.js';
 import { FAQ_ITEMS } from '../../lib/faq.js';
@@ -139,7 +138,9 @@ function IntroScene() {
         exit={{ y: -110, opacity: 0 }}
         holdRatio={0.4}
       >
-        <h1 className="comp-hero">Build with Satyam</h1>
+        <h1 className="comp-hero">
+          Build with <span className="comp-hero__mark">Satyam</span>
+        </h1>
       </ScrollLayer>
 
       <ScrollLayer
@@ -213,7 +214,6 @@ function JourneyScene() {
 
 function ProjectScene({ project, index, count, motionSet, onOpen }) {
   const [a, b] = projectRange(index, count);
-  const theme = projectTheme(project.id);
 
   return (
     <section className="scene scene--project" aria-label={project.name}>
@@ -230,12 +230,7 @@ function ProjectScene({ project, index, count, motionSet, onOpen }) {
             <p className="comp-eyebrow">
               Project {String(index + 1).padStart(2, '0')}
             </p>
-            <h2
-              className="comp-project-name"
-              style={{ color: theme.accent }}
-            >
-              {project.name}
-            </h2>
+            <h2 className="comp-project-name">{project.name}</h2>
             {project.role ? (
               <p className="comp-project-role">{project.role}</p>
             ) : null}
@@ -347,7 +342,7 @@ function StoryCtaTakeover({ range: [start, end], ctas }) {
   const radius = useTransform(
     progress,
     [start + span * 0.48, start + span * 0.82],
-    [20, 0]
+    [8, 0]
   );
   /** Buttons fade before the shell blooms — kept off the scaled layer so clicks stay reliable. */
   const contentOpacity = useTransform(
