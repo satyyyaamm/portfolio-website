@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import {
-  motion,
-  AnimatePresence,
-} from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { 
   Github, 
   Linkedin, 
@@ -40,8 +37,7 @@ import nextoffer1 from './assets/nextoffer/nextoffer1.png';
 import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
 import { trackEvent } from './lib/analytics.js';
-import { handleSectionLinkClick } from './lib/scrollToSection.js';
-import { PortfolioComposition } from './components/scroll/PortfolioComposition.jsx';
+import { AugeLanding } from './components/landing/AugeLanding.jsx';
 import { ProjectCaseView } from './components/ProjectCaseView.jsx';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
@@ -57,20 +53,6 @@ const MediumIcon = ({ className = 'h-4 w-4' }) => (
     <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.78-6.82A6.8 6.8 0 0113.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z" />
   </svg>
 );
-
-function TopMark() {
-  return (
-    <header className="journey-mark">
-      <a
-        href="#home"
-        onClick={(e) => handleSectionLinkClick(e, 'home')}
-        className="journey-mark__word"
-      >
-        Satyam
-      </a>
-    </header>
-  );
-}
 
 /** Get a free key at https://web3forms.com — set `VITE_WEB3FORMS_ACCESS_KEY` in `.env.local` */
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY ?? '';
@@ -286,18 +268,9 @@ const App = () => {
         Skip to main content
       </a>
 
-      <motion.div
-        className="journey-mark-swipe"
-        animate={{ x: caseOpen ? '100%' : 0 }}
-        transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <TopMark />
-      </motion.div>
-
       <main id="main-content" tabIndex={-1} className="relative outline-none">
-        <PortfolioComposition
+        <AugeLanding
           projects={projects}
-          caseOpen={Boolean(caseOpen)}
           onOpenProject={setProjectDetailIndex}
           socialItems={SOCIAL_ITEMS}
           EMAIL_MAILTO={EMAIL_MAILTO}
