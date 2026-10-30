@@ -1,0 +1,162 @@
+import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { DISTORT_FRAG, DISTORT_FRAG_ALPHA, DISTORT_VERT } from './distortShaders.js';
+import { dropUniformDefaults, syncDropUniforms } from './dropRipple.js';
+import { applyBottomHingeSkew } from './skewMath.js';
+
+const SEG_X = 32;
+const SEG_Y = 20;
+
+/**
+ * Stage-space distortable plane (pixel coords, y down from top of stage).
+ * Used for project cards (cover) and baked text (alpha).
+ */
+export function DistortSurface({
+  texture,
+  left,
+  top,
+  width,
+  height,
+  mouseRef,
+  paramsRef,
+  simRef,
+  reducedMotion,
+  mode = 'cover', // 'cover' | 'alpha'
+  userData,
+  onPointer,
+}) {
+  const matRef = useRef(null);
+  const meshRef = useRef(null);
+
+  const uniforms = useMemo(() => {
+    const img = texture?.image;
+    return {
+      uMap: { value: texture },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      uStrength: { value: 0 },
+      uImageSize: {
+        value: new THREE.Vector2(
+          img?.naturalWidth || img?.width || width || 1,
+          img?.naturalHeight || img?.height || height || 1
+        ),
+      },
+      uPlaneSize: { value: new THREE.Vector2(width, height) },
+      uCoverHeight: { value: height },
+      uSpreadPx: { value: 800 },
+      uResolution: { value: new THREE.Vector2(1, 1) },
+      uEdgeWidth: { value: 0.03 },
+      uEdgeRefract: { value: 0 },
+      // Text stays on matrix skew — bend stays at 0
+      uBend: { value: 0 },
+      uBendPower: { value: 1.0 },
+      uBendSpan: { value: 0 },
+      ...dropUniformDefaults(),
+    };
+  }, [texture, width, height]);
+
+  useFrame(() => {
+    const mat = matRef.current;
+    const mesh = meshRef.current;
+    const m = mouseRef.current;
+    if (!mat || !mesh || !m) return;
+
+    const w = Math.max(1, width);
+    const h = Math.max(1, height);
+    const cx = left + w * 0.5;
+    const bottomY = -(top + h);
+    // Text skews opposite the cards.
+    const skewDeg = reducedMotion ? 0 : -(simRef?.current?.skew || 0);
+    applyBottomHingeSkew(mesh, cx, bottomY, w, h, skewDeg);
+    mat.uniforms.uPlaneSize.value.set(w, h);
+    mat.uniforms.uCoverHeight.value = h;
+
+    const vw = m.vw || window.innerWidth;
+    const vh = m.vh || window.innerHeight;
+    const spread = (paramsRef?.current?.spreadPct ?? 60) / 100;
+    mat.uniforms.uSpreadPx.value = Math.min(vw, vh) * spread;
+    const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 1.5);
+    mat.uniforms.uResolution.value.set(vw * dpr, vh * dpr);
+    mat.uniforms.uEdgeWidth.value = 0.03; // 3% of viewport (fraction)
+    // Match cards: only on user scroll/drag, smooth ease
+    const sim = simRef?.current;
+    const userSpeed = Math.abs(sim?.userVelocity || 0);
+    const userScrolling = Boolean(sim?.drag?.active) || userSpeed > 10;
+    const edgeTarget = reducedMotion || !userScrolling
+      ? 0
+      : (sim?.drag?.active ? Math.max(0.35, Math.min(1, userSpeed / 520)) : Math.min(1, userSpeed / 520)) * 48 * dpr;
+    mat.uniforms.uEdgeRefract.value += (edgeTarget - mat.uniforms.uEdgeRefract.value) * 0.14;
+
+    if (texture && mat.uniforms.uMap.value !== texture) {
+      mat.uniforms.uMap.value = texture;
+    }
+    const img = texture?.image;
+    if (img && (img.naturalWidth || img.width || img.width === 0)) {
+      const iw = img.naturalWidth || img.width || w;
+      const ih = img.naturalHeight || img.height || h;
+      mat.uniforms.uImageSize.value.set(iw, ih);
+    }
+
+    const dropping = syncDropUniforms(mat, simRef?.current);
+    if (dropping) {
+      mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * 0.28;
+      return;
+    }
+
+    if (reducedMotion || !m.inside) {
+      mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * 0.14;
+      return;
+    }
+
+    const ru = (m.x - left) / w;
+    const rv = (m.y - top) / h;
+    mat.uniforms.uMouse.value.set(ru, 1 - rv);
+    const strengthMul = (paramsRef?.current?.strengthPct ?? 200) / 100;
+    const target = m.strength * strengthMul;
+    mat.uniforms.uStrength.value += (target - mat.uniforms.uStrength.value) * 0.22;
+  });
+
+  return (
+    <mesh
+      ref={meshRef}
+      matrixAutoUpdate={false}
+      userData={userData}
+      onPointerOver={
+        onPointer
+          ? (e) => {
+              e.stopPropagation();
+              onPointer('enter');
+            }
+          : undefined
+      }
+      onPointerOut={
+        onPointer
+          ? (e) => {
+              e.stopPropagation();
+              onPointer('leave');
+            }
+          : undefined
+      }
+      onClick={
+        onPointer
+          ? (e) => {
+              e.stopPropagation();
+              onPointer('click');
+            }
+          : undefined
+      }
+    >
+      <planeGeometry args={[1, 1, SEG_X, SEG_Y]} />
+      <shaderMaterial
+        ref={matRef}
+        uniforms={uniforms}
+        vertexShader={DISTORT_VERT}
+        fragmentShader={mode === 'alpha' ? DISTORT_FRAG_ALPHA : DISTORT_FRAG}
+        transparent={mode === 'alpha'}
+        depthWrite={mode !== 'alpha'}
+        premultipliedAlpha={mode === 'alpha'}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
