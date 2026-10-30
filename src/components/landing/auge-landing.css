@@ -7,6 +7,17 @@
 }
 
 .auge-stage {
+  /* Fluid stage scale — type & chrome track the viewport like auge-xp.com */
+  --auge-word-size: min(13.5rem, max(7.2vmin, 14.6vw));
+  --auge-word-lh: 0.76;
+  --auge-word-h: calc(var(--auge-word-size) * var(--auge-word-lh));
+  --auge-copy-size: min(1.25rem, max(1.5vmin, calc(var(--auge-word-size) * 0.12)));
+  --auge-pad-x: clamp(2.1rem, 5.5vw, 5.25rem);
+  /* Extra right inset so about copy clears socials + drawer */
+  --auge-pad-r: clamp(11rem, 18vw, 13.5rem);
+  --auge-pad-l: clamp(2rem, 5.2vw, 5rem);
+  --auge-chrome: clamp(0.65rem, 1.05vw, 0.95rem);
+  --auge-meta: clamp(0.95rem, 1.85vw, 1.85rem);
   position: fixed;
   inset: 0;
   z-index: 1;
@@ -14,6 +25,75 @@
   background: #edeee5;
   color: #000;
   font-family: var(--font-sans);
+}
+
+/* Blackletter monogram — top-right, shimmer + scramble on hover */
+.auge-mark {
+  position: absolute;
+  top: max(1.15rem, env(safe-area-inset-top, 0px));
+  right: max(1.75rem, env(safe-area-inset-right, 0px));
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  border: 0;
+  color: transparent;
+  font-family: var(--font-mark);
+  font-size: clamp(2.1rem, 5.5vmin, 4.25rem);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: 0;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background-image: linear-gradient(
+    105deg,
+    #000 0%,
+    #000 38%,
+    #6a6a6a 46%,
+    #f5f5f0 50%,
+    #6a6a6a 54%,
+    #000 62%,
+    #000 100%
+  );
+  background-size: 220% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: auge-mark-shimmer 3.6s ease-in-out infinite;
+}
+
+.auge-mark:hover,
+.auge-mark:focus-visible {
+  animation-duration: 1.35s;
+}
+
+.auge-mark:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 4px;
+}
+
+@keyframes auge-mark-shimmer {
+  0%,
+  28% {
+    background-position: 100% 0;
+  }
+  58%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auge-mark {
+    color: #000;
+    background-image: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    animation: none;
+  }
 }
 
 .auge-rail-window {
@@ -31,6 +111,40 @@
 
 .auge-rail-window:active {
   cursor: grabbing;
+}
+
+/* Full-stage WebGL layer — strip + Satyam/about mesh distortion */
+.auge-gl-root {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  background: #edeee5;
+  touch-action: none;
+}
+
+.auge-gl-root canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: default;
+  touch-action: none;
+}
+
+.auge-gl-meta {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  min-width: 10rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  will-change: transform, opacity;
+}
+
+.auge-gl-meta.is-on {
+  opacity: 1;
 }
 
 .auge-rail {
@@ -88,27 +202,81 @@
   outline-offset: 3px;
 }
 
-.auge-card__view {
+/* Reveal wrappers — keep absolute stage children positioned correctly while rising */
+.auge-rise--strip {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 7px 10px;
-  background: #fdf48b;
-  color: #000;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
+  /* Isolate the WebGL canvas from ancestor opacity/filter flicker */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
-/* Only .is-hot (strip idle + pointer on card) — never :hover alone, avoids skew jitter */
-.auge-card.is-hot .auge-card__view,
-.auge-card.is-hot:focus-visible .auge-card__view {
+.auge-rise--strip .auge-gl-root {
+  pointer-events: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Soft yellow diamond that lags behind the pointer */
+.auge-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  background: #fdf48b;
+  /* True diamond — not a rotated square that can read as a box */
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-999px, -999px, 0);
+  will-change: transform;
+  /* No opacity transition — card-edge toggles were flickering */
+}
+
+.auge-cursor-dot.is-on {
   opacity: 1;
-  transform: none;
+}
+
+/* Don't fight the landing diamond while the loader is up */
+body.site-loader-active .auge-cursor-dot {
+  opacity: 0 !important;
+  visibility: hidden;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .auge-cursor-dot {
+    display: none;
+  }
+}
+
+/* Follows the cursor when a card is hot — not glued to the card */
+.auge-view-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  padding: 10px 14px;
+  background: #fdf48b;
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+  font-weight: 300;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-999px, -999px, 0);
+  transition: opacity 0.08s ease;
+  will-change: transform, opacity;
+}
+
+.auge-view-tip.is-on {
+  opacity: 1;
 }
 
 .auge-card__meta {
@@ -118,6 +286,7 @@
   min-width: 10rem;
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.22s ease;
 }
 
 .auge-card.is-hot .auge-card__meta,
@@ -133,7 +302,7 @@
 
 .auge-card__name {
   display: block;
-  font-size: 22px;
+  font-size: var(--auge-meta);
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.15;
@@ -142,8 +311,8 @@
 
 .auge-card__kind {
   display: block;
-  margin-top: 4px;
-  font-size: 11px;
+  margin-top: 0.25em;
+  font-size: calc(var(--auge-meta) * 0.5);
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.2;
@@ -152,24 +321,31 @@
 }
 
 .auge-lower {
-  --auge-word-size: clamp(4.6rem, 14.6vw, 13.5rem);
-  --auge-word-lh: 0.76;
-  --auge-word-h: calc(var(--auge-word-size) * var(--auge-word-lh));
   position: absolute;
   left: 0;
   right: 0;
-  top: min(62vh, calc(100dvh - 12rem));
-  bottom: 5.75rem;
-  z-index: 1;
+  top: min(56vh, calc(100dvh - 16vmin));
+  /* Sit above footer + socials + drawer button */
+  bottom: max(7vmin, 5.5rem);
+  z-index: 3;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
   align-items: end;
-  column-gap: 4.5vw;
-  padding: 0 3rem 1.65rem 2.35rem;
+  column-gap: 5.5vw;
+  row-gap: 1.25rem;
+  padding: 0 max(var(--auge-pad-x), var(--auge-pad-r)) 1vmin var(--auge-pad-l);
   pointer-events: none;
   will-change: transform;
   transform-origin: 40% 100%;
   transform: skewX(0deg);
+  min-height: 0;
+}
+
+/* Word + label + body live in WebGL (scramble + distort on one texture); DOM is ghost */
+.auge-lower--ghost .auge-word,
+.auge-lower--ghost .auge-copy__label,
+.auge-lower--ghost .auge-copy__body {
+  opacity: 0;
 }
 
 .auge-word {
@@ -185,46 +361,51 @@
 
 .auge-copy {
   align-self: end;
-  justify-self: start;
+  justify-self: stretch;
   box-sizing: border-box;
-  width: min(34rem, 100%);
+  width: 100%;
+  max-width: min(26rem, 100%);
   height: var(--auge-word-h);
-  margin: 0 0 0 1.5vw;
+  margin: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.4rem;
+  align-items: flex-start;
+  gap: clamp(1.1rem, 2.2vmin, 1.65rem);
   pointer-events: auto;
 }
 
 .auge-copy__label {
+  position: relative;
+  z-index: 3;
   margin: 0;
   flex-shrink: 0;
-  font-size: clamp(0.8rem, calc(var(--auge-word-h) * 0.2), 1.375rem);
+  font-size: var(--auge-copy-size);
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1.2;
   text-transform: uppercase;
+  pointer-events: auto;
 }
 
 .auge-copy__body {
   margin: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
   max-width: none;
-  font-size: clamp(0.8rem, calc(var(--auge-word-h) * 0.2), 1.375rem);
+  font-size: var(--auge-copy-size);
   font-weight: 400;
   line-height: 1.35;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .auge-footer {
   position: absolute;
-  left: 2.35rem;
+  left: var(--auge-pad-l);
   right: auto;
-  bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
-  z-index: 4;
-  font-size: 11px;
+  bottom: max(2.25vmin, 1.65rem, env(safe-area-inset-bottom, 0px));
+  z-index: 8;
+  font-size: calc(var(--auge-chrome) * 0.85);
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.4;
@@ -233,22 +414,22 @@
 
 .auge-corner {
   position: absolute;
-  right: 3rem;
-  bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
-  z-index: 5;
+  right: var(--auge-pad-x);
+  bottom: max(2.25vmin, 1.65rem, env(safe-area-inset-bottom, 0px));
+  z-index: 8;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1.15rem;
+  gap: clamp(1rem, 2vmin, 1.6rem);
 }
 
 .auge-footer__links {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.4rem 0.2rem;
+  gap: 0.55em 0.55em;
   max-width: min(22rem, 70vw);
-  font-size: 15px;
+  font-size: var(--auge-chrome);
   font-weight: 500;
   letter-spacing: 0.03em;
   line-height: 1.35;
@@ -303,21 +484,69 @@
 
 .auge-drawer.is-open .auge-drawer__panel,
 .auge-drawer:focus-within .auge-drawer__panel {
-  width: 12.5rem;
-  height: 11.75rem;
-  padding: 1.15rem 0.85rem;
+  width: 14.5rem;
+  height: 17.5rem;
+  padding: 1.05rem 0.85rem 1.15rem;
   border-radius: 10px;
+  align-content: start;
+  gap: 0.85rem;
 }
 
 .auge-drawer__nav {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.55rem;
   width: 100%;
-  height: 100%;
   pointer-events: none;
+}
+
+.auge-drawer__tune {
+  display: none;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  pointer-events: none;
+}
+
+.auge-drawer.is-open .auge-drawer__tune,
+.auge-drawer:focus-within .auge-drawer__tune {
+  display: flex;
+  pointer-events: auto;
+}
+
+.auge-drawer__tune-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  width: 100%;
+  margin: 0;
+  color: #edeee5;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.auge-drawer__tune-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.auge-drawer__tune-label em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: #fdf48b;
+}
+
+.auge-drawer__tune-row input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: #fdf48b;
+  cursor: pointer;
 }
 
 .auge-drawer.is-open .auge-drawer__nav,
@@ -426,13 +655,20 @@
 
 @media (hover: hover) and (pointer: fine) {
   .auge-drawer:hover .auge-drawer__panel {
-    width: 12.5rem;
-    height: 11.75rem;
-    padding: 1.15rem 0.85rem;
+    width: 14.5rem;
+    height: 17.5rem;
+    padding: 1.05rem 0.85rem 1.15rem;
     border-radius: 10px;
+    align-content: start;
+    gap: 0.85rem;
   }
 
   .auge-drawer:hover .auge-drawer__nav {
+    pointer-events: auto;
+  }
+
+  .auge-drawer:hover .auge-drawer__tune {
+    display: flex;
     pointer-events: auto;
   }
 
@@ -611,23 +847,51 @@
 }
 
 @media (max-width: 1100px) {
+  .auge-stage {
+    --auge-word-size: min(9rem, max(6.5vmin, 12vw));
+  }
+
   .auge-lower {
-    --auge-word-size: clamp(3.8rem, 12vw, 9rem);
+    column-gap: 3.5vw;
+  }
+}
+
+/* Short laptop viewports — shrink with vmin so rhythm holds */
+@media (max-height: 820px) and (max-width: 1280px) {
+  .auge-stage {
+    --auge-word-size: min(8.5rem, max(6vmin, 11.5vw));
+  }
+
+  .auge-rail-window {
+    height: min(58vh, calc(100dvh - 9rem));
+  }
+
+  .auge-lower {
+    top: min(50vh, calc(100dvh - 14vmin));
+    bottom: max(6.5vmin, 5.25rem);
   }
 }
 
 @media (max-width: 720px) {
+  .auge-stage {
+    --auge-word-size: min(7rem, max(9vmin, 20vw));
+  }
+
   .auge-rail-window {
     height: min(52vh, calc(100dvh - 14rem));
   }
 
   .auge-lower {
-    --auge-word-size: clamp(3.4rem, 20vw, 7rem);
     grid-template-columns: 1fr;
     align-items: end;
-    top: min(48vh, calc(100dvh - 15rem));
-    bottom: 5rem;
-    padding: 0 1.65rem 1.15rem 1.4rem;
+    top: min(44vh, calc(100dvh - 18vmin));
+    bottom: max(8vmin, 6.5rem);
+    padding: 0 8vw 1vmin 7.5vw;
+    row-gap: 1.1rem;
+  }
+
+  .auge-copy {
+    gap: clamp(0.9rem, 2.5vmin, 1.5rem);
   }
 
   .auge-copy {
@@ -644,6 +908,10 @@
 
   .auge-corner {
     right: 1.65rem;
+  }
+
+  .auge-footer {
+    left: 1.4rem;
   }
 
   .auge-footer__links {
