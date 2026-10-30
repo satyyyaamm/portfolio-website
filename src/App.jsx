@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { 
   Github, 
@@ -36,9 +36,17 @@ import picksyVideo from './assets/picksy/picksy.mp4';
 import nextoffer1 from './assets/nextoffer/nextoffer1.png';
 import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
+/** Temporary cinematic stills for the landing carousel (swap back to product shots later). */
+import cine1 from './assets/cinematic/cine1.jpg';
+import cine2 from './assets/cinematic/cine2.jpg';
+import cine3 from './assets/cinematic/cine3.jpg';
+import cine4 from './assets/cinematic/cine4.jpg';
+import cine5 from './assets/cinematic/cine5.jpg';
+import cine6 from './assets/cinematic/cine6.jpg';
+import cine7 from './assets/cinematic/cine7.jpg';
 import { trackEvent } from './lib/analytics.js';
 import { AugeLanding } from './components/landing/AugeLanding.jsx';
-import { ProjectCaseView } from './components/ProjectCaseView.jsx';
+import { ProjectOpenOverlay } from './components/ProjectOpenOverlay.jsx';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
 const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
@@ -71,7 +79,8 @@ const SOCIAL_ITEMS = [
 ];
 
 const App = () => {
-  const [projectDetailIndex, setProjectDetailIndex] = useState(null);
+  const [projectOpen, setProjectOpen] = useState(null); // { index, fromRect }
+  const openCoveredRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -144,7 +153,7 @@ const App = () => {
         "Admin: staff, inventory, workshop resources, profile/task templates for repeatable job creation.",
         "Stack: Flutter & Dart, Riverpod, GoRouter—designed for multi-role access and long-term maintainability.",
       ],
-      image: gms1,
+      image: cine1,
       gallery: GMS_GALLERY,
       previewFrame: 'web',
       href: "#",
@@ -162,7 +171,7 @@ const App = () => {
         "Swipe flow with like, maybe, and pass—plus social proof showing what friends in the room already picked.",
         "Group match celebrations, watchlist/history, and integrated chat to lock in plans without leaving the app.",
       ],
-      image: picksy2,
+      image: cine2,
       previewImage: picksy3,
       gallery: PICKSY_GALLERY,
       video: picksyVideo,
@@ -182,7 +191,7 @@ const App = () => {
         "LinkedIn optimiser: PDF upload or paste-in analysis with scored sections, strengths, and prioritised improvement list.",
         "Application kit generation and freemium pricing (Free, Weekly Sprint, Monthly Pro) with Google sign-in.",
       ],
-      image: nextoffer1,
+      image: cine3,
       gallery: NEXTOFFER_GALLERY,
       previewFrame: 'web',
       href: "https://nextoffer-ai.web.app",
@@ -200,7 +209,7 @@ const App = () => {
         "Offline-first sync with SQL plus remote data; points for entering malls and voucher redemption with partners.",
         "Shared architecture patterns with UJ WayFinder, tuned via configuration.",
       ],
-      image: waya1,
+      image: cine4,
       gallery: WAYA_WAYA_GALLERY,
       previewFrame: 'mobile',
       href: "#",
@@ -217,7 +226,7 @@ const App = () => {
         "Map rendering and indoor navigation logic with BLE beacon integration.",
         "Common codebase with Waya Waya, separated by configuration.",
       ],
-      image: uj1,
+      image: cine5,
       gallery: UJ_WAYFINDER_GALLERY,
       previewFrame: 'mobile',
       href: "#",
@@ -235,7 +244,7 @@ const App = () => {
         "Community module with location-based filtering; separate collections for signals, chats, posts, and users.",
         "Push notifications for emergencies, signal updates, and community activity.",
       ],
-      image: sa1,
+      image: cine6,
       gallery: SAFE_AGAIN_GALLERY,
       previewFrame: 'mobile',
       href: "#",
@@ -253,14 +262,15 @@ const App = () => {
         "Clear handoffs and ownership visibility to reduce follow-ups and missed actions.",
         "Faster approvals and decision cycles through a single workflow view.",
       ],
-      image: nanda1,
+      image: cine7,
       gallery: NANDA_GALLERY,
       previewFrame: 'web',
       href: "#",
     },
   ];
 
-  const caseOpen = projectDetailIndex !== null && projects[projectDetailIndex];
+  const openProject = projects[projectOpen?.index];
+  const caseOpen = Boolean(openProject);
 
   return (
     <div className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}`}>
@@ -271,7 +281,12 @@ const App = () => {
       <main id="main-content" tabIndex={-1} className="relative outline-none">
         <AugeLanding
           projects={projects}
-          onOpenProject={setProjectDetailIndex}
+          stripPaused={caseOpen}
+          onOpenProject={(index, fromRect) => {
+            openCoveredRef.current = fromRect?.onCovered || null;
+            const { onCovered: _cb, ...rect } = fromRect || {};
+            setProjectOpen({ index, fromRect: fromRect ? rect : null });
+          }}
           socialItems={SOCIAL_ITEMS}
           EMAIL_MAILTO={EMAIL_MAILTO}
           PHONE_DISPLAY={PHONE_DISPLAY}
@@ -289,10 +304,15 @@ const App = () => {
 
       <AnimatePresence>
         {caseOpen ? (
-          <ProjectCaseView
-            key={projects[projectDetailIndex].id}
-            project={projects[projectDetailIndex]}
-            onClose={() => setProjectDetailIndex(null)}
+          <ProjectOpenOverlay
+            key={openProject.id}
+            project={openProject}
+            fromRect={projectOpen?.fromRect || null}
+            onCovered={() => openCoveredRef.current?.()}
+            onClose={() => {
+              openCoveredRef.current = null;
+              setProjectOpen(null);
+            }}
           />
         ) : null}
       </AnimatePresence>
