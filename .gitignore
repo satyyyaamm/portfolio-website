@@ -38,3 +38,6 @@ dist-ssr
 
 # OS junk that sometimes sneaks into public/
 **/.DS_Store
+
+# Local reference captures (never commit)
+.tmp-ref*
