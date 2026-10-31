@@ -314,6 +314,7 @@ export function initSound() {
   if (inited || typeof window === 'undefined') return;
   if (typeof window.AudioContext !== 'function') return;
   inited = true;
+  setSoundMuted(false);
 
   const audioCtx = new AudioContext({ latencyHint: 'interactive' });
   const gain = audioCtx.createGain();
