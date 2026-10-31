@@ -28,6 +28,7 @@ function riseProps(ready, reduced, settled, { from = '28vh', delay = 0, duration
 export function AugeLanding({
   projects,
   onOpenProject,
+  onOpenWorksIndex,
   stripPaused = false,
   cursorSuppressRef,
   socialItems = [],
@@ -210,7 +211,8 @@ export function AugeLanding({
                   onClick={() => {
                     playSound('clickMenuItem');
                     setDrawerOpen(false);
-                    stripRef.current?.wrap?.scrollIntoView?.({ block: 'nearest' });
+                    if (onOpenWorksIndex) onOpenWorksIndex();
+                    else stripRef.current?.wrap?.scrollIntoView?.({ block: 'nearest' });
                   }}
                 >
                   <span className="auge-drawer__label">

@@ -49,8 +49,16 @@ import { trackEvent } from './lib/analytics.js';
 import { AugeLanding } from './components/landing/AugeLanding.jsx';
 import { ProjectOpenOverlay } from './components/ProjectOpenOverlay.jsx';
 import { SiteCursor } from './components/SiteCursor.jsx';
+import { RouteCurtain } from './components/works/RouteCurtain.jsx';
+import { WorksPage } from './components/works/WorksPage.jsx';
 import { initSound } from './lib/siteSound.js';
-import { findProjectIndexBySlug, parseWorksSlug, worksPath } from './lib/worksUrl.js';
+import {
+  findProjectIndexBySlug,
+  isWorksIndex,
+  parseWorksSlug,
+  worksIndexPath,
+  worksPath,
+} from './lib/worksUrl.js';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
 const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
@@ -86,9 +94,15 @@ const SOCIAL_ITEMS = [
 
 const App = () => {
   const [projectOpen, setProjectOpen] = useState(null); // { index, fromRect }
+  const [worksIndex, setWorksIndex] = useState(() =>
+    typeof window !== 'undefined' ? isWorksIndex(window.location.pathname) : false
+  );
+  const [curtain, setCurtain] = useState(null); // { to: 'works' | 'home', label }
   const [homeRevealing, setHomeRevealing] = useState(false);
   const openCoveredRef = useRef(null);
   const cursorSuppressRef = useRef(false);
+  const curtainCoveredRef = useRef(null);
+  const curtainDoneRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -336,9 +350,32 @@ const App = () => {
     }
   };
 
+  const runCurtain = (to, label, apply) => {
+    curtainCoveredRef.current = apply;
+    curtainDoneRef.current = () => setCurtain(null);
+    setCurtain({ to, label });
+  };
+
+  const openWorksIndex = ({ fromDetail = false } = {}) => {
+    const go = () => {
+      setHomeRevealing(false);
+      setProjectOpen(null);
+      setWorksIndex(true);
+      if (!isWorksIndex(window.location.pathname)) {
+        window.history.pushState({ works: 'index' }, '', worksIndexPath());
+      }
+    };
+    if (fromDetail) {
+      go();
+      return;
+    }
+    runCurtain('works', 'WORKS', go);
+  };
+
   const coverHome = () => {
     setHomeRevealing(true);
-    if (parseWorksSlug(window.location.pathname)) {
+    setWorksIndex(false);
+    if (parseWorksSlug(window.location.pathname) || isWorksIndex(window.location.pathname)) {
       window.history.pushState({ works: null }, '', '/');
     }
   };
@@ -347,13 +384,32 @@ const App = () => {
     openCoveredRef.current = null;
     setHomeRevealing(false);
     setProjectOpen(null);
+    if (isWorksIndex(window.location.pathname)) {
+      setWorksIndex(true);
+      return;
+    }
     if (parseWorksSlug(window.location.pathname)) {
+      setWorksIndex(false);
       window.history.pushState({ works: null }, '', '/');
     }
   };
 
-  // Deep link: /works/picksy (and legacy /?case=0)
+  const closeWorksIndex = () => {
+    runCurtain('home', 'HOME', () => {
+      setWorksIndex(false);
+      setProjectOpen(null);
+      if (isWorksIndex(window.location.pathname) || parseWorksSlug(window.location.pathname)) {
+        window.history.pushState({ works: null }, '', '/');
+      }
+    });
+  };
+
+  // Deep link: /works, /works/picksy (and legacy /?case=0)
   useEffect(() => {
+    if (isWorksIndex(window.location.pathname)) {
+      setWorksIndex(true);
+      return undefined;
+    }
     const fromPath = parseWorksSlug(window.location.pathname);
     if (fromPath) {
       const index = findProjectIndexBySlug(projects, fromPath);
@@ -375,17 +431,27 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- boot once from URL
   }, []);
 
-  // Browser back/forward ↔ detail open state
+  // Browser back/forward ↔ index / detail
   useEffect(() => {
     const onPop = () => {
-      const slug = parseWorksSlug(window.location.pathname);
+      const path = window.location.pathname;
+      if (isWorksIndex(path)) {
+        openCoveredRef.current = null;
+        setHomeRevealing(false);
+        setProjectOpen(null);
+        setWorksIndex(true);
+        return;
+      }
+      const slug = parseWorksSlug(path);
       if (!slug) {
         openCoveredRef.current = null;
         setHomeRevealing(false);
         setProjectOpen(null);
+        setWorksIndex(false);
         return;
       }
       const index = findProjectIndexBySlug(projects, slug);
+      setWorksIndex(false);
       if (index >= 0) setProjectOpen({ index, fromRect: null });
       else setProjectOpen(null);
     };
@@ -395,7 +461,7 @@ const App = () => {
   }, []);
 
   return (
-    <div className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}`}>
+    <div className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${worksIndex ? ' is-works-index' : ''}`}>
       <SiteCursor suppressRef={cursorSuppressRef} />
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -404,10 +470,12 @@ const App = () => {
       <main id="main-content" tabIndex={-1} className="relative outline-none">
         <AugeLanding
           projects={projects}
-          stripPaused={caseOpen}
+          stripPaused={caseOpen || worksIndex}
           cursorSuppressRef={cursorSuppressRef}
+          onOpenWorksIndex={() => openWorksIndex()}
           onOpenProject={(index, fromRect) => {
             setHomeRevealing(false);
+            setWorksIndex(false);
             openWorks(index, fromRect);
           }}
           socialItems={SOCIAL_ITEMS}
@@ -425,6 +493,29 @@ const App = () => {
         />
       </main>
 
+      {worksIndex ? (
+        <WorksPage
+          projects={projects}
+          paused={caseOpen}
+          cursorSuppressRef={cursorSuppressRef}
+          socialItems={SOCIAL_ITEMS}
+          onOpenProject={(index, fromRect) => {
+            setHomeRevealing(false);
+            openWorks(index, fromRect);
+          }}
+          onHome={closeWorksIndex}
+        />
+      ) : null}
+
+      {curtain ? (
+        <RouteCurtain
+          active
+          label={curtain.label}
+          onCovered={() => curtainCoveredRef.current?.()}
+          onDone={() => curtainDoneRef.current?.()}
+        />
+      ) : null}
+
       <AnimatePresence>
         {caseOpen ? (
           <ProjectOpenOverlay
@@ -437,6 +528,7 @@ const App = () => {
             onCovered={() => openCoveredRef.current?.()}
             onHomeCovered={coverHome}
             onClose={closeWorks}
+            onOpenWorks={() => openWorksIndex({ fromDetail: true })}
             onOpenNext={
               nextProjectIndex >= 0
                 ? () => {

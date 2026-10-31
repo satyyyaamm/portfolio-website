@@ -132,6 +132,7 @@ export function ProjectOpenOverlay({
   onCovered,
   onHomeCovered,
   onOpenNext,
+  onOpenWorks,
 }) {
   const reducedMotion = useReducedMotion();
   /** Landing card fly-in; deep links and next-project skip arm/fly. */
@@ -635,6 +636,10 @@ export function ProjectOpenOverlay({
                     onClick={() => {
                       playSound('clickMenuItem');
                       setDrawerOpen(false);
+                      if (onOpenWorks) {
+                        onOpenWorks();
+                        return;
+                      }
                       const gallery = scrollRef.current?.querySelector('.project-detail__gallery');
                       (gallery || scrollRef.current)?.scrollIntoView?.({
                         behavior: 'smooth',
