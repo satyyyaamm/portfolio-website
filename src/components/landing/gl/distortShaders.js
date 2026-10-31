@@ -38,6 +38,7 @@ uniform float uBendSpan;
 uniform vec2 uViewport;
 uniform float uEdgeWidth;
 uniform float uScrollBend;
+uniform float uScrollBendTop;
 ${DROP_WAVE_GLSL}
 varying vec2 vUv;
 varying vec2 vWorldXy;
@@ -92,7 +93,7 @@ void main() {
   float bow = pow(max(sin(nx * 3.14159265), 0.0), 0.65);
   float mag = abs(uScrollBend);
   float lead = sign(uScrollBend);
-  float topAmp = mag * (lead < 0.0 ? 1.28 : 0.7);
+  float topAmp = mag * (lead < 0.0 ? 1.28 : 0.7) * uScrollBendTop;
   float botAmp = mag * (lead > 0.0 ? 1.28 : 0.7);
   worldPos.y -= bow * (topW * topAmp + botW * botAmp);
 

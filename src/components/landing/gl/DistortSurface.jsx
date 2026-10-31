@@ -28,6 +28,7 @@ export function DistortSurface({
   depthWrite: depthWriteProp,
   userData,
   onPointer,
+  segments = [SEG_X, SEG_Y],
 }) {
   const depthWrite = depthWriteProp ?? mode !== 'alpha';
   const matRef = useRef(null);
@@ -54,6 +55,7 @@ export function DistortSurface({
       uEdgeRefractTB: { value: 0 },
       uViewport: { value: new THREE.Vector2(1, 1) },
       uScrollBend: { value: 0 },
+      uScrollBendTop: { value: 1 },
       // Text stays on matrix skew — bend stays at 0
       uBend: { value: 0 },
       uBendPower: { value: 1.0 },
@@ -101,7 +103,7 @@ export function DistortSurface({
     const skewDeg = reducedMotion ? 0 : -(simRef?.current?.skew || 0);
     applyBottomHingeSkew(mesh, cx, bottomY, w, h, skewDeg);
     mat.uniforms.uPlaneSize.value.set(w, h);
-    mat.uniforms.uCoverHeight.value = h;
+    mat.uniforms.uCoverHeight.value = rect?.coverHeight || h;
 
     const vw = m.vw || window.innerWidth;
     const vh = m.vh || window.innerHeight;
@@ -135,16 +137,25 @@ export function DistortSurface({
         (edgeTargetTB - mat.uniforms.uEdgeRefractTB.value) * 0.14;
     }
     const bendCap = (paramsRef?.current?.scrollBendVh ?? 0) * vh;
+    const bendSpeed = paramsRef?.current?.scrollBendSpeed ?? 1400;
+    const bendEase = paramsRef?.current?.scrollBendEase ?? 0.16;
     const bendTarget =
-      reducedMotion || edgeAxis !== 'tb' ? 0 : dir * Math.min(1, userSpeed / 1400) * bendCap;
+      reducedMotion || edgeAxis !== 'tb'
+        ? 0
+        : dir * Math.min(1, userSpeed / Math.max(bendSpeed, 1)) * bendCap;
     if (mat.uniforms.uScrollBend) {
-      mat.uniforms.uScrollBend.value += (bendTarget - mat.uniforms.uScrollBend.value) * 0.16;
+      mat.uniforms.uScrollBend.value += (bendTarget - mat.uniforms.uScrollBend.value) * bendEase;
+    }
+    if (mat.uniforms.uScrollBendTop) {
+      const topMul = paramsRef?.current?.scrollBendTop;
+      mat.uniforms.uScrollBendTop.value = topMul == null ? 1 : topMul;
     }
 
-    if (texture && mat.uniforms.uMap.value !== texture) {
-      mat.uniforms.uMap.value = texture;
+    const liveTex = rect?.texture || texture;
+    if (liveTex && mat.uniforms.uMap.value !== liveTex) {
+      mat.uniforms.uMap.value = liveTex;
     }
-    const img = texture?.image;
+    const img = liveTex?.image;
     if (img && (img.naturalWidth || img.width || img.width === 0)) {
       const iw = img.naturalWidth || img.width || w;
       const ih = img.naturalHeight || img.height || h;
@@ -201,7 +212,7 @@ export function DistortSurface({
           : undefined
       }
     >
-      <planeGeometry args={[1, 1, SEG_X, SEG_Y]} />
+      <planeGeometry args={[1, 1, segments[0], segments[1]]} />
       <shaderMaterial
         ref={matRef}
         uniforms={uniforms}
