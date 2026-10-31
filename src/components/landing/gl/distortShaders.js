@@ -35,6 +35,9 @@ uniform float uSpreadPx;
 uniform float uBend;
 uniform float uBendPower;
 uniform float uBendSpan;
+uniform vec2 uViewport;
+uniform float uEdgeWidth;
+uniform float uScrollBend;
 ${DROP_WAVE_GLSL}
 varying vec2 vUv;
 varying vec2 vWorldXy;
@@ -74,6 +77,24 @@ void main() {
   worldPos.xy += dropDir(worldPos.xy) * wave * 22.0;
   worldPos.z += wave * 0.85;
   vWorldXy = worldPos.xy;
+
+  // Detail scroll: the sheet arcs down at the top and bottom of the viewport.
+  // Sign of uScrollBend is scroll direction; landing leaves it at 0.
+  float viewW = max(uViewport.x, 1.0);
+  float viewH = max(uViewport.y, 1.0);
+  float nx = clamp(worldPos.x / viewW, 0.0, 1.0);
+  float ny = clamp(-worldPos.y / viewH, 0.0, 1.0);
+  float edgeFrac = clamp(uEdgeWidth, 0.04, 0.48);
+  float topW = 1.0 - smoothstep(0.0, edgeFrac, ny);
+  float botW = 1.0 - smoothstep(0.0, edgeFrac, 1.0 - ny);
+  topW = topW * topW * (3.0 - 2.0 * topW);
+  botW = botW * botW * (3.0 - 2.0 * botW);
+  float bow = pow(max(sin(nx * 3.14159265), 0.0), 0.65);
+  float mag = abs(uScrollBend);
+  float lead = sign(uScrollBend);
+  float topAmp = mag * (lead < 0.0 ? 1.28 : 0.7);
+  float botAmp = mag * (lead > 0.0 ? 1.28 : 0.7);
+  worldPos.y -= bow * (topW * topAmp + botW * botAmp);
 
   gl_Position = projectionMatrix * viewMatrix * worldPos;
 }
@@ -151,6 +172,8 @@ uniform vec2 uImageSize;
 uniform vec2 uPlaneSize;
 uniform float uCoverHeight;
 uniform float uSpreadPx;
+uniform float uReveal;
+uniform float uRevealFrom;
 varying vec2 vUv;
 varying vec2 vWorldXy;
 
@@ -174,6 +197,16 @@ vec2 coverUv(vec2 uv, vec2 imageSize, vec2 planeSize, float coverHeight) {
 }
 
 void main() {
+  // Scroll-in wipe: 0 = left origin, 1 = right origin (detail gallery)
+  float reveal = clamp(uReveal, 0.0, 1.0);
+  if (reveal < 0.999) {
+    float soft = 0.02;
+    float mask = uRevealFrom > 0.5
+      ? smoothstep(1.0 - reveal - soft, 1.0 - reveal + soft, vUv.x)
+      : (1.0 - smoothstep(reveal - soft, reveal + soft, vUv.x));
+    if (mask < 0.02) discard;
+  }
+
   vec2 dUv = vUv - uMouse;
   vec2 dPx = dUv * uPlaneSize;
   float dist = length(dPx);
@@ -232,6 +265,6 @@ void main() {
   warped = edgeLiquidUv(warped);
   vec4 color = texture2D(uMap, clamp(warped, 0.0, 1.0));
   if (color.a < 0.02) discard;
-  gl_FragColor = vec4(color.rgb * color.a, color.a);
+  gl_FragColor = color;
 }
 `;

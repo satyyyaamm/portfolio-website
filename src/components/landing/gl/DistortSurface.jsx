@@ -6,7 +6,7 @@ import { dropUniformDefaults, syncDropUniforms } from './dropRipple.js';
 import { applyBottomHingeSkew } from './skewMath.js';
 
 const SEG_X = 32;
-const SEG_Y = 20;
+const SEG_Y = 48;
 
 /**
  * Stage-space distortable plane (pixel coords, y down from top of stage).
@@ -52,10 +52,15 @@ export function DistortSurface({
       uEdgeWidth: { value: 0.03 },
       uEdgeRefract: { value: 0 },
       uEdgeRefractTB: { value: 0 },
+      uViewport: { value: new THREE.Vector2(1, 1) },
+      uScrollBend: { value: 0 },
       // Text stays on matrix skew — bend stays at 0
       uBend: { value: 0 },
       uBendPower: { value: 1.0 },
       uBendSpan: { value: 0 },
+      // Detail gallery L/R wipe — landing leaves these at fully revealed
+      uReveal: { value: 1 },
+      uRevealFrom: { value: 0 },
       ...dropUniformDefaults(),
     };
   }, [texture, width, height]);
@@ -71,12 +76,24 @@ export function DistortSurface({
     const T = rect?.top ?? top;
     const w = Math.max(1, rect?.width ?? width);
     const h = Math.max(1, rect?.height ?? height);
+    // Live scramble / hover — hide bake so only the DOM node shows
+    if (rect?.suppress) {
+      mesh.visible = false;
+      return;
+    }
     // Offstage — park tiny
     if (rect && (w < 2 || h < 2 || T + h < -80 || T > (m.vh || 9999) + 80)) {
       mesh.visible = false;
       return;
     }
     mesh.visible = true;
+
+    const reveal =
+      typeof rect?.reveal === 'number' && Number.isFinite(rect.reveal) ? rect.reveal : 1;
+    if (mat.uniforms.uReveal) mat.uniforms.uReveal.value = reveal;
+    if (mat.uniforms.uRevealFrom) {
+      mat.uniforms.uRevealFrom.value = rect?.revealSide === 'right' ? 1 : 0;
+    }
 
     const cx = L + w * 0.5;
     const bottomY = -(T + h);
@@ -92,26 +109,36 @@ export function DistortSurface({
     mat.uniforms.uSpreadPx.value = Math.min(vw, vh) * spread;
     const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 1.5);
     mat.uniforms.uResolution.value.set(vw * dpr, vh * dpr);
+    mat.uniforms.uViewport.value.set(vw, vh);
     mat.uniforms.uEdgeWidth.value = paramsRef?.current?.edgeWidth ?? 0.03;
     // Match cards: only on user scroll/drag, smooth ease
     const sim = simRef?.current;
-    const userSpeed = Math.abs(sim?.userVelocity || 0);
-    const userScrolling = Boolean(sim?.drag?.active) || userSpeed > 10;
+    const vel = sim?.userVelocity || 0;
+    const userSpeed = Math.abs(vel);
+    const userScrolling = Boolean(sim?.drag?.active) || userSpeed > 24;
     const edgeMul =
       reducedMotion || !userScrolling
         ? 0
         : (sim?.drag?.active
-            ? Math.max(0.35, Math.min(1, userSpeed / 520))
-            : Math.min(1, userSpeed / 520)) * dpr;
+            ? Math.max(0.35, Math.min(1, userSpeed / 1400))
+            : Math.min(1, userSpeed / 1400)) * dpr;
     const edgeAxis = paramsRef?.current?.edgeAxis || 'lr';
     const tbMul = paramsRef?.current?.edgeRefractMul ?? 56;
-    const edgeTargetLR = edgeAxis === 'tb' ? 0 : edgeMul * 48;
+    // edgeRefractMul 0 keeps baked type flat — edge liquid slices glyphs
+    const edgeTargetLR = edgeAxis === 'tb' || tbMul === 0 ? 0 : edgeMul * 48;
+    const dir = Math.sign(vel) || 0;
     const edgeTargetTB =
-      edgeAxis === 'tb' ? edgeMul * tbMul : edgeAxis === 'both' ? edgeMul * 36 : 0;
+      edgeAxis === 'tb' ? dir * edgeMul * tbMul : edgeAxis === 'both' ? edgeMul * 36 : 0;
     mat.uniforms.uEdgeRefract.value += (edgeTargetLR - mat.uniforms.uEdgeRefract.value) * 0.14;
     if (mat.uniforms.uEdgeRefractTB) {
       mat.uniforms.uEdgeRefractTB.value +=
         (edgeTargetTB - mat.uniforms.uEdgeRefractTB.value) * 0.14;
+    }
+    const bendCap = (paramsRef?.current?.scrollBendVh ?? 0) * vh;
+    const bendTarget =
+      reducedMotion || edgeAxis !== 'tb' ? 0 : dir * Math.min(1, userSpeed / 1400) * bendCap;
+    if (mat.uniforms.uScrollBend) {
+      mat.uniforms.uScrollBend.value += (bendTarget - mat.uniforms.uScrollBend.value) * 0.16;
     }
 
     if (texture && mat.uniforms.uMap.value !== texture) {
@@ -147,6 +174,7 @@ export function DistortSurface({
     <mesh
       ref={meshRef}
       matrixAutoUpdate={false}
+      frustumCulled={false}
       userData={userData}
       onPointerOver={
         onPointer
@@ -182,7 +210,7 @@ export function DistortSurface({
         transparent={mode === 'alpha' || depthWriteProp === false}
         depthWrite={depthWrite}
         depthTest={depthWriteProp !== false}
-        premultipliedAlpha={mode === 'alpha'}
+        premultipliedAlpha={false}
         toneMapped={false}
       />
     </mesh>
