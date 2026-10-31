@@ -24,22 +24,31 @@
 }
 
 /*
-  Ghost DOM surfaces redrawn in WebGL (images + title).
-  Body copy stays live DOM so type matches Features / Info.
+  Ghost DOM surfaces redrawn in WebGL (images + mega title + body copy bend).
 */
-.project-detail--gl-ghost .project-detail__hero-img,
-.project-detail--gl-ghost .project-detail__shot img {
+.project-detail--gl-ghost .project-detail__hero-img {
+  opacity: 0 !important;
+}
+
+/* Gallery DOM stays visible until GL shot textures finish (avoids cream holes) */
+.project-detail--gl-ghost.project-detail--gl-shots .project-detail__shot img {
+  opacity: 0 !important;
+}
+
+/* Next-project thumb — ghost once its GL plane is up */
+.project-detail--gl-ghost.project-detail--gl-next .project-detail__next-media img {
   opacity: 0 !important;
 }
 
 .project-detail--gl-ghost .project-detail__hero,
-.project-detail--gl-ghost .project-detail__shot {
+.project-detail--gl-ghost .project-detail__shot,
+.project-detail--gl-ghost.project-detail--gl-next .project-detail__next-media {
   background: #edeee5 !important;
 }
 
 /*
   Title float is portaled onto the detail stage (above both GL layers).
-  Ghost mega (drawn on difference canvas) — kind stays live + difference.
+  Mega + kind drawn on difference canvas so both scroll-bend together.
 */
 .project-open__detail-stage--gl .project-detail__title-float {
   z-index: 8;
@@ -48,14 +57,35 @@
   isolation: auto;
 }
 
-.project-open__detail-stage--gl .project-detail__title-float .project-detail__mega {
+/* Ghost mega + kind once the title GL canvas is up */
+.project-open__detail-stage--gl-title .project-detail__title-float .project-detail__mega,
+.project-open__detail-stage--gl-title .project-detail__title-float .project-detail__kind {
   opacity: 0 !important;
   visibility: hidden !important;
   color: transparent !important;
 }
 
-.project-open__detail-stage--gl .project-detail__title-float .project-detail__kind {
+/* Body copy ghosted while GL shows scroll bend */
+.project-detail .is-gl-text {
+  opacity: 0 !important;
+}
+
+/* Info row live on hover — sit above the transparent GL hole */
+.project-detail__info-row[data-gl-live='1'] {
+  position: relative;
+  z-index: 6;
   opacity: 1 !important;
-  visibility: visible !important;
-  color: #fff !important;
+}
+
+/* View project stays clickable on the cream sheet */
+.project-detail .project-detail__cta {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* Small hero-overlay name stays live DOM (curtain slide) — invert over the photo */
+.project-open__detail-stage--gl .project-detail__title-hero {
+  z-index: 9;
+  color: #fff;
+  mix-blend-mode: difference;
 }

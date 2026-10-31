@@ -2,16 +2,164 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import Lenis from 'lenis';
-import { ScrambleHover } from './landing/Scramble.jsx';
+import { Scramble } from './landing/Scramble.jsx';
 import './project-detail.css';
 
 const EASE = [0.22, 1, 0.36, 1];
 const RISE = { hidden: { opacity: 0, y: 36 }, show: { opacity: 1, y: 0 } };
+/**
+ * Alternating L/R wipe on scroll.
+ * Lenis breaks Framer whileInView — use IntersectionObserver + rAF, drive GL via --gl-reveal.
+ */
+function GalleryShot({ src, variant, side, reducedMotion, scrollRoot }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    if (reducedMotion) {
+      el.style.setProperty('--gl-reveal', '1');
+      el.classList.add('is-revealed');
+      return undefined;
+    }
+
+    el.style.setProperty('--gl-reveal', '0');
+    el.classList.remove('is-revealed');
+    let done = false;
+    let raf = 0;
+
+    const play = () => {
+      if (done) return;
+      done = true;
+      el.classList.add('is-revealed');
+      const start = performance.now();
+      const dur = 1100;
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / dur);
+        const e = 1 - (1 - t) ** 3;
+        el.style.setProperty('--gl-reveal', String(e));
+        if (t < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    const root = scrollRoot instanceof Element ? scrollRoot : null;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.08) play();
+        }
+      },
+      { root, rootMargin: '0px 0px -12% 0px', threshold: [0, 0.1, 0.2, 0.35] }
+    );
+    io.observe(el);
+
+    // Lenis sometimes skips IO — also poll on scroll until played
+    const onScroll = () => {
+      if (done) return;
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || 800;
+      if (r.top < vh * 0.88 && r.bottom > vh * 0.12) play();
+    };
+    root?.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      done = true;
+      cancelAnimationFrame(raf);
+      io.disconnect();
+      root?.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [reducedMotion, scrollRoot, src]);
+
+  return (
+    <figure
+      ref={ref}
+      className={`project-detail__shot project-detail__shot--${variant} project-detail__shot--from-${side}`}
+      data-reveal={side}
+    >
+      <img src={src} alt="" loading="lazy" decoding="async" />
+    </figure>
+  );
+}
 
 /** Mega → pinned size (keep pinned readable — Auge stays ~mid, not micro) */
 const TITLE_FS_MAX_PX = 180;
 const TITLE_FS_MIN_PX = 52;
 const PIN_TOP_PX = 20;
+
+/** Bottom “Next project” strip — label | image | title + kind (Auge-style). */
+function NextProjectRow({ project, onOpen }) {
+  const title = splitTitle(project?.name || '');
+  const kind = typeLabel(project?.previewFrame);
+  const img = project?.image || project?.previewImage;
+  const tipRef = useRef(null);
+  const [tipOn, setTipOn] = useState(false);
+
+  const syncTip = (clientX, clientY, visible) => {
+    const tip = tipRef.current;
+    if (tip) {
+      tip.style.transform = `translate3d(${clientX + 18}px, ${clientY + 14}px, 0)`;
+      tip.style.opacity = visible ? '1' : '0';
+    }
+    setTipOn((prev) => (prev === visible ? prev : visible));
+  };
+
+  const onActivate = () => onOpen?.();
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onActivate();
+    }
+  };
+
+  const tip = (
+    <div
+      ref={tipRef}
+      className={`auge-view-tip project-detail__view-tip${tipOn ? ' is-on' : ''}`}
+      aria-hidden={!tipOn}
+    >
+      <Scramble text="View project" active={tipOn} steps={10} intervalMs={28} />
+    </div>
+  );
+
+  return (
+    <section className="project-detail__next" aria-label="Next project">
+      {/* Portal above GL canvas — tip inside scroll is trapped under the image plane */}
+      {typeof document !== 'undefined' ? createPortal(tip, document.body) : tip}
+      {/* div (not button) so text bakes match other detail copy for bend/mess */}
+      <div
+        className="project-detail__next-hit"
+        role="button"
+        tabIndex={0}
+        onClick={onActivate}
+        onKeyDown={onKeyDown}
+      >
+        <span className="project-detail__next-label">NEXT PROJECT</span>
+        <span
+          className="project-detail__next-media"
+          onPointerEnter={(e) => syncTip(e.clientX, e.clientY, true)}
+          onPointerMove={(e) => syncTip(e.clientX, e.clientY, true)}
+          onPointerLeave={() => syncTip(0, 0, false)}
+        >
+          {img ? <img src={img} alt="" loading="lazy" decoding="async" /> : null}
+        </span>
+        <span className="project-detail__next-copy">
+          <span className="project-detail__next-name">
+            <span className="project-detail__next-name-line">{title.line1}</span>
+            {title.line2 ? (
+              <span className="project-detail__next-name-line">{title.line2}</span>
+            ) : null}
+          </span>
+          <span className="project-detail__next-kind">{kind}</span>
+        </span>
+      </div>
+    </section>
+  );
+}
 
 function splitTitle(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -109,17 +257,25 @@ function titleMinPx(vw) {
  * - Scroll up: full-bleed hero
  * - Scroll down: title docks + description / gallery
  */
-export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-title' }) {
+export function ProjectDetailScroll({
+  project,
+  heroSrc,
+  titleId = 'project-open-title',
+  nextProject = null,
+  onOpenNext,
+}) {
   const reducedMotion = useReducedMotion();
   const rootRef = useRef(null);
   const heroMediaRef = useRef(null);
   const slotRef = useRef(null);
   const floatRef = useRef(null);
+  const heroTitleRef = useRef(null);
+  const heroTitleShownRef = useRef(false);
   const entrySetRef = useRef(false);
-  const entryTitleTopRef = useRef(null);
   const lenisRef = useRef(null);
   const [scrollRoot, setScrollRoot] = useState(null);
   const [stageEl, setStageEl] = useState(null);
+  const [heroTitleIn, setHeroTitleIn] = useState(false);
 
   const title = useMemo(() => splitTitle(project?.name || ''), [project?.name]);
   const kind = useMemo(() => typeLabel(project?.previewFrame), [project?.previewFrame]);
@@ -174,7 +330,8 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
       root.classList.add('project-open__scroll--smooth');
     }
 
-    if (!entrySetRef.current) {
+    // Always land on the built entry: top half hero, bottom half project name
+    {
       entrySetRef.current = true;
       const entryY = (root.clientHeight || window.innerHeight) * 0.5;
       if (lenis) lenis.scrollTo(entryY, { immediate: true });
@@ -196,26 +353,31 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
         media.style.transform = `translate(-50%, -50%) scale(${scale})`;
       }
 
-      // Remember title top at the 50/50 entry so scroll-up can rise from there
-      if (y >= entryY - 1 || entryTitleTopRef.current == null) {
-        if (y <= entryY + 2) entryTitleTopRef.current = slotTop;
-      }
-
       let dockT;
       let top;
       let pinned;
 
       if (y < entryY) {
-        // Full-bleed hero: title rides up to top-center (vertical only)
+        // Cream name stays on the cream band — rides with the slot as it leaves
+        top = slotTop;
+        dockT = 0;
+        pinned = false;
+
+        // Separate small name: curtain-style slide down over the full photo
         const upT = reducedMotion
           ? 1
           : smoothstep((entryY - y) / Math.max(entryY, 1));
-        dockT = upT;
-        const baseTop = entryTitleTopRef.current ?? slotTop;
-        top = lerp(baseTop, PIN_TOP_PX, upT);
-        pinned = upT > 0.92;
+        const showHeroTitle = upT > 0.32;
+        if (showHeroTitle !== heroTitleShownRef.current) {
+          heroTitleShownRef.current = showHeroTitle;
+          setHeroTitleIn(showHeroTitle);
+        }
       } else {
         // Cream sheet: title docks as the slot reaches the pin
+        if (heroTitleShownRef.current) {
+          heroTitleShownRef.current = false;
+          setHeroTitleIn(false);
+        }
         const pinY = stageBox.top + PIN_TOP_PX;
         const rawTop = slotBox.top;
         pinned = rawTop <= pinY + 0.5;
@@ -229,7 +391,8 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
 
       const shrinkT = dockT * dockT; // bias toward staying larger longer
       const fs = lerp(titleMaxPx(vw), titleMinPx(vw), shrinkT);
-      float.style.top = `${Math.max(PIN_TOP_PX, top)}px`;
+      float.style.top = `${top}px`;
+      float.style.opacity = '1';
       float.style.setProperty('--title-dock', String(dockT));
       float.style.setProperty('--title-fs', `${fs}px`);
       float.dataset.pinned = pinned ? 'true' : 'false';
@@ -268,27 +431,31 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
         transition: { duration: 0.85, ease: EASE },
       };
 
-  const renderGallery = (list, keyPrefix) =>
+  const renderGallery = (list, keyPrefix, indexOffset = 0) =>
     list.length ? (
       <section className="project-detail__gallery" aria-label="Project gallery">
-        {list.map((src, i) => (
-          <motion.figure
-            key={`${keyPrefix}-${src}-${i}`}
-            className={`project-detail__shot project-detail__shot--${(i % 4) + 1}`}
-            {...motionProps}
-            transition={{ duration: 0.9, ease: EASE, delay: reducedMotion ? 0 : (i % 3) * 0.08 }}
-          >
-            <img src={src} alt="" loading="lazy" decoding="async" />
-          </motion.figure>
-        ))}
+        {list.map((src, i) => {
+          // First two shots: wipe right→left; the rest: left→right
+          const side = indexOffset + i < 2 ? 'right' : 'left';
+          return (
+            <GalleryShot
+              key={`${keyPrefix}-${src}-${i}`}
+              src={src}
+              variant={(i % 4) + 1}
+              side={side}
+              reducedMotion={reducedMotion}
+              scrollRoot={scrollRoot}
+            />
+          );
+        })}
       </section>
     ) : null;
 
   const renderStory = (label, text) =>
     text ? (
       <motion.section className="project-detail__desc project-detail__story" {...motionProps}>
-        <ScrambleHover as="h2" className="project-detail__section-label" text={label} />
-        <ScrambleHover as="p" className="project-detail__intro" text={text} steps={14} />
+        <h2 className="project-detail__section-label">{label}</h2>
+        <p className="project-detail__intro">{text}</p>
       </motion.section>
     ) : null;
 
@@ -321,12 +488,8 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
 
         {body ? (
           <motion.section className="project-detail__desc" {...motionProps}>
-            <ScrambleHover
-              as="h2"
-              className="project-detail__section-label"
-              text="Description"
-            />
-            <ScrambleHover as="p" className="project-detail__intro" text={body} steps={14} />
+            <h2 className="project-detail__section-label">Description</h2>
+            <p className="project-detail__intro">{body}</p>
           </motion.section>
         ) : null}
 
@@ -337,26 +500,19 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
         >
           {showCaseLink ? (
             <div className="project-detail__meta-lead">
-              <ScrambleHover as="p" className="project-detail__year" text={`©${year}`} />
-              <ScrambleHover
-                as="a"
-                className="project-detail__cta"
-                text="View project"
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-              />
+              <p className="project-detail__year">{`©${year}`}</p>
+              <a className="project-detail__cta" href={href} target="_blank" rel="noreferrer">
+                View project
+              </a>
             </div>
           ) : null}
 
           {features.length ? (
             <div className="project-detail__features">
-              <ScrambleHover as="h2" className="project-detail__section-label" text="Features" />
+              <h2 className="project-detail__section-label">Features</h2>
               <ul className="project-detail__feature-list">
                 {features.map((f) => (
-                  <li key={f}>
-                    <ScrambleHover text={f} />
-                  </li>
+                  <li key={f}>{f}</li>
                 ))}
               </ul>
             </div>
@@ -364,13 +520,13 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
 
           {rows.length ? (
             <div className="project-detail__info">
-              <ScrambleHover as="h2" className="project-detail__section-label" text="Info" />
+              <h2 className="project-detail__section-label">Info</h2>
               <ul className="project-detail__info-list">
                 {rows.map((row) => (
                   <li key={`${row.mid}-${row.end}`} className="project-detail__info-row">
-                    <ScrambleHover as="span" className="project-detail__info-year" text={row.year} />
-                    <ScrambleHover as="span" className="project-detail__info-mid" text={row.mid} />
-                    <ScrambleHover as="span" className="project-detail__info-end" text={row.end} />
+                    <span className="project-detail__info-year">{row.year}</span>
+                    <span className="project-detail__info-mid">{row.mid}</span>
+                    <span className="project-detail__info-end">{row.end}</span>
                   </li>
                 ))}
               </ul>
@@ -378,22 +534,46 @@ export function ProjectDetailScroll({ project, heroSrc, titleId = 'project-open-
           ) : null}
         </motion.div>
 
-        {renderGallery(shotsBefore, 'before')}
+        {renderGallery(shotsBefore, 'before', 0)}
         {renderStory('Challenge', challenge)}
-        {renderGallery(shotsAfter, 'after')}
+        {renderGallery(shotsAfter, 'after', shotsBefore.length)}
         {renderStory('Solution', solution)}
+
+        {nextProject ? <NextProjectRow project={nextProject} onOpen={onOpenNext} /> : null}
 
         <div className="project-detail__footer-space" aria-hidden />
       </div>
 
       {stageEl
         ? createPortal(
-            <div ref={floatRef} className="project-detail__title-float">
-              <h1 id={titleId} className="project-detail__mega">
-                {titleInner}
-              </h1>
-              <ScrambleHover as="p" className="project-detail__kind" text={kind} />
-            </div>,
+            <>
+              {/* Cream / sheet title — stays on the cream canvas */}
+              <div ref={floatRef} className="project-detail__title-float">
+                <h1 id={titleId} className="project-detail__mega">
+                  {titleInner}
+                </h1>
+                <p className="project-detail__kind">{kind}</p>
+              </div>
+              {/* Full-photo title — small, slides down like the yellow curtain */}
+              <div
+                ref={heroTitleRef}
+                className={`project-detail__title-hero${heroTitleIn ? ' is-in' : ''}`}
+                aria-hidden={!heroTitleIn}
+              >
+                <p className="project-detail__title-hero-mega">
+                  <Scramble text={title.line1} active={heroTitleIn} steps={12} />
+                  {title.line2 ? (
+                    <>
+                      {' '}
+                      <Scramble text={title.line2} active={heroTitleIn} steps={12} />
+                    </>
+                  ) : null}
+                </p>
+                <p className="project-detail__title-hero-kind">
+                  <Scramble text={kind} active={heroTitleIn} steps={10} />
+                </p>
+              </div>
+            </>,
             stageEl
           )
         : null}

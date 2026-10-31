@@ -3,7 +3,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import * as THREE from 'three';
 import { DistortSurface } from './landing/gl/DistortSurface.jsx';
-import { bakeDetailTitleTexture } from './detailTextBake.js';
+import {
+  bakeDetailKindTexture,
+  bakeDetailTitleTexture,
+  useDetailCopyBakes,
+} from './detailTextBake.js';
 import './detail-screen-fx.css';
 
 function PixelCamera() {
@@ -51,26 +55,42 @@ function titleMaxPx(vw) {
   return Math.max(64, Math.min(180, 0.1 * vw + 100));
 }
 
+function typeLabel(previewFrame) {
+  if (previewFrame === 'mobile') return 'App';
+  if (previewFrame === 'web') return 'Website';
+  return 'Project';
+}
+
 function DetailScene({
   scrollRef,
   project,
   heroSrc,
+  nextSrc,
   mouseRef,
   simRef,
   paramsRef,
   heroRectRef,
   shotRectRefs,
+  nextRectRef,
   titleRectRef,
+  kindRectRef,
   textParamsRef,
+  copyParamsRef,
+  copyBakes,
+  copyRectsRef,
   reducedMotion,
   /** 'media' = photos, 'title' = mega name (difference canvas), 'all' */
   layer = 'all',
   onMediaReady,
+  onShotsReady,
+  onNextReady,
 }) {
   const readySent = useRef(false);
+  const scrollSampleRef = useRef({ top: null, vel: 0 });
   const { size, gl } = useThree();
   const [heroTex, setHeroTex] = useState(null);
   const [shotTex, setShotTex] = useState(() => new Map());
+  const [nextTex, setNextTex] = useState(null);
   const [fontsReady, setFontsReady] = useState(0);
 
   useLayoutEffect(() => {
@@ -98,8 +118,10 @@ function DetailScene({
   }, [project, heroSrc]);
 
   const titleParts = useMemo(() => splitTitle(project?.name || ''), [project?.name]);
+  const titleKind = useMemo(() => typeLabel(project?.previewFrame), [project?.previewFrame]);
 
   const titleBakeSizeRef = useRef(null);
+  const kindBakeSizeRef = useRef(null);
   const titleBake = useMemo(() => {
     if (!titleParts.line1) return null;
     const maxFs = titleMaxPx(size.width || window.innerWidth || 1200);
@@ -114,11 +136,29 @@ function DetailScene({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [titleParts.line1, titleParts.line2, size.width, fontsReady]);
 
+  const kindBake = useMemo(() => {
+    if (!titleKind) return null;
+    const next = bakeDetailKindTexture({
+      kind: titleKind,
+      vw: size.width || window.innerWidth || 1200,
+    });
+    if (next) kindBakeSizeRef.current = { width: next.width, height: next.height };
+    return next;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [titleKind, size.width, fontsReady]);
+
   useEffect(
     () => () => {
       titleBake?.texture?.dispose?.();
     },
     [titleBake]
+  );
+
+  useEffect(
+    () => () => {
+      kindBake?.texture?.dispose?.();
+    },
+    [kindBake]
   );
 
   useEffect(() => {
@@ -143,17 +183,20 @@ function DetailScene({
     };
   }, [heroSrc, layer]);
 
+  // Stagger gallery GPU uploads so enter doesn't hitch on a burst of decodes
   useEffect(() => {
     if (layer === 'title') return undefined;
     let dead = false;
     const loader = new THREE.TextureLoader();
-    const next = new Map();
-    let pending = shots.length;
-    if (!pending) {
+    if (!shots.length) {
       setShotTex(new Map());
       return undefined;
     }
-    shots.forEach((src) => {
+    let i = 0;
+    const loadNext = () => {
+      if (dead || i >= shots.length) return;
+      const src = shots[i];
+      i += 1;
       loader.load(
         src,
         (tex) => {
@@ -165,37 +208,74 @@ function DetailScene({
           tex.minFilter = THREE.LinearFilter;
           tex.magFilter = THREE.LinearFilter;
           tex.generateMipmaps = false;
-          next.set(src, tex);
-          pending -= 1;
-          if (pending <= 0) {
-            setShotTex((prev) => {
-              prev.forEach((t, k) => {
-                if (!next.has(k)) t.dispose();
-              });
-              return new Map(next);
-            });
+          setShotTex((prev) => {
+            const next = new Map(prev);
+            const old = next.get(src);
+            if (old && old !== tex) old.dispose();
+            next.set(src, tex);
+            return next;
+          });
+          if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(loadNext, { timeout: 200 });
+          } else {
+            window.setTimeout(loadNext, 32);
           }
         },
         undefined,
         () => {
-          pending -= 1;
-          if (pending <= 0 && !dead) {
-            setShotTex((prev) => {
-              prev.forEach((t, k) => {
-                if (!next.has(k)) t.dispose();
-              });
-              return new Map(next);
-            });
-          }
+          if (!dead) loadNext();
         }
       );
-    });
+    };
+    // Start after a tick so the first detail paint isn't competing
+    const kick = window.setTimeout(loadNext, 120);
     return () => {
       dead = true;
+      window.clearTimeout(kick);
     };
   }, [shots, layer]);
 
-  // Signal overlay once photo textures are in GPU memory
+  // Next-project thumb — load early so footer has bend/mess ready on arrival
+  useEffect(() => {
+    if (layer === 'title') return undefined;
+    if (!nextSrc) {
+      setNextTex((prev) => {
+        prev?.dispose?.();
+        return null;
+      });
+      return undefined;
+    }
+    let dead = false;
+    const kick = window.setTimeout(() => {
+      new THREE.TextureLoader().load(
+        nextSrc,
+        (tex) => {
+          if (dead) {
+            tex.dispose();
+            return;
+          }
+          tex.colorSpace = THREE.NoColorSpace;
+          tex.minFilter = THREE.LinearFilter;
+          tex.magFilter = THREE.LinearFilter;
+          tex.generateMipmaps = false;
+          setNextTex((prev) => {
+            prev?.dispose?.();
+            return tex;
+          });
+        },
+        undefined,
+        () => {
+          /* keep DOM thumb if GL decode fails */
+        }
+      );
+    }, 60);
+    return () => {
+      dead = true;
+      window.clearTimeout(kick);
+    };
+  }, [nextSrc, layer]);
+
+  // Unblock the yellow load once the hero is on the GPU — gallery can stream in after.
   useEffect(() => {
     if (layer === 'title' || readySent.current) return;
     if (!heroSrc) {
@@ -204,10 +284,28 @@ function DetailScene({
       return;
     }
     if (!heroTex) return;
-    if (shots.length > 0 && shotTex.size < shots.length) return;
     readySent.current = true;
     onMediaReady?.();
-  }, [layer, heroSrc, heroTex, shotTex, shots.length, onMediaReady]);
+  }, [layer, heroSrc, heroTex, onMediaReady]);
+
+  useEffect(() => {
+    if (layer === 'title') return;
+    if (shots.length === 0) {
+      onShotsReady?.();
+      return;
+    }
+    if (shotTex.size >= shots.length) onShotsReady?.();
+  }, [layer, shots.length, shotTex, onShotsReady]);
+
+  useEffect(() => {
+    if (layer === 'title') return;
+    // No next thumb, loaded, or failed load — unblock ghosting either way
+    if (!nextSrc) {
+      onNextReady?.();
+      return;
+    }
+    if (nextTex) onNextReady?.();
+  }, [layer, nextSrc, nextTex, onNextReady]);
 
   useFrame((_, dt) => {
     const m = mouseRef.current;
@@ -221,7 +319,24 @@ function DetailScene({
       m.inside && !reducedMotion ? Math.min(0.1615, 0.0323 + speed * 0.000226) : 0;
     m.strength += (targetStrength - m.strength) * (m.inside ? 0.16 : 0.07);
 
-    simRef.current.userVelocity *= Math.pow(0.04, dt);
+    if (layer !== 'title') {
+      const scroller = scrollRef?.current;
+      const sample = scrollSampleRef.current;
+      if (scroller) {
+        const top = scroller.scrollTop;
+        if (sample.top == null) {
+          sample.top = top;
+          sample.vel = 0;
+        } else {
+          const instant = (top - sample.top) / Math.max(dt, 0.001);
+          sample.top = top;
+          const follow = 1 - Math.exp(-Math.max(dt, 0.001) * 12);
+          sample.vel += (instant - sample.vel) * follow;
+          if (Math.abs(sample.vel) < 6) sample.vel = 0;
+        }
+        simRef.current.userVelocity = sample.vel;
+      }
+    }
 
     const scrollEl = scrollRef?.current;
     const stage = scrollEl?.closest('.project-open__detail-stage');
@@ -233,30 +348,83 @@ function DetailScene({
     const figs = scrollEl.querySelectorAll('.project-detail__shot');
     figs.forEach((fig, i) => {
       if (!shotRectRefs.current[i]) shotRectRefs.current[i] = { current: null };
-      shotRectRefs.current[i].current = measure(fig, stageBox);
+      const box = measure(fig, stageBox);
+      if (box) {
+        const raw = parseFloat(fig.style.getPropertyValue('--gl-reveal'));
+        box.reveal = Number.isFinite(raw) ? raw : fig.dataset.reveal ? 0 : 1;
+        box.revealSide = fig.dataset.reveal === 'right' ? 'right' : 'left';
+      }
+      shotRectRefs.current[i].current = box;
     });
 
-    // Mega only — kind stays DOM. Uniform scale from bake aspect (no stretch).
-    const titleEl =
+    if (nextRectRef) {
+      const nextEl = scrollEl.querySelector('.project-detail__next-media');
+      const nextHit = scrollEl.querySelector('.project-detail__next-hit');
+      let nextBox = measure(nextEl, stageBox);
+      const hot =
+        nextEl?.matches(':hover') || nextHit?.matches(':hover, :focus-visible');
+      if (nextBox && hot) {
+        const s = 1.04;
+        const cx = nextBox.left + nextBox.width * 0.5;
+        const cy = nextBox.top + nextBox.height * 0.5;
+        nextBox = {
+          ...nextBox,
+          width: nextBox.width * s,
+          height: nextBox.height * s,
+          left: cx - (nextBox.width * s) * 0.5,
+          top: cy - (nextBox.height * s) * 0.5,
+        };
+      }
+      nextRectRef.current = nextBox;
+    }
+
+    // Mega scales to the live mega box; kind is 1:1 with the live kind box (hero-sized).
+    const megaEl =
       stage.querySelector('.project-detail__title-float .project-detail__mega') ||
-      scrollEl.querySelector('.project-detail__title-slot .project-detail__mega') ||
-      stage.querySelector('.project-detail__title-float');
-    const titleBox = measure(titleEl, stageBox);
+      scrollEl.querySelector('.project-detail__title-slot .project-detail__mega');
+    const kindEl =
+      stage.querySelector('.project-detail__title-float .project-detail__kind') ||
+      scrollEl.querySelector('.project-detail__title-slot .project-detail__kind');
+    const megaBox = measure(megaEl, stageBox);
     const titleBakeSize = titleBakeSizeRef.current;
-    if (titleBox && titleBakeSize?.height > 0) {
-      const scale = titleBox.height / titleBakeSize.height;
+    if (megaBox && titleBakeSize?.height > 0) {
+      const scale = megaBox.height / titleBakeSize.height;
       const w = titleBakeSize.width * scale;
       const h = titleBakeSize.height * scale;
       titleRectRef.current = {
-        left: titleBox.left + (titleBox.width - w) * 0.5,
-        top: titleBox.top,
+        left: megaBox.left + (megaBox.width - w) * 0.5,
+        top: megaBox.top,
         width: w,
         height: h,
       };
     } else {
-      titleRectRef.current = titleBox;
+      titleRectRef.current = megaBox;
     }
 
+    const kindBox = measure(kindEl, stageBox);
+    const kindBakeSize = kindBakeSizeRef.current;
+    if (kindBox && kindBakeSize?.width > 0 && kindRectRef) {
+      // Keep baked kind at its native CSS px — center on the live kind box
+      const w = kindBakeSize.width;
+      const h = kindBakeSize.height;
+      kindRectRef.current = {
+        left: kindBox.left + (kindBox.width - w) * 0.5,
+        top: kindBox.top + (kindBox.height - h) * 0.5,
+        width: w,
+        height: h,
+      };
+    } else if (kindRectRef) {
+      kindRectRef.current = kindBox;
+    }
+
+    stage.querySelectorAll('[data-bend-key]').forEach((el) => {
+      const id = el.dataset.bendKey;
+      if (!id || !copyRectsRef) return;
+      if (!copyRectsRef.current[id]) copyRectsRef.current[id] = { current: null };
+      const box = measure(el, stageBox);
+      if (box) box.suppress = el.dataset.glLive === '1';
+      copyRectsRef.current[id].current = box;
+    });
   });
 
   const showMedia = layer === 'all' || layer === 'media';
@@ -297,6 +465,18 @@ function DetailScene({
             );
           })
         : null}
+      {showMedia && nextTex && nextRectRef ? (
+        <DistortSurface
+          texture={nextTex}
+          rectRef={nextRectRef}
+          mouseRef={mouseRef}
+          paramsRef={paramsRef}
+          simRef={simRef}
+          reducedMotion={reducedMotion}
+          mode="cover"
+          depthWrite={false}
+        />
+      ) : null}
       {showTitle && titleBake?.texture ? (
         <DistortSurface
           texture={titleBake.texture}
@@ -309,17 +489,65 @@ function DetailScene({
           depthWrite={false}
         />
       ) : null}
+      {showTitle && kindBake?.texture ? (
+        <DistortSurface
+          texture={kindBake.texture}
+          rectRef={kindRectRef}
+          mouseRef={mouseRef}
+          paramsRef={textParamsRef}
+          simRef={simRef}
+          reducedMotion={reducedMotion}
+          mode="alpha"
+          depthWrite={false}
+        />
+      ) : null}
+      {showMedia
+        ? (copyBakes || [])
+            .filter((item) => item.layer === 'body')
+            .map((item) => {
+              if (!copyRectsRef.current[item.id]) copyRectsRef.current[item.id] = { current: null };
+              return (
+                <DistortSurface
+                  key={item.id}
+                  texture={item.texture}
+                  rectRef={copyRectsRef.current[item.id]}
+                  mouseRef={mouseRef}
+                  paramsRef={copyParamsRef}
+                  simRef={simRef}
+                  reducedMotion={reducedMotion}
+                  mode="alpha"
+                  depthWrite={false}
+                />
+              );
+            })
+        : null}
     </>
   );
 }
 
-/** WebGL: hero + gallery + baked title/intro (mesh distortion like landing / Auge). */
-export function DetailGlStage({ scrollRef, project, heroSrc, active, onReady }) {
+/**
+ * WebGL: hero + gallery + next thumb + mega title + body copy scroll bend.
+ * `titleFx` / `copyFx` stay off during the yellow % hold so load stays smooth.
+ */
+export function DetailGlStage({
+  scrollRef,
+  project,
+  heroSrc,
+  nextSrc = null,
+  active,
+  onReady,
+  titleFx = true,
+  copyFx = true,
+}) {
   const reducedMotion = useReducedMotion();
   const enabled = Boolean(active) && !reducedMotion;
   const [mediaReady, setMediaReady] = useState(false);
+  const [shotsReady, setShotsReady] = useState(false);
+  const [nextReady, setNextReady] = useState(!nextSrc);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const shotsReadySent = useRef(false);
+  const nextReadySent = useRef(false);
   const mouseRef = useRef({
     x: 0,
     y: 0,
@@ -342,22 +570,38 @@ export function DetailGlStage({ scrollRef, project, heroSrc, active, onReady }) 
     spreadPct: 60,
     strengthPct: 200,
     edgeAxis: 'tb',
-    edgeWidth: 0.16,
-    edgeRefractMul: 110,
+    edgeWidth: 0.42,
+    edgeRefractMul: 72,
+    scrollBendVh: 0.12,
   });
-  // Text planes: mouse mesh only — edge liquid slices glyphs (unlike photo covers)
+  // Mega + kind: same mouse mess + scroll bend as photos; no edge liquid (slices glyphs)
   const textParamsRef = useRef({
     spreadPct: 60,
     strengthPct: 200,
-    edgeAxis: 'lr',
-    edgeWidth: 0.03,
+    edgeAxis: 'tb',
+    edgeWidth: 0.42,
     edgeRefractMul: 0,
+    scrollBendVh: 0.12,
+  });
+  // Body / next-project type: same mouse mess + bend; edge liquid still off
+  const copyParamsRef = useRef({
+    spreadPct: 60,
+    strengthPct: 200,
+    edgeAxis: 'tb',
+    edgeWidth: 0.42,
+    edgeRefractMul: 0,
+    scrollBendVh: 0.12,
+  });
+  const { bakes: copyBakes, rectsRef: copyRectsRef } = useDetailCopyBakes({
+    scrollRef,
+    enabled: enabled && mediaReady && copyFx,
+    projectKey: project?.id || project?.name || '',
   });
   const heroRectRef = useRef(null);
   const shotRectRefs = useRef([]);
+  const nextRectRef = useRef(null);
   const titleRectRef = useRef(null);
-  const lastScrollTop = useRef(0);
-  const lastScrollTs = useRef(performance.now());
+  const kindRectRef = useRef(null);
 
   useEffect(() => {
     if (!enabled) return undefined;
@@ -384,29 +628,17 @@ export function DetailGlStage({ scrollRef, project, heroSrc, active, onReady }) 
       m.y = e.clientY - rect.top;
     };
 
-    const onScroll = () => {
-      const now = performance.now();
-      const dt = Math.max(0.008, (now - lastScrollTs.current) / 1000);
-      const top = scrollEl.scrollTop;
-      simRef.current.userVelocity = (top - lastScrollTop.current) / dt;
-      lastScrollTop.current = top;
-      lastScrollTs.current = now;
-    };
-
     window.addEventListener('pointermove', onMove, { passive: true });
-    scrollEl.addEventListener('scroll', onScroll, { passive: true });
-    lastScrollTop.current = scrollEl.scrollTop;
 
     return () => {
       window.removeEventListener('pointermove', onMove);
-      scrollEl.removeEventListener('scroll', onScroll);
       scrollEl.classList.remove('project-open__scroll--gl');
       detail?.classList.remove('project-detail--gl-ghost');
       stage?.classList.remove('project-open__detail-stage--gl');
     };
   }, [enabled, scrollRef]);
 
-  // Only ghost DOM images once GL textures exist — avoids cream flash / flicker
+  // Ghost hero as soon as it's in GL; ghost gallery shots only once their textures exist
   useEffect(() => {
     if (!enabled || !mediaReady) return undefined;
     const scrollEl = scrollRef?.current;
@@ -416,10 +648,36 @@ export function DetailGlStage({ scrollRef, project, heroSrc, active, onReady }) 
     stage?.classList.add('project-open__detail-stage--gl');
     onReadyRef.current?.();
     return () => {
-      detail?.classList.remove('project-detail--gl-ghost');
-      stage?.classList.remove('project-open__detail-stage--gl');
+      detail?.classList.remove(
+        'project-detail--gl-ghost',
+        'project-detail--gl-shots',
+        'project-detail--gl-next'
+      );
+      stage?.classList.remove('project-open__detail-stage--gl', 'project-open__detail-stage--gl-title');
     };
   }, [enabled, mediaReady, scrollRef]);
+
+  useEffect(() => {
+    if (!enabled || !mediaReady || !shotsReady) return undefined;
+    const detail = scrollRef?.current?.querySelector('.project-detail');
+    detail?.classList.add('project-detail--gl-shots');
+    return () => detail?.classList.remove('project-detail--gl-shots');
+  }, [enabled, mediaReady, shotsReady, scrollRef]);
+
+  useEffect(() => {
+    if (!enabled || !mediaReady || !nextReady) return undefined;
+    const detail = scrollRef?.current?.querySelector('.project-detail');
+    detail?.classList.add('project-detail--gl-next');
+    return () => detail?.classList.remove('project-detail--gl-next');
+  }, [enabled, mediaReady, nextReady, scrollRef]);
+
+  useEffect(() => {
+    if (!enabled || !titleFx) return undefined;
+    const stage =
+      scrollRef?.current?.closest('.project-open__detail-stage') || scrollRef?.current?.parentElement;
+    stage?.classList.add('project-open__detail-stage--gl-title');
+    return () => stage?.classList.remove('project-open__detail-stage--gl-title');
+  }, [enabled, titleFx, scrollRef]);
 
   if (!enabled) return null;
 
@@ -427,47 +685,69 @@ export function DetailGlStage({ scrollRef, project, heroSrc, active, onReady }) 
     scrollRef,
     project,
     heroSrc,
+    nextSrc,
     mouseRef,
     simRef,
     paramsRef,
     heroRectRef,
     shotRectRefs,
+    nextRectRef,
     titleRectRef,
+    kindRectRef,
     textParamsRef,
+    copyParamsRef,
+    copyBakes,
+    copyRectsRef,
     reducedMotion: Boolean(reducedMotion),
   };
 
-  const canvasProps = {
+  const mediaCanvasProps = {
     orthographic: true,
-    dpr: [1, 1.5],
+    dpr: [1, 1.25],
     camera: { position: [0, 0, 400], near: 0.1, far: 4000 },
     gl: {
       alpha: true,
-      antialias: true,
+      antialias: false,
       powerPreference: 'high-performance',
       premultipliedAlpha: false,
     },
     style: { pointerEvents: 'none' },
   };
+  const titleCanvasProps = {
+    ...mediaCanvasProps,
+    dpr: 1,
+  };
 
   return (
     <>
-      {/* Photos — normal composite; body copy stays live DOM */}
+      {/* Photos — warm during yellow load (hero only needed to dismiss %) */}
       <div className="detail-gl-stage" aria-hidden>
-        <Canvas className="detail-gl-stage__canvas" {...canvasProps}>
+        <Canvas className="detail-gl-stage__canvas" {...mediaCanvasProps}>
           <DetailScene
             {...sharedScene}
             layer="media"
             onMediaReady={() => setMediaReady(true)}
+            onShotsReady={() => {
+              if (shotsReadySent.current) return;
+              shotsReadySent.current = true;
+              setShotsReady(true);
+            }}
+            onNextReady={() => {
+              if (nextReadySent.current) return;
+              nextReadySent.current = true;
+              setNextReady(true);
+            }}
           />
         </Canvas>
       </div>
-      {/* Mega title — white bake + difference (same trick as landing S / Auge) */}
-      <div className="detail-gl-stage detail-gl-stage--title" aria-hidden>
-        <Canvas className="detail-gl-stage__canvas" {...canvasProps}>
-          <DetailScene {...sharedScene} layer="title" />
-        </Canvas>
-      </div>
+      {/* Title difference canvas — deferred past yellow % hold */}
+      {titleFx ? (
+        <div className="detail-gl-stage detail-gl-stage--title" aria-hidden>
+          <Canvas className="detail-gl-stage__canvas" {...titleCanvasProps}>
+            <DetailScene {...sharedScene} layer="title" />
+          </Canvas>
+        </div>
+      ) : null}
     </>
   );
 }
