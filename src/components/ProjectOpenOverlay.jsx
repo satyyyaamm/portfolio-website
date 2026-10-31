@@ -4,6 +4,8 @@ import { DetailGlStage } from './DetailGlStage.jsx';
 import { Scramble, ScrambleHover, scrambleFrame } from './landing/Scramble.jsx';
 import { ProjectDetailScroll } from './ProjectDetailScroll.jsx';
 import { preloadProjectImages } from '../lib/preloadProjectImages.js';
+import { SoundToggle } from './SoundToggle.jsx';
+import { playHoverSound, playScrambleSound, playSound } from '../lib/siteSound.js';
 import './project-open.css';
 
 const EASE_SOFT = [0.22, 1, 0.36, 1];
@@ -15,11 +17,14 @@ const EXIT_CURTAIN_MS = 2000;
 const CURTAIN_IN_MS = 700;
 /** Scramble settles, then hold on yellow before wipes. */
 const TITLE_HOLD_MS = 2000;
+/** Home close: slower curtain than project open. */
+const HOME_CURTAIN_IN_MS = 1150;
+const HOME_CURTAIN_OUT_MS = 3200;
 /** Home close: hold “HOME” on yellow before curtain lifts. */
-const HOME_HOLD_MS = 1600;
+const HOME_HOLD_MS = 2100;
 const EXIT_EASE_CSS = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const SCRAMBLE_STEPS = 14;
-const SCRAMBLE_INTERVAL_MS = 30;
+const SCRAMBLE_STEPS = 26;
+const SCRAMBLE_INTERVAL_MS = 38;
 
 const HOME_PHASES = new Set(['homeIn', 'homeHold', 'homeOut']);
 
@@ -49,8 +54,10 @@ function EditorialLine({ text, scramble = false }) {
     }
     let frame = 0;
     setShown(scrambleFrame(text, 0));
+    playScrambleSound('curtainTitle');
     const id = window.setInterval(() => {
       frame += 1;
+      playScrambleSound('curtainTitle');
       if (frame >= SCRAMBLE_STEPS) {
         setShown(text);
         window.clearInterval(id);
@@ -112,20 +119,24 @@ function rectStyle(r) {
 /**
  * arm → fly → curtain → title scramble + hold →
  * exitPhoto / exitName (clip wipe) → slow exitCurtain → detail.
+ * Next project → nextIn (yellow cover) → swap → title/load → exit → detail.
  * Logo / Esc → homeIn → homeHold (HOME) → homeOut → landing.
  */
 export function ProjectOpenOverlay({
   project,
+  nextProject = null,
   fromRect,
   socialItems = [],
   emailMailto = 'mailto:satyamt5152@gmail.com',
   onClose,
   onCovered,
   onHomeCovered,
+  onOpenNext,
 }) {
   const reducedMotion = useReducedMotion();
-  const skipIntro = Boolean(reducedMotion) || !fromRect;
-  const [phase, setPhase] = useState(() => (skipIntro ? 'detail' : 'arm'));
+  /** Landing card fly-in; deep links and next-project skip arm/fly. */
+  const cardIntro = Boolean(fromRect) && !reducedMotion;
+  const [phase, setPhase] = useState(() => (cardIntro ? 'arm' : 'detail'));
   const [vw, setVw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1200));
   const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 800));
   const [loadPct, setLoadPct] = useState(0);
@@ -134,6 +145,8 @@ export function ProjectOpenOverlay({
   const [markHover, setMarkHover] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLink, setDrawerLink] = useState(null);
+  /** After next-project curtain cover — run yellow load + exit without card fly. */
+  const [nextIntro, setNextIntro] = useState(false);
   const photoRef = useRef(null);
   const titleRef = useRef(null);
   const scrollRef = useRef(null);
@@ -145,6 +158,8 @@ export function ProjectOpenOverlay({
   onHomeCoveredRef.current = onHomeCovered;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onOpenNextRef = useRef(onOpenNext);
+  onOpenNextRef.current = onOpenNext;
 
   const src = fromRect?.src || project?.image;
   const title = splitTitle(project?.name || '');
@@ -153,6 +168,7 @@ export function ProjectOpenOverlay({
     () => (fromRect ? topCenterRect(fromRect, vw, vh) : heroRect(vw, vh)),
     [fromRect, vw, vh]
   );
+  const playingYellowIntro = cardIntro || nextIntro;
   useEffect(() => {
     document.body.classList.add('project-open-active');
     const prevOverflow = document.body.style.overflow;
@@ -171,9 +187,9 @@ export function ProjectOpenOverlay({
 
   const goHome = () => {
     if (homeClosingRef.current) return;
-    if (HOME_PHASES.has(phase)) return;
-    // Only from detail (or skip-intro deep link)
-    if (phase !== 'detail' && !skipIntro) return;
+    if (HOME_PHASES.has(phase) || phase === 'nextIn') return;
+    // Only from settled detail
+    if (phase !== 'detail') return;
     if (reducedMotion) {
       onHomeCoveredRef.current?.();
       onCloseRef.current?.();
@@ -183,6 +199,16 @@ export function ProjectOpenOverlay({
     setPhase('homeIn');
   };
 
+  const beginNext = () => {
+    if (!onOpenNextRef.current || phase !== 'detail') return;
+    playSound('clickProject');
+    if (reducedMotion) {
+      onOpenNextRef.current();
+      return;
+    }
+    setPhase('nextIn');
+  };
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') goHome();
@@ -190,14 +216,15 @@ export function ProjectOpenOverlay({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, reducedMotion, skipIntro]);
+  }, [phase, reducedMotion]);
 
   // Home close: curtain in → HOME hold → curtain out → unmount
   useEffect(() => {
     if (phase !== 'homeIn') return undefined;
-    const id = window.setTimeout(() => setPhase('homeHold'), CURTAIN_IN_MS);
+    playSound('raiseCurtain', { delay: reducedMotion ? 0 : 0.12 });
+    const id = window.setTimeout(() => setPhase('homeHold'), HOME_CURTAIN_IN_MS);
     return () => window.clearTimeout(id);
-  }, [phase]);
+  }, [phase, reducedMotion]);
 
   useEffect(() => {
     if (phase !== 'homeHold') return undefined;
@@ -208,28 +235,49 @@ export function ProjectOpenOverlay({
 
   useEffect(() => {
     if (phase !== 'homeOut') return undefined;
-    const id = window.setTimeout(() => onCloseRef.current?.(), EXIT_CURTAIN_MS);
+    const id = window.setTimeout(() => onCloseRef.current?.(), HOME_CURTAIN_OUT_MS);
     return () => window.clearTimeout(id);
   }, [phase]);
 
-  // Cover GL card, then fly.
+  // Next project: yellow covers → swap project → load % → exit → detail
+  useEffect(() => {
+    if (phase !== 'nextIn') return undefined;
+    playSound('raiseCurtain', { delay: reducedMotion ? 0 : 0.12 });
+    const id = window.setTimeout(() => {
+      setLoadPct(0);
+      setImagesReady(false);
+      setGlReady(false);
+      setNextIntro(true);
+      onOpenNextRef.current?.();
+      setPhase('title');
+    }, CURTAIN_IN_MS);
+    return () => window.clearTimeout(id);
+  }, [phase, reducedMotion]);
+
+  // Seat photo over the GL card, paint, THEN blank the strip — no cream flash.
   useLayoutEffect(() => {
-    if (skipIntro || !origin || phase !== 'arm') return undefined;
+    if (!cardIntro || !origin || phase !== 'arm') return undefined;
     const el = photoRef.current;
     if (!el) return undefined;
     el.style.transition = 'none';
+    el.style.opacity = '1';
     Object.assign(el.style, rectStyle(origin));
     void el.offsetWidth;
-    if (!coveredRef.current) {
-      coveredRef.current = true;
-      onCoveredRef.current?.();
-    }
     let raf = 0;
+    let raf2 = 0;
     raf = requestAnimationFrame(() => {
-      raf = requestAnimationFrame(() => setPhase('fly'));
+      // Photo is composited over the live GL card
+      if (!coveredRef.current) {
+        coveredRef.current = true;
+        onCoveredRef.current?.();
+      }
+      raf2 = requestAnimationFrame(() => setPhase('fly'));
     });
-    return () => cancelAnimationFrame(raf);
-  }, [phase, skipIntro, origin]);
+    return () => {
+      cancelAnimationFrame(raf);
+      cancelAnimationFrame(raf2);
+    };
+  }, [phase, cardIntro, origin]);
 
   useLayoutEffect(() => {
     if (phase !== 'fly' || !origin) return undefined;
@@ -246,9 +294,11 @@ export function ProjectOpenOverlay({
 
   useEffect(() => {
     if (phase !== 'curtain') return undefined;
+    // Auge: transition whoosh shortly after the yellow cover starts.
+    playSound('raiseCurtain', { delay: reducedMotion ? 0 : 0.12 });
     const id = window.setTimeout(() => setPhase('title'), CURTAIN_IN_MS);
     return () => window.clearTimeout(id);
-  }, [phase]);
+  }, [phase, reducedMotion]);
 
   // Prefetch hero + gallery while yellow is up (Auge-style curtain load)
   useEffect(() => {
@@ -275,20 +325,23 @@ export function ProjectOpenOverlay({
     return () => window.clearInterval(id);
   }, [phase, imagesReady, glReady]);
 
-  // Reduced-motion / no-GL path: don't block the curtain forever
+  // Deep-link / reduced-motion: don't wait on GL
   useEffect(() => {
-    if (skipIntro) {
+    if (reducedMotion || (!cardIntro && !nextIntro && phase === 'detail')) {
       setGlReady(true);
       setImagesReady(true);
       setLoadPct(100);
     }
-  }, [skipIntro]);
+  }, [reducedMotion, cardIntro, nextIntro, phase]);
 
   // Photo exit: top stays fixed; clip rises from the bottom until gone.
   useLayoutEffect(() => {
     if (phase !== 'exitPhoto') return undefined;
     const el = photoRef.current;
-    if (!el) return undefined;
+    if (!el) {
+      const id = window.setTimeout(() => setPhase('exitName'), 0);
+      return () => window.clearTimeout(id);
+    }
     el.style.transition = 'none';
     el.style.transform = '';
     el.style.clipPath = 'inset(0 0 0 0)';
@@ -303,7 +356,10 @@ export function ProjectOpenOverlay({
   useLayoutEffect(() => {
     if (phase !== 'exitName') return undefined;
     const el = titleRef.current;
-    if (!el) return undefined;
+    if (!el) {
+      const id = window.setTimeout(() => setPhase('exitCurtain'), 0);
+      return () => window.clearTimeout(id);
+    }
     el.style.animation = 'none';
     el.style.transition = 'none';
     el.style.transform = 'none';
@@ -317,9 +373,22 @@ export function ProjectOpenOverlay({
 
   useEffect(() => {
     if (phase !== 'exitCurtain') return undefined;
-    const id = window.setTimeout(() => setPhase('detail'), EXIT_CURTAIN_MS);
+    const id = window.setTimeout(() => {
+      setNextIntro(false);
+      setPhase('detail');
+    }, EXIT_CURTAIN_MS);
     return () => window.clearTimeout(id);
   }, [phase]);
+
+  // Keep the built 50/50 entry (half hero / half name) when the next project swaps in
+  useEffect(() => {
+    if (!nextIntro) return;
+    if (phase !== 'title' && phase !== 'detail') return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const entryY = (el.clientHeight || window.innerHeight) * 0.5;
+    el.scrollTop = entryY;
+  }, [project?.id, nextIntro, phase]);
 
   if (!project || !src) return null;
 
@@ -331,19 +400,22 @@ export function ProjectOpenOverlay({
     phase === 'exitPhoto' ||
     phase === 'exitName' ||
     phase === 'exitCurtain' ||
+    phase === 'nextIn' ||
     phase === 'homeIn' ||
     phase === 'homeHold' ||
     phase === 'homeOut';
   const curtainOut = phase === 'exitCurtain' || phase === 'homeOut';
   const showYellowTitle =
-    phase === 'title' || phase === 'exitPhoto' || phase === 'exitName' || phase === 'exitCurtain';
+    playingYellowIntro &&
+    (phase === 'title' || phase === 'exitPhoto' || phase === 'exitName' || phase === 'exitCurtain');
   const showHomeTitle = phase === 'homeHold' || phase === 'homeOut';
   const nameRisingOut = phase === 'exitName' || phase === 'exitCurtain';
   const homeTitleOut = phase === 'homeOut';
   const lifting = phase === 'arm' || phase === 'fly';
-  // Keep detail under rising Home curtain; drop it once yellow fully covers
+  // Keep detail under home/next cover; warm new detail under yellow load
   const showDetailUnder =
     phase === 'homeIn' ||
+    phase === 'nextIn' ||
     (!goingHome &&
       (phase === 'curtain' ||
         phase === 'title' ||
@@ -351,10 +423,11 @@ export function ProjectOpenOverlay({
         phase === 'exitName' ||
         phase === 'exitCurtain' ||
         phase === 'detail'));
-  const warmGl = showDetailUnder && phase !== 'homeIn';
+  const warmGl = showDetailUnder && phase !== 'homeIn' && phase !== 'nextIn';
   const loadLabel = glReady ? 100 : Math.min(99, Math.max(0, loadPct));
+  // Next-project path: yellow + title + % only — no floating half-image on the curtain
   const photoRect =
-    !origin
+    nextIntro || !origin
       ? null
       : phase === 'fly' ||
           phase === 'curtain' ||
@@ -368,9 +441,13 @@ export function ProjectOpenOverlay({
   const photoExiting =
     phase === 'exitPhoto' || phase === 'exitName' || phase === 'exitCurtain';
   const photoClippedAway = phase === 'exitName' || phase === 'exitCurtain';
-  const titleTop = float.top + float.height + Math.max(18, vh * 0.03);
+  const titleTop = nextIntro
+    ? Math.max(vh * 0.42, 120)
+    : float.top + float.height + Math.max(18, vh * 0.03);
   const titleClippedAway = phase === 'exitCurtain';
-  const showCurtain = (inIntro && !skipIntro) || goingHome;
+  const showCurtain = (inIntro && playingYellowIntro) || goingHome || phase === 'nextIn';
+  const showIntroPhoto =
+    !nextIntro && playingYellowIntro && inIntro && Boolean(photoRect) && phase !== 'nextIn';
 
   return (
     <motion.div
@@ -380,9 +457,9 @@ export function ProjectOpenOverlay({
       role="dialog"
       aria-modal="true"
       aria-labelledby="project-open-title"
-      initial={{ opacity: 1 }}
+      initial={false}
       exit={{ opacity: 0 }}
-      transition={{ duration: goingHome ? 0 : 0.3, ease: EASE_SOFT }}
+      transition={{ duration: goingHome ? 0 : 0.2, ease: EASE_SOFT }}
     >
       {/* Detail sits under the exit stack so the curtain reveals it. */}
       {showDetailUnder ? (
@@ -392,14 +469,26 @@ export function ProjectOpenOverlay({
           style={inIntro ? { pointerEvents: 'none' } : undefined}
         >
           <div ref={scrollRef} className="project-open__scroll">
-            <ProjectDetailScroll project={project} heroSrc={src} titleId="project-open-title" />
+            <ProjectDetailScroll
+              key={project?.id ?? project?.name}
+              project={project}
+              heroSrc={src}
+              titleId="project-open-title"
+              nextProject={nextProject}
+              onOpenNext={beginNext}
+            />
           </div>
           {warmGl ? (
             <DetailGlStage
+              key={project?.id ?? project?.name}
               scrollRef={scrollRef}
               project={project}
               heroSrc={src}
+              nextSrc={nextProject?.image || nextProject?.previewImage || null}
               active
+              /* Title canvas during curtain wipe; text bakes only once detail is interactive */
+              titleFx={phase === 'detail' || phase === 'exitCurtain'}
+              copyFx={phase === 'detail'}
               onReady={() => setGlReady(true)}
             />
           ) : null}
@@ -413,19 +502,21 @@ export function ProjectOpenOverlay({
           initial={{ y: '118%' }}
           animate={{ y: curtainOut ? '-135%' : curtainVisible ? '0%' : '118%' }}
           transition={{
-            duration: curtainOut ? EXIT_CURTAIN_MS / 1000 : CURTAIN_IN_MS / 1000,
+            duration: goingHome
+              ? (curtainOut ? HOME_CURTAIN_OUT_MS : HOME_CURTAIN_IN_MS) / 1000
+              : (curtainOut ? EXIT_CURTAIN_MS : CURTAIN_IN_MS) / 1000,
             ease: EASE_SOFT,
           }}
         />
       ) : null}
 
-      {showYellowTitle && !skipIntro ? (
-        <div className="project-open__load" aria-live="polite">
-          {`${loadLabel}%`}
+      {showYellowTitle ? (
+        <div className="project-open__load" aria-live="polite" aria-label={`Loading ${loadLabel}%`}>
+          {String(loadLabel).padStart(3, '0')}
         </div>
       ) : null}
 
-      {inIntro && !skipIntro && photoRect ? (
+      {showIntroPhoto ? (
         <img
           ref={photoRef}
           src={src}
@@ -446,9 +537,10 @@ export function ProjectOpenOverlay({
         />
       ) : null}
 
-      {showYellowTitle && !skipIntro ? (
+      {showYellowTitle ? (
         <div
           ref={titleRef}
+          key={`yellow-${project?.id ?? title.line1}`}
           className={`project-open__yellow-title${
             nameRisingOut ? ' project-open__yellow-title--collapse' : ' project-open__yellow-title--in'
           }`}
@@ -506,12 +598,13 @@ export function ProjectOpenOverlay({
         </button>
       ) : null}
 
-      {/* Same stacking context as the S mark — required for difference blend */}
-      {phase === 'detail' ? (
+      {/* Same stacking context as the S mark — show as soon as the curtain lifts */}
+      {phase === 'detail' || phase === 'exitCurtain' ? (
         <div className="project-open__desk-foot">
-          <p className="project-open__desk-copy">
+          <div className="project-open__desk-copy">
             <ScrambleHover text={`© ${new Date().getFullYear()} Satyam Tiwari`} />
-          </p>
+            <SoundToggle className="project-open__desk-sound" />
+          </div>
           <div className="project-open__desk-corner">
             <div
               className={`auge-drawer project-open__drawer${drawerOpen ? ' is-open' : ''}`}
@@ -533,10 +626,14 @@ export function ProjectOpenOverlay({
                   <button
                     type="button"
                     className="auge-drawer__link"
-                    onPointerEnter={() => setDrawerLink('works')}
+                    onPointerEnter={() => {
+                      setDrawerLink('works');
+                      playHoverSound('hoverButton');
+                    }}
                     onPointerLeave={() => setDrawerLink(null)}
                     onFocus={() => setDrawerLink('works')}
                     onClick={() => {
+                      playSound('clickMenuItem');
                       setDrawerOpen(false);
                       const gallery = scrollRef.current?.querySelector('.project-detail__gallery');
                       (gallery || scrollRef.current)?.scrollIntoView?.({
@@ -553,10 +650,14 @@ export function ProjectOpenOverlay({
                   <button
                     type="button"
                     className="auge-drawer__link"
-                    onPointerEnter={() => setDrawerLink('home')}
+                    onPointerEnter={() => {
+                      setDrawerLink('home');
+                      playHoverSound('hoverButton');
+                    }}
                     onPointerLeave={() => setDrawerLink(null)}
                     onFocus={() => setDrawerLink('home')}
                     onClick={() => {
+                      playSound('clickMenuItem');
                       setDrawerOpen(false);
                       goHome();
                     }}
@@ -569,10 +670,16 @@ export function ProjectOpenOverlay({
                   <a
                     className="auge-drawer__link"
                     href={emailMailto}
-                    onPointerEnter={() => setDrawerLink('talk')}
+                    onPointerEnter={() => {
+                      setDrawerLink('talk');
+                      playHoverSound('hoverButton');
+                    }}
                     onPointerLeave={() => setDrawerLink(null)}
                     onFocus={() => setDrawerLink('talk')}
-                    onClick={() => setDrawerOpen(false)}
+                    onClick={() => {
+                      playSound('clickMenuItem');
+                      setDrawerOpen(false);
+                    }}
                   >
                     <span className="auge-drawer__label">
                       <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
@@ -587,20 +694,20 @@ export function ProjectOpenOverlay({
               </div>
             </div>
 
-            {socialItems.length ? (
-              <nav className="project-open__desk-socials" aria-label="Social links">
-                {socialItems.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    target={item.href.startsWith('mailto:') ? undefined : '_blank'}
-                    rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-                  >
-                    <ScrambleHover text={item.label} />
-                  </a>
-                ))}
-              </nav>
-            ) : null}
+            <nav className="project-open__desk-socials" aria-label="Social links">
+              {socialItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.href.startsWith('mailto:') ? undefined : '_blank'}
+                  rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                  onPointerEnter={() => playHoverSound('hoverFooterItem')}
+                  onClick={() => playSound('clickMenuItem')}
+                >
+                  <ScrambleHover text={item.label} />
+                </a>
+              ))}
+            </nav>
           </div>
         </div>
       ) : null}

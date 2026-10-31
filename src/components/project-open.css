@@ -24,14 +24,15 @@
   pointer-events: none;
 }
 
-/* Auge-style curtain progress — sits on yellow until mesh is ready */
+/* Curtain progress — center bottom, digits only (no %) */
 .project-open__load {
   position: fixed;
-  right: max(1.25rem, env(safe-area-inset-right, 0px));
-  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  bottom: max(1.75rem, env(safe-area-inset-bottom, 0px) + 1rem);
   z-index: 6;
   margin: 0;
   padding: 0;
+  translate: -50% 0;
   font-family: var(--font-sans);
   font-size: clamp(0.7rem, 1.4vw, 0.85rem);
   font-weight: 500;
@@ -51,9 +52,14 @@
   padding: 0;
   border: 0;
   pointer-events: none;
+  background: #edeee5;
+  opacity: 1;
   will-change: left, top, width, height, clip-path;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
   transition: none;
+  /* Own compositor layer so the first paint covers the GL card cleanly */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .project-open__photo--lifting {
@@ -186,19 +192,28 @@
   background: #edeee5;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Lenis-driven detail scroll — keep native scrollbar, kill rubber-band fight */
+.project-open__scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Lenis-driven detail scroll — no native scrollbar chrome */
 .project-open__scroll--smooth {
   overflow-y: auto;
   overscroll-behavior: none;
+  scrollbar-width: none;
 }
 
-/* Same blackletter S as landing — replaces the X, top-right */
+/* Same blackletter S as landing — half the desk-foot inset on top/right */
 .project-open__mark {
   position: absolute;
-  top: max(1.15rem, env(safe-area-inset-top, 0px));
-  right: max(1.75rem, env(safe-area-inset-right, 0px));
+  top: max(clamp(1.05rem, 2.75vw, 2.625rem), env(safe-area-inset-top, 0px));
+  right: max(clamp(1.05rem, 2.75vw, 2.625rem), env(safe-area-inset-right, 0px));
   z-index: 12;
   display: grid;
   place-items: center;
@@ -295,6 +310,9 @@ body.project-open-active .auge-view-tip {
   .project-open__desk-copy {
     position: relative;
     z-index: 12;
+    display: flex;
+    align-items: center;
+    gap: 0.55em;
     margin: 0;
     padding: 0.15rem 0.35rem;
     font-family: var(--font-sans);
@@ -307,6 +325,17 @@ body.project-open-active .auge-view-tip {
     mix-blend-mode: difference;
     pointer-events: auto;
     cursor: default;
+  }
+
+  .project-open__desk-sound {
+    font-size: 1.15em;
+    color: inherit;
+  }
+
+  .project-open__desk-sound:hover {
+    background: #fdf48b;
+    color: #000;
+    mix-blend-mode: normal;
   }
 
   .project-open__desk-corner {
@@ -362,11 +391,13 @@ body.project-open-active .auge-view-tip {
 
   .project-open__desk-socials {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-end;
+    align-items: center;
     gap: 0.55em;
-    max-width: min(22rem, 48vw);
+    max-width: none;
     margin: 0;
+    white-space: nowrap;
     font-family: var(--font-sans);
     font-size: clamp(0.7rem, 1.2vw, 0.95rem);
     font-weight: 500;
