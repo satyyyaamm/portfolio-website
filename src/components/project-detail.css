@@ -1,0 +1,463 @@
+/* Auge-style case detail: sticky hero + cream sheet + sticky title + body */
+
+.project-detail {
+  --detail-cream: #edeee5;
+  --detail-ink: #000;
+  --detail-yellow: #fdf48b;
+  position: relative;
+  background: var(--detail-cream);
+  color: var(--detail-ink);
+}
+
+/* 100vh flow spacer — sticky hero fills it (Auge h-dvh before cream) */
+.project-detail__hero-pin {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+}
+
+.project-detail__hero {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Oversized media — JS scales 1.2 → 1 while cream covers */
+.project-detail__hero-media {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%) scale(1.2);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.project-detail__hero-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+/* Cream sheet rises over the sticky hero */
+.project-detail__sheet {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0 clamp(1.25rem, 5vw, 4rem);
+  background: var(--detail-cream);
+  border-radius: 0;
+}
+
+/* Entry lower half — name centered under the 50vh hero peek */
+.project-detail__band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  min-height: 50vh;
+  max-height: 50vh;
+  padding: 0;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.project-detail__title-slot {
+  --title-fs: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: 92vw;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.project-detail__title-slot .project-detail__mega-line {
+  white-space: nowrap;
+}
+
+/*
+  Portaled above the GL canvas.
+  White + mix-blend difference = auto invert over hero/cream (Auge).
+  --title-fs set in px by scroll (180 → ~29).
+*/
+.project-detail__title-float {
+  --title-dock: 0;
+  --title-fs: 180px;
+  position: absolute;
+  left: 50%;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: max-content;
+  max-width: 92vw;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  transform: translate(-50%, 0);
+  transform-origin: top center;
+  will-change: top;
+  color: #fff;
+  mix-blend-mode: difference;
+}
+
+.project-detail__mega {
+  margin: 0;
+  width: max-content;
+  max-width: 92vw;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: inherit;
+}
+
+.project-detail__mega-line {
+  display: block;
+  width: max-content;
+  max-width: 92vw;
+  font-size: var(--title-fs);
+  white-space: nowrap;
+}
+
+.project-detail__kind {
+  margin: 1.15rem 0 0;
+  font-size: clamp(0.78rem, 1.35vw, 0.95rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 1;
+}
+
+/* Stay legible when title docks — only tighten spacing slightly */
+.project-detail__title-float[data-pinned='true'] .project-detail__kind {
+  margin-top: 0.55rem;
+  font-size: clamp(0.75rem, 1.2vw, 0.88rem);
+  letter-spacing: 0.12em;
+}
+
+@supports not (mix-blend-mode: difference) {
+  .project-detail__title-float {
+    color: var(--detail-ink);
+    mix-blend-mode: normal;
+  }
+}
+
+/* Auge-style description block */
+.project-detail__desc {
+  position: relative;
+  margin: clamp(2rem, 5vh, 3.5rem) auto clamp(3rem, 8vh, 5.5rem);
+  max-width: min(88rem, 100%);
+  padding: 0 clamp(1.25rem, 5vw, 4rem);
+}
+
+.project-detail__intro {
+  margin: 0;
+  max-width: none;
+  width: 100%;
+  font-family: "Schibsted Grotesk", var(--font-sans);
+  font-size: clamp(1.65rem, 3.6vw, 3.15rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: #111;
+  cursor: default;
+}
+
+.project-detail__intro span {
+  font-weight: 400;
+}
+
+.project-detail__meta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  align-items: start;
+  margin: 0 auto clamp(3rem, 8vh, 5.5rem);
+  max-width: min(88rem, 100%);
+  padding: 0 clamp(1.25rem, 5vw, 4rem);
+}
+
+/* No live case link → Features 1 / Info 2 */
+.project-detail__meta-grid--no-cta {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.project-detail__meta-grid--no-cta .project-detail__features {
+  grid-column: 1;
+}
+
+.project-detail__meta-grid--no-cta .project-detail__info {
+  grid-column: 2;
+}
+
+.project-detail__meta-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  align-items: flex-start;
+}
+
+.project-detail__year {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #111;
+  cursor: default;
+}
+
+.project-detail__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.55rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: 0.2rem;
+  background: var(--detail-yellow);
+  color: var(--detail-ink);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.project-detail__cta:hover {
+  background: #f7ef6a;
+}
+
+.project-detail__cta:focus-visible {
+  outline: 2px solid var(--detail-ink);
+  outline-offset: 3px;
+}
+
+.project-detail__cta--ghost {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Shared section labels — Description, Features, Info, … */
+.project-detail__section-label {
+  display: block;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  font-family: "Schibsted Grotesk", var(--font-sans);
+  font-size: clamp(0.82rem, 1.35vw, 1rem);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #111;
+  cursor: default;
+}
+
+.project-detail__section-label span {
+  font-weight: 400;
+}
+
+.project-detail__feature-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.project-detail__feature-list li {
+  font-family: var(--font-sans);
+  font-size: clamp(0.95rem, 1.45vw, 1.08rem);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+  color: #111;
+  cursor: default;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.project-detail__info-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-detail__info-row {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  gap: 0.85rem 1.1rem;
+  align-items: baseline;
+  padding: 0.85rem 0;
+  border-top: 1.5px solid #111;
+  font-family: var(--font-sans);
+  font-size: clamp(0.88rem, 1.3vw, 1rem);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: #111;
+  cursor: default;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.project-detail__info-row:last-child {
+  border-bottom: 1.5px solid #111;
+}
+
+.project-detail__info-row:hover {
+  background: #111;
+  color: var(--detail-cream);
+}
+
+.project-detail__info-year {
+  font-variant-numeric: tabular-nums;
+}
+
+.project-detail__info-mid {
+  min-width: 0;
+}
+
+.project-detail__info-end {
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.92em;
+}
+
+.project-detail__story {
+  margin-top: clamp(1rem, 3vh, 2rem);
+}
+
+.project-detail__gallery {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: start;
+  max-width: min(88rem, 100%);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vh, 3rem) clamp(1.25rem, 5vw, 4rem);
+}
+
+.project-detail__shot {
+  margin: 0;
+  overflow: hidden;
+  /* Same cream as the page — warp gaps must not read as a dark “shadow” */
+  background: var(--detail-cream);
+}
+
+.project-detail__shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.project-detail__shot--1 {
+  grid-column: 1 / span 5;
+  aspect-ratio: 4 / 5;
+  margin-top: 0;
+}
+
+.project-detail__shot--2 {
+  grid-column: 6 / span 7;
+  aspect-ratio: 5 / 4;
+  margin-top: clamp(2rem, 8vh, 6rem);
+}
+
+.project-detail__shot--3 {
+  grid-column: 2 / span 6;
+  aspect-ratio: 16 / 11;
+  margin-top: clamp(1rem, 4vh, 3rem);
+}
+
+.project-detail__shot--4 {
+  grid-column: 8 / span 5;
+  aspect-ratio: 4 / 5;
+  margin-top: clamp(3rem, 10vh, 7rem);
+}
+
+.project-detail__footer-space {
+  height: clamp(4rem, 12vh, 8rem);
+}
+
+@media (min-width: 721px) {
+  .project-detail__footer-space {
+    height: clamp(5.5rem, 14vh, 9rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .project-detail__meta-grid {
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
+  }
+
+  .project-detail__intro {
+    font-size: clamp(1.35rem, 6.5vw, 2rem);
+  }
+
+  .project-detail__info-row {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+  }
+
+  .project-detail__info-end {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .project-detail__shot--1,
+  .project-detail__shot--2,
+  .project-detail__shot--3,
+  .project-detail__shot--4 {
+    grid-column: 1 / -1;
+    margin-top: 0;
+    aspect-ratio: 4 / 3;
+  }
+
+  .project-detail__shot--1,
+  .project-detail__shot--3 {
+    aspect-ratio: 5 / 4;
+  }
+}
+
+@media (max-width: 720px) {
+  .project-detail__info-row {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-detail__cta {
+    transition: none;
+  }
+
+  .project-detail__info-row {
+    transition: none;
+  }
+
+  .project-detail__hero-media {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
