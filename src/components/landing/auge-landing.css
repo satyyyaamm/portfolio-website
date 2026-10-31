@@ -365,6 +365,9 @@
   right: auto;
   bottom: max(2.25vmin, 1.65rem, env(safe-area-inset-bottom, 0px));
   z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
   padding: 0.15rem 0.35rem;
   font-size: calc(var(--auge-chrome) * 0.85);
   font-weight: 500;
@@ -373,6 +376,19 @@
   text-transform: uppercase;
   color: #000;
   background: none;
+}
+
+.auge-footer p {
+  margin: 0;
+}
+
+.auge-footer__sound {
+  font-size: 1.15em;
+  color: #000;
+}
+
+.auge-footer__sound:hover {
+  background: #fdf48b;
 }
 
 .auge-corner {
@@ -388,10 +404,12 @@
 
 .auge-footer__links {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 0.55em 0.55em;
-  max-width: min(22rem, 70vw);
+  align-items: center;
+  gap: 0.55em;
+  max-width: none;
+  white-space: nowrap;
   font-size: var(--auge-chrome);
   font-weight: 500;
   letter-spacing: 0.03em;
@@ -880,7 +898,7 @@
   }
 
   .auge-footer__links {
-    max-width: min(18rem, 72vw);
+    max-width: none;
     font-size: 13px;
   }
 }

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { 
-  Github, 
-  Linkedin, 
+import {
+  Github,
+  Instagram,
+  Linkedin,
   Mail,
 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ import { trackEvent } from './lib/analytics.js';
 import { AugeLanding } from './components/landing/AugeLanding.jsx';
 import { ProjectOpenOverlay } from './components/ProjectOpenOverlay.jsx';
 import { SiteCursor } from './components/SiteCursor.jsx';
+import { initSound } from './lib/siteSound.js';
 import { findProjectIndexBySlug, parseWorksSlug, worksPath } from './lib/worksUrl.js';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
@@ -68,6 +70,7 @@ const MediumIcon = ({ className = 'h-4 w-4' }) => (
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY ?? '';
 const GITHUB_URL = 'https://github.com/satyyyaamm';
 const LINKEDIN_URL = 'https://www.linkedin.com/in/satyam-tiwari-a03299200';
+const INSTAGRAM_URL = 'https://www.instagram.com/buildwithsatyamm/';
 const MEDIUM_URL = 'https://medium.com/@satyamt5152';
 const EMAIL_MAILTO = 'mailto:satyamt5152@gmail.com';
 const PHONE_DISPLAY = '+91 87933 80992';
@@ -76,6 +79,7 @@ const PHONE_TEL = 'tel:+918793380992';
 const SOCIAL_ITEMS = [
   { label: 'GitHub', href: GITHUB_URL, icon: <Github size={16} strokeWidth={1.75} /> },
   { label: 'LinkedIn', href: LINKEDIN_URL, icon: <Linkedin size={16} strokeWidth={1.75} /> },
+  { label: 'Instagram', href: INSTAGRAM_URL, icon: <Instagram size={16} strokeWidth={1.75} /> },
   { label: 'Medium', href: MEDIUM_URL, icon: <MediumIcon className="h-4 w-4" /> },
   { label: 'Email', href: EMAIL_MAILTO, icon: <Mail size={16} strokeWidth={1.75} /> },
 ];
@@ -95,6 +99,10 @@ const App = () => {
   const [contactFormStatus, setContactFormStatus] = useState('idle');
   const [contactFormError, setContactFormError] = useState('');
   const [contactHoneypot, setContactHoneypot] = useState('');
+
+  useEffect(() => {
+    initSound();
+  }, []);
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -310,6 +318,11 @@ const App = () => {
 
   const openProject = projects[projectOpen?.index];
   const caseOpen = Boolean(openProject);
+  const nextProjectIndex =
+    caseOpen && projects.length > 1
+      ? (projectOpen.index + 1) % projects.length
+      : -1;
+  const nextProject = nextProjectIndex >= 0 ? projects[nextProjectIndex] : null;
 
   const openWorks = (index, fromRect = null) => {
     const project = projects[index];
@@ -391,7 +404,7 @@ const App = () => {
       <main id="main-content" tabIndex={-1} className="relative outline-none">
         <AugeLanding
           projects={projects}
-          stripPaused={caseOpen && !homeRevealing}
+          stripPaused={caseOpen}
           cursorSuppressRef={cursorSuppressRef}
           onOpenProject={(index, fromRect) => {
             setHomeRevealing(false);
@@ -415,14 +428,24 @@ const App = () => {
       <AnimatePresence>
         {caseOpen ? (
           <ProjectOpenOverlay
-            key={openProject.id}
+            key="works-overlay"
             project={openProject}
+            nextProject={nextProject}
             fromRect={projectOpen?.fromRect || null}
             socialItems={SOCIAL_ITEMS}
             emailMailto={EMAIL_MAILTO}
             onCovered={() => openCoveredRef.current?.()}
             onHomeCovered={coverHome}
             onClose={closeWorks}
+            onOpenNext={
+              nextProjectIndex >= 0
+                ? () => {
+                    setHomeRevealing(false);
+                    // Keep overlay mounted — it runs curtain → load → detail itself
+                    openWorks(nextProjectIndex, null);
+                  }
+                : undefined
+            }
           />
         ) : null}
       </AnimatePresence>

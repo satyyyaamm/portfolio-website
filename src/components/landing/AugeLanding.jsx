@@ -4,6 +4,8 @@ import { ABOUT_PARAGRAPH } from '../../lib/slides.js';
 import { useSiteAnimationsEnabled } from '../../context/SiteReadyContext.jsx';
 import { Scramble } from './Scramble.jsx';
 import { GlProjectStrip } from './gl/GlProjectStrip.jsx';
+import { SoundToggle } from '../SoundToggle.jsx';
+import { playHoverSound, playSound } from '../../lib/siteSound.js';
 import './auge-landing.css';
 
 /** Fast lift, then settle into place (Auge-like expo feel). */
@@ -45,14 +47,11 @@ export function AugeLanding({
   const stageRef = useRef(null);
   const stripRef = useRef(null);
   const lowerRef = useRef(null);
-  const cursorTipRef = useRef(null);
   const viewTipOnRef = useRef(false);
-  const cardHoverRef = useRef(false);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLink, setDrawerLink] = useState(null);
-  const [viewTipOn, setViewTipOn] = useState(false);
   const [spreadPct, setSpreadPct] = useState(60);
   const [strengthPct, setStrengthPct] = useState(200);
   const [markHover, setMarkHover] = useState(false);
@@ -72,34 +71,31 @@ export function AugeLanding({
     setLabelScrambleKey((n) => n + 1);
   };
 
-  const syncCursorSuppress = () => {
+  // Drive SiteCursor label morph (diamond → View project), not a separate tip.
+  const syncCursorLabel = () => {
     if (!cursorSuppressRef) return;
-    cursorSuppressRef.current = Boolean(cardHoverRef.current || viewTipOnRef.current);
+    cursorSuppressRef.current = Boolean(viewTipOnRef.current);
   };
 
-  const syncViewTip = (x, y, visible) => {
-    const tip = cursorTipRef.current;
-    if (tip) {
-      tip.style.transform = `translate3d(${x + 18}px, ${y + 14}px, 0)`;
-      tip.style.opacity = visible ? '1' : '0';
-    }
-    if (viewTipOnRef.current !== visible) {
-      viewTipOnRef.current = visible;
-      setViewTipOn(visible);
-    }
-    syncCursorSuppress();
+  const syncViewTip = (_x, _y, visible) => {
+    if (viewTipOnRef.current === visible) return;
+    viewTipOnRef.current = visible;
+    syncCursorLabel();
   };
 
   useEffect(() => {
-    if (!stripPaused) return;
-    cardHoverRef.current = false;
-    viewTipOnRef.current = false;
-    setViewTipOn(false);
-    syncCursorSuppress();
+    if (stripPaused) {
+      viewTipOnRef.current = false;
+      syncCursorLabel();
+      return;
+    }
+    // Returning from detail — tip/cursor re-armed by the strip hit-test on resume
+    syncCursorLabel();
   }, [stripPaused, cursorSuppressRef]);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
+    playSound('openMenu');
     const onKey = (event) => {
       if (event.key === 'Escape') setMenuOpen(false);
     };
@@ -122,14 +118,6 @@ export function AugeLanding({
 
   return (
     <div className="auge-track" id="top">
-      <div
-        ref={cursorTipRef}
-        className={`auge-view-tip${viewTipOn ? ' is-on' : ''}`}
-        aria-hidden={!viewTipOn}
-      >
-        <Scramble text="View project" active={viewTipOn} steps={10} intervalMs={28} />
-      </div>
-
       <div className="auge-stage" ref={stageRef}>
         <motion.a
           href="#top"
@@ -160,10 +148,6 @@ export function AugeLanding({
             strengthPct={strengthPct}
             onOpenProject={onOpenProject}
             onViewTip={syncViewTip}
-            onHoverChange={(item) => {
-              cardHoverRef.current = Boolean(item);
-              syncCursorSuppress();
-            }}
             labelScrambleKey={labelScrambleKey}
           />
         </motion.div>
@@ -188,6 +172,7 @@ export function AugeLanding({
             : riseProps(siteReady, reducedMotion, riseSettled, { from: '22vh', delay: 0.12, duration: 1 }))}
         >
           <p>© {new Date().getFullYear()} Satyam Tiwari</p>
+          <SoundToggle className="auge-footer__sound" />
         </motion.footer>
 
         <motion.div
@@ -216,10 +201,14 @@ export function AugeLanding({
                 <button
                   type="button"
                   className="auge-drawer__link"
-                  onPointerEnter={() => setDrawerLink('works')}
+                  onPointerEnter={() => {
+                    setDrawerLink('works');
+                    playHoverSound('hoverButton');
+                  }}
                   onPointerLeave={() => setDrawerLink(null)}
                   onFocus={() => setDrawerLink('works')}
                   onClick={() => {
+                    playSound('clickMenuItem');
                     setDrawerOpen(false);
                     stripRef.current?.wrap?.scrollIntoView?.({ block: 'nearest' });
                   }}
@@ -232,10 +221,14 @@ export function AugeLanding({
                 <button
                   type="button"
                   className="auge-drawer__link"
-                  onPointerEnter={() => setDrawerLink('about')}
+                  onPointerEnter={() => {
+                    setDrawerLink('about');
+                    playHoverSound('hoverButton');
+                  }}
                   onPointerLeave={() => setDrawerLink(null)}
                   onFocus={() => setDrawerLink('about')}
                   onClick={() => {
+                    playSound('clickMenuItem');
                     setDrawerOpen(false);
                     setMenuOpen(true);
                   }}
@@ -248,10 +241,14 @@ export function AugeLanding({
                 <button
                   type="button"
                   className="auge-drawer__link"
-                  onPointerEnter={() => setDrawerLink('talk')}
+                  onPointerEnter={() => {
+                    setDrawerLink('talk');
+                    playHoverSound('hoverButton');
+                  }}
                   onPointerLeave={() => setDrawerLink(null)}
                   onFocus={() => setDrawerLink('talk')}
                   onClick={() => {
+                    playSound('clickMenuItem');
                     setDrawerOpen(false);
                     setMenuOpen(true);
                   }}
@@ -311,6 +308,8 @@ export function AugeLanding({
                 href={item.href}
                 target={item.href.startsWith('mailto:') ? undefined : '_blank'}
                 rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                onPointerEnter={() => playHoverSound('hoverFooterItem')}
+                onClick={() => playSound('clickMenuItem')}
               >
                 {item.label}
               </a>
@@ -331,7 +330,10 @@ export function AugeLanding({
             <button
               type="button"
               className="auge-overlay__close"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                playSound('clickMenuItem');
+                setMenuOpen(false);
+              }}
               autoFocus
             >
               Close
