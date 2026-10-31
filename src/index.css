@@ -30,6 +30,8 @@
   --font-sans: "PP Neue Montreal", "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-service: "Greed", "Fraunces", ui-serif, Georgia, serif;
   --font-mark: "UnifrakturMaguntia", "Times New Roman", serif;
+  /* Yellow-curtain display — Didone with italic/roman mix (Auge-style). */
+  --font-didone: "Bodoni Moda", "Didot", "Bodoni MT", ui-serif, Georgia, serif;
   --color-primary: #000000;
   --color-secondary: #edeee5;
   --color-tertiary: #fdf48b;
