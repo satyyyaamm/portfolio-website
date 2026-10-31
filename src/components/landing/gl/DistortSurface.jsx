@@ -14,18 +14,22 @@ const SEG_Y = 20;
  */
 export function DistortSurface({
   texture,
-  left,
-  top,
-  width,
-  height,
+  left = 0,
+  top = 0,
+  width = 1,
+  height = 1,
+  /** Optional live rect `{ left, top, width, height }` — detail stage scroll sync */
+  rectRef,
   mouseRef,
   paramsRef,
   simRef,
   reducedMotion,
   mode = 'cover', // 'cover' | 'alpha'
+  depthWrite: depthWriteProp,
   userData,
   onPointer,
 }) {
+  const depthWrite = depthWriteProp ?? mode !== 'alpha';
   const matRef = useRef(null);
   const meshRef = useRef(null);
 
@@ -47,6 +51,7 @@ export function DistortSurface({
       uResolution: { value: new THREE.Vector2(1, 1) },
       uEdgeWidth: { value: 0.03 },
       uEdgeRefract: { value: 0 },
+      uEdgeRefractTB: { value: 0 },
       // Text stays on matrix skew — bend stays at 0
       uBend: { value: 0 },
       uBendPower: { value: 1.0 },
@@ -61,10 +66,20 @@ export function DistortSurface({
     const m = mouseRef.current;
     if (!mat || !mesh || !m) return;
 
-    const w = Math.max(1, width);
-    const h = Math.max(1, height);
-    const cx = left + w * 0.5;
-    const bottomY = -(top + h);
+    const rect = rectRef?.current;
+    const L = rect?.left ?? left;
+    const T = rect?.top ?? top;
+    const w = Math.max(1, rect?.width ?? width);
+    const h = Math.max(1, rect?.height ?? height);
+    // Offstage — park tiny
+    if (rect && (w < 2 || h < 2 || T + h < -80 || T > (m.vh || 9999) + 80)) {
+      mesh.visible = false;
+      return;
+    }
+    mesh.visible = true;
+
+    const cx = L + w * 0.5;
+    const bottomY = -(T + h);
     // Text skews opposite the cards.
     const skewDeg = reducedMotion ? 0 : -(simRef?.current?.skew || 0);
     applyBottomHingeSkew(mesh, cx, bottomY, w, h, skewDeg);
@@ -77,15 +92,27 @@ export function DistortSurface({
     mat.uniforms.uSpreadPx.value = Math.min(vw, vh) * spread;
     const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 1.5);
     mat.uniforms.uResolution.value.set(vw * dpr, vh * dpr);
-    mat.uniforms.uEdgeWidth.value = 0.03; // 3% of viewport (fraction)
+    mat.uniforms.uEdgeWidth.value = paramsRef?.current?.edgeWidth ?? 0.03;
     // Match cards: only on user scroll/drag, smooth ease
     const sim = simRef?.current;
     const userSpeed = Math.abs(sim?.userVelocity || 0);
     const userScrolling = Boolean(sim?.drag?.active) || userSpeed > 10;
-    const edgeTarget = reducedMotion || !userScrolling
-      ? 0
-      : (sim?.drag?.active ? Math.max(0.35, Math.min(1, userSpeed / 520)) : Math.min(1, userSpeed / 520)) * 48 * dpr;
-    mat.uniforms.uEdgeRefract.value += (edgeTarget - mat.uniforms.uEdgeRefract.value) * 0.14;
+    const edgeMul =
+      reducedMotion || !userScrolling
+        ? 0
+        : (sim?.drag?.active
+            ? Math.max(0.35, Math.min(1, userSpeed / 520))
+            : Math.min(1, userSpeed / 520)) * dpr;
+    const edgeAxis = paramsRef?.current?.edgeAxis || 'lr';
+    const tbMul = paramsRef?.current?.edgeRefractMul ?? 56;
+    const edgeTargetLR = edgeAxis === 'tb' ? 0 : edgeMul * 48;
+    const edgeTargetTB =
+      edgeAxis === 'tb' ? edgeMul * tbMul : edgeAxis === 'both' ? edgeMul * 36 : 0;
+    mat.uniforms.uEdgeRefract.value += (edgeTargetLR - mat.uniforms.uEdgeRefract.value) * 0.14;
+    if (mat.uniforms.uEdgeRefractTB) {
+      mat.uniforms.uEdgeRefractTB.value +=
+        (edgeTargetTB - mat.uniforms.uEdgeRefractTB.value) * 0.14;
+    }
 
     if (texture && mat.uniforms.uMap.value !== texture) {
       mat.uniforms.uMap.value = texture;
@@ -108,8 +135,8 @@ export function DistortSurface({
       return;
     }
 
-    const ru = (m.x - left) / w;
-    const rv = (m.y - top) / h;
+    const ru = (m.x - L) / w;
+    const rv = (m.y - T) / h;
     mat.uniforms.uMouse.value.set(ru, 1 - rv);
     const strengthMul = (paramsRef?.current?.strengthPct ?? 200) / 100;
     const target = m.strength * strengthMul;
@@ -152,8 +179,9 @@ export function DistortSurface({
         uniforms={uniforms}
         vertexShader={DISTORT_VERT}
         fragmentShader={mode === 'alpha' ? DISTORT_FRAG_ALPHA : DISTORT_FRAG}
-        transparent={mode === 'alpha'}
-        depthWrite={mode !== 'alpha'}
+        transparent={mode === 'alpha' || depthWriteProp === false}
+        depthWrite={depthWrite}
+        depthTest={depthWriteProp !== false}
         premultipliedAlpha={mode === 'alpha'}
         toneMapped={false}
       />

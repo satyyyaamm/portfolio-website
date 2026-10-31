@@ -1,0 +1,61 @@
+.detail-gl-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none !important;
+}
+
+/* White title bake inverts against cream / photos (Auge / landing S) */
+.detail-gl-stage--title {
+  z-index: 5;
+  mix-blend-mode: difference;
+}
+
+.detail-gl-stage__canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+.project-open__scroll--gl {
+  pointer-events: auto;
+  touch-action: pan-y;
+}
+
+/*
+  Ghost DOM surfaces redrawn in WebGL (images + title).
+  Body copy stays live DOM so type matches Features / Info.
+*/
+.project-detail--gl-ghost .project-detail__hero-img,
+.project-detail--gl-ghost .project-detail__shot img {
+  opacity: 0 !important;
+}
+
+.project-detail--gl-ghost .project-detail__hero,
+.project-detail--gl-ghost .project-detail__shot {
+  background: #edeee5 !important;
+}
+
+/*
+  Title float is portaled onto the detail stage (above both GL layers).
+  Ghost mega (drawn on difference canvas) — kind stays live + difference.
+*/
+.project-open__detail-stage--gl .project-detail__title-float {
+  z-index: 8;
+  color: #fff;
+  mix-blend-mode: difference;
+  isolation: auto;
+}
+
+.project-open__detail-stage--gl .project-detail__title-float .project-detail__mega {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  color: transparent !important;
+}
+
+.project-open__detail-stage--gl .project-detail__title-float .project-detail__kind {
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: #fff !important;
+}

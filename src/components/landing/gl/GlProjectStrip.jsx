@@ -159,6 +159,7 @@ function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, 
       uResolution: { value: new THREE.Vector2(1, 1) },
       uEdgeWidth: { value: 0.03 },
       uEdgeRefract: { value: 0 },
+      uEdgeRefractTB: { value: 0 },
       uBend: { value: 0 },
       // Mild curve — closer to 1 reads as skew; ~1.35 is a slight flex
       uBendPower: { value: 1.35 },

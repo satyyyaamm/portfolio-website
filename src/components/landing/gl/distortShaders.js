@@ -104,11 +104,15 @@ void main() {
 }
 `;
 
-/** Edge liquid glass — UV warp strongest at left/right of the viewport. */
+/**
+ * Edge liquid glass — L/R (landing strip) + optional T/B (detail stage).
+ * uEdgeRefractTB stays 0 on the landing so behavior is unchanged.
+ */
 const EDGE_LIQUID_GLSL = /* glsl */ `
 uniform vec2 uResolution;
 uniform float uEdgeWidth;
 uniform float uEdgeRefract;
+uniform float uEdgeRefractTB;
 
 vec2 edgeLiquidUv(vec2 uv) {
   float w = max(uResolution.x, 1.0);
@@ -119,14 +123,21 @@ vec2 edgeLiquidUv(vec2 uv) {
 
   float edgeL = 1.0 - smoothstep(0.0, edgeFrac, nx);
   float edgeR = 1.0 - smoothstep(0.0, edgeFrac, 1.0 - nx);
-  float edge = max(edgeL, edgeR);
-  edge = edge * edge * (3.0 - 2.0 * edge);
-
+  float edgeLR = max(edgeL, edgeR);
+  edgeLR = edgeLR * edgeLR * (3.0 - 2.0 * edgeLR);
   float verticalWave = sin(ny * 3.14159265) * 0.65 + sin(ny * 9.424777) * 0.35;
 
+  float edgeT = 1.0 - smoothstep(0.0, edgeFrac * 1.35, ny);
+  float edgeB = 1.0 - smoothstep(0.0, edgeFrac * 1.35, 1.0 - ny);
+  float edgeTB = max(edgeT, edgeB);
+  edgeTB = edgeTB * edgeTB * (3.0 - 2.0 * edgeTB);
+  float horizontalWave = sin(nx * 3.14159265) * 0.65 + sin(nx * 9.424777) * 0.35;
+
   vec2 offset = vec2(
-    (edgeL - edgeR) * uEdgeRefract * edge / w,
-    verticalWave * uEdgeRefract * edge * 1.15 / h
+    (edgeL - edgeR) * uEdgeRefract * edgeLR / w
+      + horizontalWave * uEdgeRefractTB * edgeTB * 1.1 / w,
+    verticalWave * uEdgeRefract * edgeLR * 1.15 / h
+      + (edgeT - edgeB) * uEdgeRefractTB * edgeTB / h
   );
   return uv + offset;
 }
