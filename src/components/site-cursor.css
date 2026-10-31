@@ -1,29 +1,57 @@
-/* Soft yellow diamond that lags behind the real pointer (OS cursor stays visible) */
+/* Soft yellow diamond that lags behind the real pointer (OS cursor stays visible).
+   Size / rotation / radius morph are driven per-frame from SiteCursor.jsx. */
 .site-cursor-dot {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 2147483646;
-  width: 14px;
-  height: 14px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 0;
+  /* Rounded square; JS rotates 45° so it reads as a soft diamond */
+  border-radius: 2.5px;
   background: #fdf48b;
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+  font-weight: 300;
+  line-height: 1;
   pointer-events: none;
   opacity: 0;
-  transform: translate3d(-999px, -999px, 0);
-  will-change: transform, opacity;
+  overflow: hidden;
+  white-space: nowrap;
+  transform: translate3d(-999px, -999px, 0) rotate(45deg);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity, width, height, border-radius, padding;
   mix-blend-mode: difference;
+  isolation: isolate;
 }
 
 .site-cursor-dot.is-on {
   opacity: 1;
 }
 
+.site-cursor-dot__label {
+  display: block;
+  opacity: 0;
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
+  will-change: opacity, transform;
+}
+
 body.site-loader-active .site-cursor-dot {
+  opacity: 0 !important;
+  visibility: hidden;
+}
+
+/* Keep diamond under the yellow curtain — never the View project tag */
+body.project-open-active .site-cursor-dot__label {
   opacity: 0 !important;
   visibility: hidden;
 }
