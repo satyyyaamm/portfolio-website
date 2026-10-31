@@ -1,4 +1,4 @@
-/* Click → ripple → photo FLIP → curvy yellow curtain → loader-style title → detail */
+/* strip → float → yellow curtain → Didone title → rise out → cream detail */
 
 .project-open {
   position: fixed;
@@ -8,13 +8,9 @@
   pointer-events: auto;
   color: #000;
   font-family: var(--font-sans);
-  /* Transparent — landing stays visible under the flying photo / rising curtain */
   background: transparent;
 }
 
-/*
-  Tip-yellow curtain — over the landing, under the photo.
-*/
 .project-open__curtain {
   position: absolute;
   left: -70%;
@@ -28,6 +24,25 @@
   pointer-events: none;
 }
 
+/* Auge-style curtain progress — sits on yellow until mesh is ready */
+.project-open__load {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  z-index: 6;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(0.7rem, 1.4vw, 0.85rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: #000;
+  pointer-events: none;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
 .project-open__photo {
   position: fixed;
   z-index: 5;
@@ -36,222 +51,389 @@
   padding: 0;
   border: 0;
   pointer-events: none;
-  will-change: left, top, width, height;
+  will-change: left, top, width, height, clip-path;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
-  /* Position is driven inline — never animate box-shadow on lift (causes flicker). */
   transition: none;
 }
 
-/* While lifting out of the strip — no shadow so it reads as the same photo */
 .project-open__photo--lifting {
   box-shadow: none;
 }
 
-/* Loader-style brand block under the floating photo */
-.project-open__brand {
+/* Didone title on the yellow field, under the floating photo */
+.project-open__yellow-title {
   position: fixed;
   left: 0;
   right: 0;
-  z-index: 3;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15em;
+  gap: 0;
   text-align: center;
   pointer-events: none;
   user-select: none;
   color: #000;
-  mix-blend-mode: difference;
+  will-change: clip-path, transform;
 }
 
-.project-open__brand-line {
-  overflow: hidden;
-  line-height: 1;
+.project-open__yellow-title--in {
+  animation: project-open-title-in 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.project-open__brand-word {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: clamp(2.4rem, 8vw, 5.5rem);
-  font-weight: 700;
-  letter-spacing: -0.055em;
-  line-height: 0.88;
-  text-transform: uppercase;
-  will-change: transform, opacity;
+.project-open__yellow-title--collapse {
+  /* exit wipe driven inline via clip-path */
 }
 
-.project-open__brand-sub {
-  margin: 0;
-  font-family: var(--font-service), var(--font-sans);
-  font-size: clamp(1.2rem, 3.2vw, 2.1rem);
-  font-weight: 500;
-  font-style: italic;
-  letter-spacing: 0.01em;
-  line-height: 1.15;
-  text-transform: none;
-  min-height: 1.15em;
-  will-change: transform, opacity;
-}
-
-.project-open__counter {
-  position: fixed;
+/* Centered HOME word on the return curtain */
+.project-open__yellow-title--home {
+  top: 50%;
   left: 50%;
-  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
-  z-index: 3;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: clamp(0.7rem, 1.1vw, 0.85rem);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-  color: #000;
-  mix-blend-mode: difference;
+  right: auto;
+  width: max-content;
+  max-width: 92vw;
+  transform: translate(-50%, -50%);
+  z-index: 4;
 }
 
-/* Detail / scrollable shell */
+.project-open__yellow-title--home.project-open__yellow-title--in {
+  animation: project-open-home-in 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes project-open-home-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.project-open--home {
+  background: transparent;
+}
+
+@keyframes project-open-title-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 110%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.project-open__photo--exiting {
+  box-shadow: none;
+  overflow: hidden;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.project-open__didone {
+  margin: 0;
+  font-family: var(--font-didone);
+  font-size: clamp(2.8rem, 9.5vw, 6.75rem);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.project-open__didone-line {
+  display: inline-block;
+}
+
+.project-open__didone-ital {
+  font-style: italic;
+  font-weight: 500;
+}
+
+.project-open__didone-roman {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.project-open__didone-space {
+  display: inline-block;
+  width: 0.28em;
+}
+
+/* Detail / scrollable shell — keep overlay bg clear so difference blends see content */
 .project-open--detail {
   overflow: hidden;
+  background: transparent;
+}
+
+.project-open__detail-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   background: #edeee5;
+  overflow: hidden;
 }
 
 .project-open__scroll {
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: #edeee5;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
-.project-open__hero {
-  position: relative;
-  width: 100%;
-  height: min(42vh, 520px);
-  min-height: 220px;
-  margin: 0;
-  background: #d9daca;
-  overflow: hidden;
+/* Lenis-driven detail scroll — keep native scrollbar, kill rubber-band fight */
+.project-open__scroll--smooth {
+  overflow-y: auto;
+  overscroll-behavior: none;
 }
 
-.project-open__hero-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-}
-
-.project-open__close {
+/* Same blackletter S as landing — replaces the X, top-right */
+.project-open__mark {
   position: absolute;
-  top: max(1rem, env(safe-area-inset-top, 0px));
-  right: max(1rem, env(safe-area-inset-right, 0px));
-  z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  top: max(1.15rem, env(safe-area-inset-top, 0px));
+  right: max(1.75rem, env(safe-area-inset-right, 0px));
+  z-index: 12;
+  display: grid;
+  place-items: center;
   margin: 0;
-  padding: 0;
+  padding: 0.15rem 0.35rem;
   border: 0;
-  border-radius: 0;
-  background: #000;
-  color: #edeee5;
+  color: #fff;
+  font-family: var(--font-mark);
+  font-size: clamp(2.1rem, 5.5vmin, 4.25rem);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: 0;
   cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: none;
+  mix-blend-mode: difference;
+  animation: project-open-mark-breathe 3.6s ease-in-out infinite;
 }
 
-.project-open__close:hover {
-  background: #222;
+.project-open__mark:hover,
+.project-open__mark:focus-visible {
+  animation-duration: 1.35s;
 }
 
-.project-open__close:focus-visible {
-  outline: 2px solid #fdf48b;
-  outline-offset: 3px;
+.project-open__mark:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
 }
 
-.project-open__band {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: min(58vh, 640px);
-  padding: clamp(2rem, 6vh, 4rem) clamp(1.25rem, 4vw, 3rem) 3rem;
-  background: #edeee5;
-  text-align: center;
+.project-open__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.project-open__mega {
-  margin: 0;
-  max-width: 18ch;
-  font-weight: 700;
-  line-height: 0.88;
-  letter-spacing: -0.055em;
-  text-transform: uppercase;
+@keyframes project-open-mark-breathe {
+  0%,
+  28% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0.78;
+  }
 }
 
-.project-open__mega-line {
-  display: block;
-  font-size: clamp(3rem, 12vw, 8.5rem);
+@supports not (mix-blend-mode: difference) {
+  .project-open__mark {
+    color: #000;
+    mix-blend-mode: normal;
+  }
 }
 
-.project-open__mega-line--em {
-  font-style: italic;
-  font-weight: 600;
-}
-
-.project-open__meta {
-  margin: 1.5rem 0 0;
-  max-width: 36rem;
-  font-size: clamp(0.8rem, 1.4vw, 0.95rem);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #333;
-}
-
-.project-open__stub {
-  padding: 0 clamp(1.25rem, 4vw, 3rem) 4rem;
-  background: #edeee5;
-}
-
-.project-open__stub-block {
-  width: min(42rem, 100%);
-  height: 28vh;
-  margin: 0 auto 1.25rem;
-  background: #e5e7eb;
-}
-
-.project-open__stub-block--short {
-  height: 16vh;
-  margin-bottom: 0;
-}
-
-body.project-open-active .auge-cursor-dot,
+/* Tip is strip-only — hide on detail. Diamond cursor stays (SiteCursor). */
 body.project-open-active .auge-view-tip {
   opacity: 0 !important;
   visibility: hidden;
   pointer-events: none;
 }
 
+/*
+  Desktop footer — same invert as the S mark.
+  No z-index here: a stacking context on the wrapper would trap
+  mix-blend-mode so the pieces only difference against each other.
+  Each piece carries z-index and blends with the detail stage.
+*/
+.project-open__desk-foot {
+  display: none;
+}
+
+@media (min-width: 721px) {
+  .project-open__desk-foot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0 clamp(2.1rem, 5.5vw, 5.25rem) max(1.65rem, env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+    background: transparent;
+    color: #fff;
+  }
+
+  .project-open__desk-copy {
+    position: relative;
+    z-index: 12;
+    margin: 0;
+    padding: 0.15rem 0.35rem;
+    font-family: var(--font-sans);
+    font-size: clamp(0.65rem, 1.05vw, 0.85rem);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: #fff;
+    mix-blend-mode: difference;
+    pointer-events: auto;
+    cursor: default;
+  }
+
+  .project-open__desk-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: clamp(1rem, 2vmin, 1.6rem);
+    pointer-events: auto;
+    background: transparent;
+  }
+
+  /*
+    Closed control is a white plate with black bars. Difference turns the
+    plate into the negative of the photo and knocks the bars back to the
+    original pixels, so the icon stays readable. Open menu is solid ink.
+  */
+  .project-open__drawer .project-open__drawer-panel {
+    z-index: 12;
+    background: #fff;
+    mix-blend-mode: difference;
+  }
+
+  .project-open__drawer .auge-drawer__bars span {
+    background: #000;
+  }
+
+  /*
+    Closed links sit at opacity 0 with a transform. That layer masks the
+    plate's difference blend down to a sliver, so keep them out until open.
+  */
+  .project-open__drawer:not(.is-open):not(:hover):not(:focus-within) .auge-drawer__nav {
+    display: none;
+  }
+
+  .project-open__drawer.is-open .project-open__drawer-panel,
+  .project-open__drawer:focus-within .project-open__drawer-panel,
+  .project-open__drawer:hover .project-open__drawer-panel {
+    height: 11.25rem;
+    background: #000;
+    mix-blend-mode: normal;
+  }
+
+  .project-open__drawer.is-open .auge-drawer__bars span,
+  .project-open__drawer:focus-within .auge-drawer__bars span,
+  .project-open__drawer:hover .auge-drawer__bars span {
+    background: #fdf48b;
+  }
+
+  .project-open__drawer .auge-drawer__link {
+    text-decoration: none;
+    color: #edeee5;
+  }
+
+  .project-open__desk-socials {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.55em;
+    max-width: min(22rem, 48vw);
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: clamp(0.7rem, 1.2vw, 0.95rem);
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    pointer-events: auto;
+    color: #fff;
+  }
+
+  .project-open__desk-socials a {
+    position: relative;
+    z-index: 12;
+    padding: 0.15rem 0.35rem;
+    color: #fff;
+    text-decoration: none;
+    mix-blend-mode: difference;
+  }
+
+  .project-open__desk-socials a:hover,
+  .project-open__desk-socials a:focus-visible {
+    background: #fdf48b;
+    color: #000;
+    mix-blend-mode: normal;
+  }
+
+  .project-open__desk-socials a:not(:last-child)::after {
+    content: '|';
+    margin-left: 0.4rem;
+    color: inherit;
+    background: transparent;
+  }
+}
+
+@supports not (mix-blend-mode: difference) {
+  .project-open__desk-copy,
+  .project-open__desk-socials,
+  .project-open__desk-socials a {
+    color: #000;
+    mix-blend-mode: normal;
+  }
+
+  .project-open__drawer .project-open__drawer-panel {
+    background: #000;
+    mix-blend-mode: normal;
+  }
+
+  .project-open__drawer .auge-drawer__bars span {
+    background: #fdf48b;
+  }
+}
+
 @media (max-width: 720px) {
-  .project-open__hero {
-    height: min(38vh, 360px);
-  }
-
-  .project-open__band {
-    min-height: 48vh;
-  }
-
-  .project-open__brand-word {
-    font-size: clamp(1.8rem, 9vw, 3rem);
+  .project-open__didone {
+    font-size: clamp(2.1rem, 11vw, 3.6rem);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .project-open__photo,
-  .project-open__curtain {
+  .project-open__curtain,
+  .project-open__yellow-title {
     will-change: auto;
+  }
+
+  .project-open__mark {
+    animation: none;
+    opacity: 1;
   }
 }

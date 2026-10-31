@@ -49,3 +49,30 @@ export function Scramble({ text, active = true, steps = 12, intervalMs = 32 }) {
 
   return <span aria-hidden>{shown}</span>;
 }
+
+/** Scramble glyphs while the pointer is over this text. */
+export function ScrambleHover({
+  text,
+  as: Comp = 'span',
+  className,
+  steps = 10,
+  intervalMs = 28,
+  children,
+  ...rest
+}) {
+  const [on, setOn] = useState(false);
+  const label = String(text ?? '');
+
+  return (
+    <Comp
+      className={className}
+      aria-label={label}
+      onPointerEnter={() => setOn(true)}
+      onPointerLeave={() => setOn(false)}
+      {...rest}
+    >
+      <Scramble text={label} active={on} steps={steps} intervalMs={intervalMs} />
+      {children}
+    </Comp>
+  );
+}

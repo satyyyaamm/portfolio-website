@@ -27,6 +27,7 @@ export function AugeLanding({
   projects,
   onOpenProject,
   stripPaused = false,
+  cursorSuppressRef,
   socialItems = [],
   EMAIL_MAILTO,
   PHONE_DISPLAY,
@@ -45,7 +46,6 @@ export function AugeLanding({
   const stripRef = useRef(null);
   const lowerRef = useRef(null);
   const cursorTipRef = useRef(null);
-  const cursorDotRef = useRef(null);
   const viewTipOnRef = useRef(false);
   const cardHoverRef = useRef(false);
 
@@ -72,6 +72,11 @@ export function AugeLanding({
     setLabelScrambleKey((n) => n + 1);
   };
 
+  const syncCursorSuppress = () => {
+    if (!cursorSuppressRef) return;
+    cursorSuppressRef.current = Boolean(cardHoverRef.current || viewTipOnRef.current);
+  };
+
   const syncViewTip = (x, y, visible) => {
     const tip = cursorTipRef.current;
     if (tip) {
@@ -82,7 +87,16 @@ export function AugeLanding({
       viewTipOnRef.current = visible;
       setViewTipOn(visible);
     }
+    syncCursorSuppress();
   };
+
+  useEffect(() => {
+    if (!stripPaused) return;
+    cardHoverRef.current = false;
+    viewTipOnRef.current = false;
+    setViewTipOn(false);
+    syncCursorSuppress();
+  }, [stripPaused, cursorSuppressRef]);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -106,81 +120,8 @@ export function AugeLanding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion]);
 
-  // Yellow cursor follower — lerps behind the pointer for a soft offset.
-  useEffect(() => {
-    const dot = cursorDotRef.current;
-    if (!dot || reducedMotion) return undefined;
-    if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
-      return undefined;
-    }
-
-    const target = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
-    const pos = { x: target.x, y: target.y };
-    let pointerInside = false;
-    let overCardStable = false;
-    let overCardFrames = 0;
-    let shown = false;
-    let raf = 0;
-
-    const applyVisibility = (show) => {
-      if (show === shown) return;
-      shown = show;
-      // Instant hide/show — opacity transitions were reading as flicker at card edges.
-      dot.style.opacity = show ? '1' : '0';
-      dot.classList.toggle('is-on', show);
-    };
-
-    const onMove = (event) => {
-      target.x = event.clientX;
-      target.y = event.clientY;
-      if (!pointerInside) {
-        pointerInside = true;
-        pos.x = target.x;
-        pos.y = target.y;
-      }
-    };
-    const onLeave = () => {
-      pointerInside = false;
-      overCardStable = false;
-      overCardFrames = 0;
-      applyVisibility(false);
-    };
-
-    const tick = () => {
-      pos.x += (target.x - pos.x) * 0.14;
-      pos.y += (target.y - pos.y) * 0.14;
-      dot.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0) translate(-50%, -50%)`;
-
-      // Hysteresis: need a few consistent frames before flipping over-card state.
-      const rawOver = cardHoverRef.current || viewTipOnRef.current;
-      if (rawOver === overCardStable) {
-        overCardFrames = 0;
-      } else {
-        overCardFrames += 1;
-        if (overCardFrames >= (rawOver ? 2 : 6)) {
-          overCardStable = rawOver;
-          overCardFrames = 0;
-        }
-      }
-
-      applyVisibility(pointerInside && !overCardStable);
-      raf = window.requestAnimationFrame(tick);
-    };
-
-    window.addEventListener('pointermove', onMove, { passive: true });
-    document.documentElement.addEventListener('pointerleave', onLeave);
-    raf = window.requestAnimationFrame(tick);
-
-    return () => {
-      window.cancelAnimationFrame(raf);
-      window.removeEventListener('pointermove', onMove);
-      document.documentElement.removeEventListener('pointerleave', onLeave);
-    };
-  }, [reducedMotion]);
-
   return (
     <div className="auge-track" id="top">
-      <div ref={cursorDotRef} className="auge-cursor-dot" aria-hidden />
       <div
         ref={cursorTipRef}
         className={`auge-view-tip${viewTipOn ? ' is-on' : ''}`}
@@ -221,6 +162,7 @@ export function AugeLanding({
             onViewTip={syncViewTip}
             onHoverChange={(item) => {
               cardHoverRef.current = Boolean(item);
+              syncCursorSuppress();
             }}
             labelScrambleKey={labelScrambleKey}
           />
@@ -238,16 +180,21 @@ export function AugeLanding({
           </div>
         </motion.div>
 
+        {/* After rise, drop Framer transforms so difference blend reaches the stage */}
         <motion.footer
           className="auge-footer"
-          {...riseProps(siteReady, reducedMotion, riseSettled, { from: '22vh', delay: 0.12, duration: 1 })}
+          {...(riseSettled
+            ? { initial: false }
+            : riseProps(siteReady, reducedMotion, riseSettled, { from: '22vh', delay: 0.12, duration: 1 }))}
         >
           <p>© {new Date().getFullYear()} Satyam Tiwari</p>
         </motion.footer>
 
         <motion.div
           className="auge-corner"
-          {...riseProps(siteReady, reducedMotion, riseSettled, { from: '26vh', delay: 0.08, duration: 1.05 })}
+          {...(riseSettled
+            ? { initial: false }
+            : riseProps(siteReady, reducedMotion, riseSettled, { from: '26vh', delay: 0.08, duration: 1.05 }))}
         >
           <div
             className={`auge-drawer${drawerOpen ? ' is-open' : ''}`}

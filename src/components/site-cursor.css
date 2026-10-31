@@ -1,0 +1,35 @@
+/* Soft yellow diamond that lags behind the real pointer (OS cursor stays visible) */
+.site-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483646;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fdf48b;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-999px, -999px, 0);
+  will-change: transform, opacity;
+  mix-blend-mode: difference;
+}
+
+.site-cursor-dot.is-on {
+  opacity: 1;
+}
+
+body.site-loader-active .site-cursor-dot {
+  opacity: 0 !important;
+  visibility: hidden;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .site-cursor-dot {
+    display: none !important;
+  }
+}
