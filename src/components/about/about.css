@@ -110,51 +110,6 @@
   pointer-events: auto !important;
 }
 
-/*
-  Chrome z-index auto so difference sees page pixels (not trapped in a stacking context).
-*/
-.about-page__chrome {
-  position: absolute;
-  inset: 0;
-  z-index: auto;
-  isolation: auto;
-  pointer-events: none;
-  background: transparent;
-}
-
-.about-page__chrome .auge-mark,
-.about-page__chrome .auge-footer,
-.about-page__chrome .auge-corner {
-  pointer-events: auto;
-}
-
-.about-page__chrome .auge-corner {
-  z-index: auto;
-}
-
-.about-page__chrome .auge-mark,
-.about-page__chrome .auge-footer,
-.about-page__chrome .auge-footer__links {
-  color: #fff;
-  mix-blend-mode: difference;
-  z-index: auto;
-}
-
-.about-page__chrome .auge-footer p,
-.about-page__chrome .auge-footer__sound,
-.about-page__chrome .auge-footer__links a,
-.about-page__chrome .auge-footer__links a:not(:last-child)::after {
-  color: inherit;
-  mix-blend-mode: normal;
-  background: transparent;
-}
-
-.about-page__chrome .auge-footer__sound:hover,
-.about-page__chrome .auge-footer__links a:hover {
-  background: transparent;
-  color: inherit;
-}
-
 .about-hero {
   position: relative;
   background: #000;

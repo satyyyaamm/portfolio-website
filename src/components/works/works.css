@@ -225,36 +225,6 @@
   opacity: 0;
 }
 
-.works-chrome {
-  position: absolute;
-  inset: 0;
-  z-index: auto;
-  isolation: auto;
-  pointer-events: none;
-}
-
-.works-chrome .auge-mark,
-.works-chrome .auge-footer,
-.works-chrome .auge-corner {
-  pointer-events: auto;
-}
-
-.works-chrome .auge-mark,
-.works-chrome .auge-footer,
-.works-chrome .auge-footer p,
-.works-chrome .auge-footer__sound,
-.works-chrome .auge-footer__links,
-.works-chrome .auge-footer__links a,
-.works-chrome .auge-footer__links a:not(:last-child)::after {
-  color: #fff;
-  mix-blend-mode: difference;
-}
-
-.works-chrome .auge-footer__sound:hover,
-.works-chrome .auge-footer__links a:hover {
-  background: transparent;
-}
-
 @media (max-width: 1023px) {
   .works-thumb,
   .works-row__hit {

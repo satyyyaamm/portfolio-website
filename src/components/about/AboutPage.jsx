@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import Lenis from 'lenis';
-import { Scramble, ScrambleHover } from '../landing/Scramble.jsx';
-import { SoundToggle } from '../SoundToggle.jsx';
+import { ScrambleHover } from '../landing/Scramble.jsx';
 import { playHoverSound, playSound } from '../../lib/siteSound.js';
 import {
   ABOUT_HELLO,
@@ -15,6 +14,7 @@ import {
   aboutMediaFromProjects,
   shippedFromProjects,
 } from '../../lib/aboutContent.js';
+import { AugeChrome } from '../chrome/AugeChrome.jsx';
 import { AboutSurfaceWarp } from './AboutSurfaceWarp.jsx';
 import { AboutTypeLine } from './AboutTypeLine.jsx';
 import '../landing/auge-landing.css';
@@ -26,13 +26,11 @@ export function AboutPage({
   emailMailto = 'mailto:satyamt5152@gmail.com',
   onHome,
   onOpenWorks,
+  onOpenContact,
   onOpenProject,
 }) {
   const scrollRef = useRef(null);
   const reducedMotion = useReducedMotion();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerLink, setDrawerLink] = useState(null);
-  const [markHover, setMarkHover] = useState(false);
   const [reelOpen, setReelOpen] = useState(false);
   const [ctaSwap, setCtaSwap] = useState(false);
   const [ctaIn, setCtaIn] = useState(Boolean(reducedMotion));
@@ -248,111 +246,15 @@ export function AboutPage({
 
       <AboutSurfaceWarp scrollRef={scrollRef} contentKey={contentKey} />
 
-      <div className="about-page__chrome">
-        <a
-          href="/"
-          className="auge-mark"
-          aria-label="Home"
-          onPointerEnter={() => setMarkHover(true)}
-          onPointerLeave={() => setMarkHover(false)}
-          onClick={(event) => {
-            event.preventDefault();
-            playSound('clickMenuItem');
-            onHome?.();
-          }}
-        >
-          <Scramble text="S" active={markHover} steps={36} intervalMs={120} />
-          <span className="auge-sr">Satyam</span>
-        </a>
-
-        <footer className="auge-footer">
-          <p>© {new Date().getFullYear()} Satyam Tiwari</p>
-          <SoundToggle className="auge-footer__sound" />
-        </footer>
-
-        <div className="auge-corner">
-          <div
-            className={`auge-drawer${drawerOpen ? ' is-open' : ''}`}
-            onPointerEnter={() => setDrawerOpen(true)}
-            onPointerLeave={() => {
-              setDrawerOpen(false);
-              setDrawerLink(null);
-            }}
-          >
-            <div className="auge-drawer__panel">
-              <nav className="auge-drawer__nav" aria-label="Site">
-                <button
-                  type="button"
-                  className="auge-drawer__link"
-                  onPointerEnter={() => {
-                    setDrawerLink('works');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onClick={() => {
-                    playSound('clickMenuItem');
-                    onOpenWorks?.();
-                  }}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="auge-drawer__link"
-                  onPointerEnter={() => {
-                    setDrawerLink('home');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onClick={() => {
-                    playSound('clickMenuItem');
-                    onHome?.();
-                  }}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="Home" active={drawerOpen && drawerLink === 'home'} />
-                  </span>
-                </button>
-                <a
-                  className="auge-drawer__link"
-                  href={emailMailto}
-                  onPointerEnter={() => {
-                    setDrawerLink('talk');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onClick={() => playSound('clickMenuItem')}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
-                  </span>
-                </a>
-              </nav>
-              <span className="auge-drawer__bars" aria-hidden>
-                <span />
-                <span />
-              </span>
-            </div>
-          </div>
-
-          <nav className="auge-footer__links" aria-label="Social links">
-            {socialItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith('mailto:') ? undefined : '_blank'}
-                rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-                onPointerEnter={() => playHoverSound('hoverFooterItem')}
-                onClick={() => playSound('clickMenuItem')}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-      </div>
+      <AugeChrome
+        socialItems={socialItems}
+        onHome={onHome}
+        navItems={[
+          { id: 'works', label: 'Works', onClick: onOpenWorks },
+          { id: 'home', label: 'Home', onClick: onHome },
+          { id: 'talk', label: "Let's talk", onClick: onOpenContact },
+        ]}
+      />
 
       {reelOpen && reel ? (
         <button

@@ -359,6 +359,64 @@
   overflow: visible;
 }
 
+/*
+  Shared overlay chrome (About / Works / Contact).
+  Wrapper MUST stay z-index:auto — a stacking context here traps mix-blend
+  and the mark/footer stop inverting over page pixels. Raise z on children only.
+*/
+.auge-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: auto;
+  isolation: auto;
+  pointer-events: none;
+  background: transparent;
+}
+
+/*
+  Mark + © footer blend on themselves (z-index ok on the same node).
+  Corner must NOT take z-index — it would trap social-link difference.
+  Raise drawer + links instead so socials blend with the page like the © line.
+*/
+.auge-chrome .auge-mark,
+.auge-chrome .auge-footer {
+  pointer-events: auto;
+  z-index: 40;
+  color: #fff;
+  mix-blend-mode: difference;
+}
+
+.auge-chrome .auge-corner {
+  z-index: auto;
+  pointer-events: none;
+}
+
+.auge-chrome .auge-drawer,
+.auge-chrome .auge-footer__links {
+  pointer-events: auto;
+  z-index: 40;
+}
+
+.auge-chrome .auge-footer__links {
+  color: #fff;
+  mix-blend-mode: difference;
+}
+
+.auge-chrome .auge-footer p,
+.auge-chrome .auge-footer__sound,
+.auge-chrome .auge-footer__links a,
+.auge-chrome .auge-footer__links a:not(:last-child)::after {
+  color: inherit;
+  mix-blend-mode: normal;
+  background: transparent;
+}
+
+.auge-chrome .auge-footer__sound:hover,
+.auge-chrome .auge-footer__links a:hover {
+  background: transparent;
+  color: inherit;
+}
+
 .auge-footer {
   position: absolute;
   left: var(--auge-pad-l);
