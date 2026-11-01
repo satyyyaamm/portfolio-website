@@ -35,6 +35,11 @@ export function distLerp(absSteps, fallback) {
 
 export function worksLayout(width, height, desktop) {
   if (!desktop) {
+    // Media stays full-bleed; text uses a soft frame so index/title can
+    // approach with the same bend curve as desktop.
+    const frameInset = Math.max(GUTTER_MOBILE, Math.round(Math.min(width * 0.1, 40)));
+    const frameLeft = frameInset;
+    const frameRight = width - frameInset;
     return {
       isMobile: true,
       mediaLeft: 0,
@@ -45,9 +50,11 @@ export function worksLayout(width, height, desktop) {
       thumbFarWidth: 0,
       thumbCenterLeft: 0,
       thumbCenterWidth: 0,
-      indexCenterRight: GUTTER_MOBILE,
-      titleCenterLeft: width - GUTTER_MOBILE,
-      titleNearLeft: width,
+      indexCenterRight: frameLeft,
+      titleCenterLeft: frameRight,
+      titleNearLeft: frameRight,
+      textMediaLeft: frameLeft,
+      textMediaRight: frameRight,
     };
   }
 

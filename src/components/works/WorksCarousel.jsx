@@ -247,9 +247,16 @@ export function WorksCarousel({
       const indexBox = 110 * t;
       const titleSize = desktop ? Math.max(30, 60 * t) : 30;
       const awaySize = desktop ? Math.max(20, 40 * t) : 20;
-      const indexApproach = (layout.centerX - layout.indexCenterRight) / Math.max(layout.centerX - layout.mediaLeft, 1);
-      const titleApproach = (layout.titleCenterLeft - layout.centerX) / Math.max(layout.titleNearLeft - layout.centerX, 1);
-      const extraY = desktop ? layout.mediaHeight / 2 + 80 * t - step : 180 - step;
+      // Soft text frame on mobile — same approach math as desktop, media stays full-bleed.
+      const textLeft = desktop ? layout.mediaLeft : layout.textMediaLeft ?? layout.indexCenterRight;
+      const textNearRight = desktop ? layout.titleNearLeft : layout.textMediaRight ?? layout.titleNearLeft;
+      const indexApproach =
+        (layout.centerX - layout.indexCenterRight) / Math.max(layout.centerX - textLeft, 1);
+      const titleApproach =
+        (layout.titleCenterLeft - layout.centerX) / Math.max(textNearRight - layout.centerX, 1);
+      const extraY = desktop
+        ? layout.mediaHeight / 2 + 80 * t - step
+        : Math.min(vh * 0.16, 130) - step * 0.2;
 
       for (let i = 0; i < virtualCount; i += 1) {
         const item = items[i];
@@ -280,11 +287,11 @@ export function WorksCarousel({
           const near = 1 - clamp(Math.abs(v), 0, 1);
           const tw = layout.thumbFarWidth + (layout.thumbCenterWidth - layout.thumbFarWidth) * near;
           const th = tw / 1.6;
-          const tx =
+          const thumbX =
             layout.thumbFarLeft +
             (layout.thumbCenterLeft - layout.thumbFarLeft) * near +
             (dist / 6) * rail;
-          thumb.style.left = `${tx}px`;
+          thumb.style.left = `${thumbX}px`;
           thumb.style.top = `${y - th / 2}px`;
           thumb.style.width = `${tw}px`;
           thumb.style.height = `${th}px`;
@@ -292,7 +299,7 @@ export function WorksCarousel({
           if (dist < 5.4 && item.project?.image) {
             thumbRects.push({
               src: item.project.image,
-              left: tx,
+              left: thumbX,
               top: y - th / 2,
               width: tw,
               height: th,
@@ -306,18 +313,49 @@ export function WorksCarousel({
         const rest = sim.titleMetrics[i] || { w: 180, h: titleSize * 1.7 };
         const titleH = rest.h * scale;
         const titleW = rest.w * scale;
-        const indexW = desktop ? indexBox : (indexRefs.current[i]?.offsetWidth || 48);
-        const pairW = indexW + 20 + titleW;
-        const pairPad = Math.max(0, (layout.titleCenterLeft - layout.indexCenterRight - pairW) / 2);
-        const spread = 1 - distLerp(dist, 1);
+        const titleTop = y - titleH / 2;
+        const indexW = desktop ? indexBox : indexRefs.current[i]?.offsetWidth || 48;
 
         const idx = indexRefs.current[i];
         const ixToward = distLerp(dist, indexApproach);
-        const k = layout.centerX - (layout.centerX - layout.mediaLeft) * ixToward;
-        const ix = desktop ? k - indexBox : layout.indexCenterRight + pairPad * spread;
+        const k = layout.centerX - (layout.centerX - textLeft) * ixToward;
+        // Desktop: right-aligned in a fixed box. Mobile: left edge rides the bend.
+        let ix = desktop ? k - indexBox : k;
+        const indexTop = desktop ? y - 8 : titleTop + Math.max(0, (sizePx * 0.85 - metaPx) * 0.5);
+
+        const titleToward = distLerp(dist, titleApproach);
+        let titleAnchor = layout.centerX + (textNearRight - layout.centerX) * titleToward;
+        // Desktop grows right from the media edge; mobile keeps the right edge on the curve.
+        let tx = desktop ? titleAnchor : titleAnchor - titleW;
+
+        // Mobile: when the bend pulls both toward center, keep a clear gap so
+        // "(001)" never sits on top of the project name at the stack ends.
+        if (!desktop) {
+          const minGap = 18;
+          const leftLimit = layout.indexCenterRight;
+          const rightLimit = layout.titleCenterLeft;
+          let indexRight = ix + indexW;
+          let titleLeft = tx;
+          if (titleLeft < indexRight + minGap) {
+            const need = indexRight + minGap - titleLeft;
+            const pullLeft = Math.min(need / 2, Math.max(0, ix - leftLimit));
+            const pushRight = Math.min(need - pullLeft, Math.max(0, rightLimit - titleAnchor));
+            ix -= pullLeft;
+            titleAnchor += pushRight;
+            tx = titleAnchor - titleW;
+            indexRight = ix + indexW;
+            titleLeft = tx;
+            if (titleLeft < indexRight + minGap) {
+              tx = Math.min(rightLimit - titleW, indexRight + minGap);
+              titleAnchor = tx + titleW;
+              ix = Math.max(leftLimit, tx - minGap - indexW);
+            }
+          }
+        }
+
         if (idx) {
           idx.style.left = `${ix}px`;
-          idx.style.top = `${y - 8}px`;
+          idx.style.top = `${indexTop}px`;
           idx.style.width = desktop ? `${indexBox}px` : 'auto';
           idx.style.transform = 'none';
           idx.style.opacity = dist > 5.5 ? '0' : '1';
@@ -327,7 +365,7 @@ export function WorksCarousel({
             role: 'index',
             lines: [`(${String(item.projectIndex + 1).padStart(3, '0')})`],
             x: desktop ? ix + indexBox : ix,
-            y: y - 8,
+            y: indexTop,
             fontSize: metaPx,
             weight: 500,
             tracking: 0.04,
@@ -336,13 +374,9 @@ export function WorksCarousel({
           });
         }
 
-        const titleToward = distLerp(dist, titleApproach);
-        const tx = desktop
-          ? layout.centerX + (layout.titleNearLeft - layout.centerX) * titleToward
-          : layout.titleCenterLeft - pairPad * spread - (desktop ? 0 : titleW);
         if (title) {
           title.style.left = `${tx}px`;
-          title.style.top = `${y - titleH / 2}px`;
+          title.style.top = `${titleTop}px`;
           title.style.fontSize = `${sizePx}px`;
           title.style.transform = 'none';
           title.style.opacity = dist > 5.5 ? '0' : '1';
@@ -354,8 +388,8 @@ export function WorksCarousel({
           typeRects.push({
             role: 'title',
             lines: liveLines,
-            x: tx,
-            y: y - titleH / 2,
+            x: desktop ? tx : titleAnchor,
+            y: titleTop,
             fontSize: sizePx,
             weight: 800,
             tracking: -0.055,
@@ -368,25 +402,25 @@ export function WorksCarousel({
         const showKind =
           i === sim.hoverDisplay ||
           (sim.hoverDisplay == null && item.projectIndex === active && dist < 0.45);
-        const kx = desktop
-          ? layout.centerX + (layout.titleNearLeft - layout.centerX) * titleToward
-          : layout.titleCenterLeft - pairPad * spread;
+        const kindW = !desktop && kind ? kind.offsetWidth || 0 : 0;
+        const kx = desktop ? titleAnchor : titleAnchor - kindW;
+        const kindTop = titleTop + titleH + 8;
         if (kind && title) {
           kind.style.left = `${kx}px`;
-          kind.style.top = `${y - titleH / 2 + titleH + 8}px`;
+          kind.style.top = `${kindTop}px`;
           kind.style.opacity = showKind ? '1' : '0';
         }
         if (showKind) {
           typeRects.push({
             role: 'kind',
             lines: [kindTextRefs.current[i]?.textContent || projectCategory(item.project)],
-            x: kx,
-            y: y - titleH / 2 + titleH + 8,
+            x: desktop ? kx : titleAnchor,
+            y: kindTop,
             fontSize: metaPx,
             weight: 500,
             tracking: 0.06,
             lineHeight: 1,
-            align: 'left',
+            align: desktop ? 'left' : 'right',
           });
         }
       }

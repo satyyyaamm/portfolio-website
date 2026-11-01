@@ -13,6 +13,21 @@
   user-select: none;
 }
 
+/* Keep chrome above the carousel hit layer so the drawer can open on tap */
+.works-page .auge-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.works-page .auge-chrome .auge-mark,
+.works-page .auge-chrome .auge-footer,
+.works-page .auge-chrome .auge-drawer,
+.works-page .auge-chrome .auge-footer__links {
+  pointer-events: auto;
+}
+
 .works-page.is-locked {
   overscroll-behavior: none;
 }
@@ -237,6 +252,11 @@
 
   .works-title {
     text-align: right;
+  }
+
+  .works-kind {
+    text-align: right;
+    width: max-content;
   }
 }
 
