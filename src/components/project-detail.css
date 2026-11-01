@@ -4,6 +4,8 @@
   --detail-cream: #edeee5;
   --detail-ink: #000;
   --detail-yellow: #fdf48b;
+  /* Same rhythm as the gap between gallery shots */
+  --detail-gallery-gap: clamp(1rem, 2.5vw, 2rem);
   position: relative;
   background: var(--detail-cream);
   color: var(--detail-ink);
@@ -434,7 +436,7 @@
 .project-detail__gallery {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(1rem, 2.5vw, 2rem);
+  gap: var(--detail-gallery-gap);
   align-items: start;
   max-width: min(88rem, 100%);
   margin: 0 auto;
@@ -642,9 +644,15 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
     white-space: normal;
   }
 
-  .project-detail__meta-grid {
+  .project-detail__meta-grid,
+  .project-detail__meta-grid--no-cta {
     grid-template-columns: 1fr;
     gap: 2.25rem;
+  }
+
+  .project-detail__meta-grid--no-cta .project-detail__features,
+  .project-detail__meta-grid--no-cta .project-detail__info {
+    grid-column: 1;
   }
 
   .project-detail__intro {
@@ -676,6 +684,21 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
 }
 
 @media (max-width: 720px) {
+  /* L/R page padding = gap between gallery images (shots 2 → 3) */
+  .project-detail__sheet {
+    padding-left: var(--detail-gallery-gap);
+    padding-right: var(--detail-gallery-gap);
+  }
+
+  .project-detail__desc,
+  .project-detail__meta-grid,
+  .project-detail__meta-grid--no-cta,
+  .project-detail__gallery,
+  .project-detail__next {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   .project-detail__info-row {
     grid-template-columns: 4.5rem minmax(0, 1fr);
     gap: 0.75rem;

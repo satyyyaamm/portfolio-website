@@ -366,13 +366,13 @@ export function ProjectOpenOverlay({
   const nameRisingOut = phase === 'exitName' || phase === 'exitCurtain';
   const homeTitleOut = phase === 'homeOut';
   const lifting = phase === 'arm' || phase === 'fly';
-  // Keep detail under home/next cover; warm new detail under yellow load
+  // Wait until yellow fully covers before mounting detail — during curtain rise
+  // the ellipse still leaves gaps, and cream detail would flash over the landing.
   const showDetailUnder =
     phase === 'homeIn' ||
     phase === 'nextIn' ||
     (!goingHome &&
-      (phase === 'curtain' ||
-        phase === 'title' ||
+      (phase === 'title' ||
         phase === 'exitPhoto' ||
         phase === 'exitName' ||
         phase === 'exitCurtain' ||
@@ -561,13 +561,24 @@ export function ProjectOpenOverlay({
           </div>
           <div className="project-open__desk-corner">
             <div
+              id="project-open-drawer"
               className={`auge-drawer project-open__drawer${drawerOpen ? ' is-open' : ''}`}
-              onPointerEnter={() => setDrawerOpen(true)}
-              onPointerLeave={() => {
-                setDrawerOpen(false);
-                setDrawerLink(null);
+              onPointerEnter={() => {
+                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                  setDrawerOpen(true);
+                }
               }}
-              onFocus={() => setDrawerOpen(true)}
+              onPointerLeave={() => {
+                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                  setDrawerOpen(false);
+                  setDrawerLink(null);
+                }
+              }}
+              onFocus={() => {
+                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                  setDrawerOpen(true);
+                }
+              }}
               onBlur={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) {
                   setDrawerOpen(false);
@@ -575,78 +586,146 @@ export function ProjectOpenOverlay({
                 }
               }}
             >
-              <div className="auge-drawer__panel project-open__drawer-panel" id="project-open-drawer">
-                <nav className="auge-drawer__nav" aria-label="Site">
-                  <button
-                    type="button"
-                    className="auge-drawer__link"
-                    onPointerEnter={() => {
-                      setDrawerLink('works');
-                      playHoverSound('hoverButton');
-                    }}
-                    onPointerLeave={() => setDrawerLink(null)}
-                    onFocus={() => setDrawerLink('works')}
-                    onClick={() => {
-                      playSound('clickMenuItem');
+              <div className="auge-drawer__panel project-open__drawer-panel">
+                <button
+                  type="button"
+                  className="auge-drawer__toggle"
+                  aria-expanded={drawerOpen}
+                  aria-controls="project-open-drawer"
+                  aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    playSound('clickMenuItem');
+                    if (drawerOpen) {
+                      setDrawerLink(null);
                       setDrawerOpen(false);
-                      if (onOpenWorks) {
-                        onOpenWorks();
-                        return;
-                      }
-                      const gallery = scrollRef.current?.querySelector('.project-detail__gallery');
-                      (gallery || scrollRef.current)?.scrollIntoView?.({
-                        behavior: 'smooth',
-                        block: 'start',
-                      });
-                    }}
-                  >
-                    <span className="auge-drawer__label">
-                      <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
-                    </span>
-                    <span className="project-open__sr">Works</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="auge-drawer__link"
-                    onPointerEnter={() => {
-                      setDrawerLink('about');
-                      playHoverSound('hoverButton');
-                    }}
-                    onPointerLeave={() => setDrawerLink(null)}
-                    onFocus={() => setDrawerLink('about')}
-                    onClick={() => {
-                      playSound('clickMenuItem');
-                      setDrawerOpen(false);
-                      if (onOpenAbout) onOpenAbout();
-                      else goHome();
-                    }}
-                  >
-                    <span className="auge-drawer__label">
-                      <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
-                    </span>
-                    <span className="project-open__sr">About</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="auge-drawer__link"
-                    onPointerEnter={() => {
-                      setDrawerLink('talk');
-                      playHoverSound('hoverButton');
-                    }}
-                    onPointerLeave={() => setDrawerLink(null)}
-                    onFocus={() => setDrawerLink('talk')}
-                    onClick={() => {
-                      playSound('clickMenuItem');
-                      setDrawerOpen(false);
-                      if (onOpenContact) onOpenContact();
-                    }}
-                  >
-                    <span className="auge-drawer__label">
-                      <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
-                    </span>
-                    <span className="project-open__sr">Let's talk</span>
-                  </button>
-                </nav>
+                      event.currentTarget.blur();
+                    } else {
+                      setDrawerOpen(true);
+                    }
+                  }}
+                >
+                  <span className="auge-drawer__close" aria-hidden>
+                    ×
+                  </span>
+                </button>
+
+                <div className="auge-drawer__body">
+                  <nav className="auge-drawer__nav" aria-label="Site">
+                    <button
+                      type="button"
+                      className="auge-drawer__link"
+                      onPointerEnter={() => {
+                        setDrawerLink('works');
+                        playHoverSound('hoverButton');
+                      }}
+                      onPointerLeave={() => setDrawerLink(null)}
+                      onFocus={() => setDrawerLink('works')}
+                      onClick={() => {
+                        playSound('clickMenuItem');
+                        setDrawerOpen(false);
+                        if (onOpenWorks) {
+                          onOpenWorks();
+                          return;
+                        }
+                        const gallery = scrollRef.current?.querySelector('.project-detail__gallery');
+                        (gallery || scrollRef.current)?.scrollIntoView?.({
+                          behavior: 'smooth',
+                          block: 'start',
+                        });
+                      }}
+                    >
+                      <span className="auge-drawer__label">
+                        <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
+                      </span>
+                      <span className="project-open__sr">Works</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="auge-drawer__link"
+                      onPointerEnter={() => {
+                        setDrawerLink('about');
+                        playHoverSound('hoverButton');
+                      }}
+                      onPointerLeave={() => setDrawerLink(null)}
+                      onFocus={() => setDrawerLink('about')}
+                      onClick={() => {
+                        playSound('clickMenuItem');
+                        setDrawerOpen(false);
+                        if (onOpenAbout) onOpenAbout();
+                        else goHome();
+                      }}
+                    >
+                      <span className="auge-drawer__label">
+                        <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
+                      </span>
+                      <span className="project-open__sr">About</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="auge-drawer__link"
+                      onPointerEnter={() => {
+                        setDrawerLink('talk');
+                        playHoverSound('hoverButton');
+                      }}
+                      onPointerLeave={() => setDrawerLink(null)}
+                      onFocus={() => setDrawerLink('talk')}
+                      onClick={() => {
+                        playSound('clickMenuItem');
+                        setDrawerOpen(false);
+                        if (onOpenContact) onOpenContact();
+                      }}
+                    >
+                      <span className="auge-drawer__label">
+                        <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
+                      </span>
+                      <span className="project-open__sr">Let's talk</span>
+                    </button>
+                  </nav>
+
+                  <div className="auge-drawer__meta">
+                    <nav className="auge-drawer__socials" aria-label="Social and legal">
+                      {socialItems.map((item) => (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          target={item.href.startsWith('mailto:') ? undefined : '_blank'}
+                          rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                          onPointerEnter={() => playHoverSound('hoverFooterItem')}
+                          onClick={() => {
+                            playSound('clickMenuItem');
+                            setDrawerOpen(false);
+                          }}
+                        >
+                          {item.label}
+                        </a>
+                      ))}
+                      <a
+                        href="#privacy"
+                        onClick={() => {
+                          playSound('clickMenuItem');
+                          setDrawerOpen(false);
+                        }}
+                      >
+                        Privacy
+                      </a>
+                      <a
+                        href="#cookies"
+                        onClick={() => {
+                          playSound('clickMenuItem');
+                          setDrawerOpen(false);
+                        }}
+                      >
+                        Cookies
+                      </a>
+                    </nav>
+                    <div className="auge-drawer__legal">
+                      <span>© {new Date().getFullYear()}</span>
+                      <SoundToggle className="auge-drawer__sound" />
+                    </div>
+                  </div>
+                </div>
+
                 <span className="auge-drawer__bars" aria-hidden>
                   <span />
                   <span />

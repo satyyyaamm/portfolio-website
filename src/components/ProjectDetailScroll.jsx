@@ -243,11 +243,14 @@ function lerp(a, b, t) {
 }
 
 function titleMaxPx(vw) {
+  // Mobile entry title was oversized (~0.1*vw+100 ≈ 140px on phones).
+  if (vw <= 720) return Math.max(52, Math.min(76, vw * 0.175));
   return Math.max(64, Math.min(TITLE_FS_MAX_PX, 0.1 * vw + 100));
 }
 
 function titleMinPx(vw) {
-  // ~52px desktop, never below ~40px on narrow screens
+  // Docked size — keep readable but tighter on narrow screens
+  if (vw <= 720) return Math.max(28, Math.min(36, vw * 0.08));
   return Math.max(40, Math.min(TITLE_FS_MIN_PX, 0.045 * vw + 28));
 }
 

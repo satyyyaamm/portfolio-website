@@ -52,6 +52,7 @@ function splitTitle(name = '') {
 }
 
 function titleMaxPx(vw) {
+  if (vw <= 720) return Math.max(52, Math.min(76, vw * 0.175));
   return Math.max(64, Math.min(180, 0.1 * vw + 100));
 }
 

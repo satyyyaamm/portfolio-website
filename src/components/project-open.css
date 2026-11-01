@@ -288,23 +288,91 @@ body.project-open-active .auge-view-tip {
   Each piece carries z-index and blends with the detail stage.
 */
 .project-open__desk-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 14;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0 1.25rem max(1.1rem, env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+  background: transparent;
+  color: #fff;
+}
+
+.project-open__desk-copy {
+  position: relative;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: #fff;
+  mix-blend-mode: difference;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.project-open__desk-sound {
+  font-size: 1.15em;
+  color: inherit;
+}
+
+.project-open__desk-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Mobile: socials live in the drawer — same as landing */
+.project-open__desk-socials {
   display: none;
+}
+
+.project-open__drawer .project-open__drawer-panel {
+  z-index: 12;
+  background: #000;
+  mix-blend-mode: normal;
+}
+
+.project-open__drawer .auge-drawer__bars span {
+  background: #fdf48b;
+}
+
+.project-open__drawer.is-open .project-open__drawer-panel {
+  background: #000;
+  mix-blend-mode: normal;
+}
+
+.project-open__drawer.is-open .auge-drawer__bars span {
+  background: #fdf48b;
+}
+
+.project-open__drawer .auge-drawer__link {
+  text-decoration: none;
+  color: #edeee5;
 }
 
 @media (min-width: 721px) {
   .project-open__desk-foot {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1.5rem;
     padding: 0 clamp(2.1rem, 5.5vw, 5.25rem) max(1.65rem, env(safe-area-inset-bottom, 0px));
-    pointer-events: none;
-    background: transparent;
-    color: #fff;
+  }
+
+  .project-open__desk-copy {
+    font-size: clamp(0.65rem, 1.05vw, 0.85rem);
   }
 
   .project-open__desk-copy {
@@ -348,23 +416,8 @@ body.project-open-active .auge-view-tip {
   }
 
   /*
-    Closed control is a white plate with black bars. Difference turns the
-    plate into the negative of the photo and knocks the bars back to the
-    original pixels, so the icon stays readable. Open menu is solid ink.
-  */
-  .project-open__drawer .project-open__drawer-panel {
-    z-index: 12;
-    background: #fff;
-    mix-blend-mode: difference;
-  }
-
-  .project-open__drawer .auge-drawer__bars span {
-    background: #000;
-  }
-
-  /*
-    Closed links sit at opacity 0 with a transform. That layer masks the
-    plate's difference blend down to a sliver, so keep them out until open.
+    Closed links sit at opacity 0 with a transform — keep them out until open
+    so the black plate stays solid.
   */
   .project-open__drawer:not(.is-open):not(:hover):not(:focus-within) .auge-drawer__nav {
     display: none;
@@ -440,19 +493,24 @@ body.project-open-active .auge-view-tip {
     mix-blend-mode: normal;
   }
 
-  .project-open__drawer .project-open__drawer-panel {
-    background: #000;
-    mix-blend-mode: normal;
-  }
-
-  .project-open__drawer .auge-drawer__bars span {
-    background: #fdf48b;
-  }
 }
 
 @media (max-width: 720px) {
   .project-open__didone {
-    font-size: clamp(2.1rem, 11vw, 3.6rem);
+    font-size: clamp(1.65rem, 8.5vw, 2.6rem);
+  }
+
+  .project-open__desk-copy {
+    right: 5.5rem;
+  }
+
+  .project-open__desk-sound {
+    display: none;
+  }
+
+  /* Open drawer is solid black (landing styles); keep bars/close readable */
+  .project-open__drawer.is-open .auge-drawer__close {
+    color: #fdf48b;
   }
 }
 
