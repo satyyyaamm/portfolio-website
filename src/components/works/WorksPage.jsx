@@ -16,6 +16,8 @@ export function WorksPage({
   onOpenProject,
   onHome,
   onOpenAbout,
+  onOpenWorks,
+  emailMailto = 'mailto:satyamt5152@gmail.com',
 }) {
   const reducedMotion = useReducedMotion();
   const rootRef = useRef(null);
@@ -114,6 +116,10 @@ export function WorksPage({
                     playHoverSound('hoverButton');
                   }}
                   onPointerLeave={() => setDrawerLink(null)}
+                  onClick={() => {
+                    playSound('clickMenuItem');
+                    onOpenWorks?.();
+                  }}
                 >
                   <span className="auge-drawer__label">
                     <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
@@ -123,24 +129,7 @@ export function WorksPage({
                   type="button"
                   className="auge-drawer__link"
                   onPointerEnter={() => {
-                    setDrawerLink('home');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onClick={() => {
-                    playSound('clickMenuItem');
-                    onHome?.();
-                  }}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="Home" active={drawerOpen && drawerLink === 'home'} />
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="auge-drawer__link"
-                  onPointerEnter={() => {
-                    setDrawerLink('talk');
+                    setDrawerLink('about');
                     playHoverSound('hoverButton');
                   }}
                   onPointerLeave={() => setDrawerLink(null)}
@@ -150,9 +139,23 @@ export function WorksPage({
                   }}
                 >
                   <span className="auge-drawer__label">
-                    <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
+                    <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
                   </span>
                 </button>
+                <a
+                  className="auge-drawer__link"
+                  href={emailMailto}
+                  onPointerEnter={() => {
+                    setDrawerLink('talk');
+                    playHoverSound('hoverButton');
+                  }}
+                  onPointerLeave={() => setDrawerLink(null)}
+                  onClick={() => playSound('clickMenuItem')}
+                >
+                  <span className="auge-drawer__label">
+                    <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
+                  </span>
+                </a>
               </nav>
               <span className="auge-drawer__bars" aria-hidden>
                 <span />

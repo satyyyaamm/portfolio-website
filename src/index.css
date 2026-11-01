@@ -2425,6 +2425,12 @@ body.site-loader-active .site-loader-main {
   overflow: hidden;
 }
 
+.journey-root.is-about .auge-stage,
+.journey-root.is-works-index .auge-stage {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .scroll-comp.is-case-open .scroll-comp__track {
   pointer-events: none;
 }

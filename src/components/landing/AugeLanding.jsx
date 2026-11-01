@@ -29,6 +29,7 @@ export function AugeLanding({
   projects,
   onOpenProject,
   onOpenWorksIndex,
+  onOpenAbout,
   stripPaused = false,
   cursorSuppressRef,
   socialItems = [],
@@ -232,7 +233,8 @@ export function AugeLanding({
                   onClick={() => {
                     playSound('clickMenuItem');
                     setDrawerOpen(false);
-                    setMenuOpen(true);
+                    if (onOpenAbout) onOpenAbout();
+                    else setMenuOpen(true);
                   }}
                 >
                   <span className="auge-drawer__label">

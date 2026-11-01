@@ -52,6 +52,7 @@ import { SiteCursor } from './components/SiteCursor.jsx';
 import { RouteCurtain } from './components/works/RouteCurtain.jsx';
 import { WorksPage } from './components/works/WorksPage.jsx';
 import { initSound } from './lib/siteSound.js';
+import { AboutPage } from './components/about/AboutPage.jsx';
 import {
   findProjectIndexBySlug,
   isWorksIndex,
@@ -59,6 +60,7 @@ import {
   worksIndexPath,
   worksPath,
 } from './lib/worksUrl.js';
+import { aboutPath, isAboutPath } from './lib/aboutUrl.js';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
 const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
@@ -97,7 +99,10 @@ const App = () => {
   const [worksIndex, setWorksIndex] = useState(() =>
     typeof window !== 'undefined' ? isWorksIndex(window.location.pathname) : false
   );
-  const [curtain, setCurtain] = useState(null); // { to: 'works' | 'home', label }
+  const [aboutOpen, setAboutOpen] = useState(() =>
+    typeof window !== 'undefined' ? isAboutPath(window.location.pathname) : false
+  );
+  const [curtain, setCurtain] = useState(null); // { to: 'works' | 'home' | 'about', label }
   const [homeRevealing, setHomeRevealing] = useState(false);
   const openCoveredRef = useRef(null);
   const cursorSuppressRef = useRef(false);
@@ -343,6 +348,7 @@ const App = () => {
     if (!project) return;
     openCoveredRef.current = fromRect?.onCovered || null;
     const { onCovered: _cb, ...rect } = fromRect || {};
+    setAboutOpen(false);
     setProjectOpen({ index, fromRect: fromRect ? rect : null });
     const next = worksPath(project.slug);
     if (window.location.pathname !== next) {
@@ -356,26 +362,41 @@ const App = () => {
     setCurtain({ to, label });
   };
 
-  const openWorksIndex = ({ fromDetail = false } = {}) => {
+  const openWorksIndex = () => {
     const go = () => {
       setHomeRevealing(false);
       setProjectOpen(null);
+      setAboutOpen(false);
       setWorksIndex(true);
       if (!isWorksIndex(window.location.pathname)) {
         window.history.pushState({ works: 'index' }, '', worksIndexPath());
       }
     };
-    if (fromDetail) {
-      go();
-      return;
-    }
     runCurtain('works', 'WORKS', go);
+  };
+
+  const openAbout = () => {
+    const go = () => {
+      setHomeRevealing(false);
+      setProjectOpen(null);
+      setWorksIndex(false);
+      setAboutOpen(true);
+      if (!isAboutPath(window.location.pathname)) {
+        window.history.pushState({ about: true }, '', aboutPath());
+      }
+    };
+    runCurtain('about', 'ABOUT', go);
   };
 
   const coverHome = () => {
     setHomeRevealing(true);
     setWorksIndex(false);
-    if (parseWorksSlug(window.location.pathname) || isWorksIndex(window.location.pathname)) {
+    setAboutOpen(false);
+    if (
+      parseWorksSlug(window.location.pathname) ||
+      isWorksIndex(window.location.pathname) ||
+      isAboutPath(window.location.pathname)
+    ) {
       window.history.pushState({ works: null }, '', '/');
     }
   };
@@ -397,15 +418,25 @@ const App = () => {
   const closeWorksIndex = () => {
     runCurtain('home', 'HOME', () => {
       setWorksIndex(false);
+      setAboutOpen(false);
       setProjectOpen(null);
-      if (isWorksIndex(window.location.pathname) || parseWorksSlug(window.location.pathname)) {
+      if (
+        isWorksIndex(window.location.pathname) ||
+        parseWorksSlug(window.location.pathname) ||
+        isAboutPath(window.location.pathname)
+      ) {
         window.history.pushState({ works: null }, '', '/');
       }
     });
   };
 
-  // Deep link: /works, /works/picksy (and legacy /?case=0)
+  // Deep link: /works, /works/picksy, /about (and legacy /?case=0)
   useEffect(() => {
+    if (isAboutPath(window.location.pathname)) {
+      setAboutOpen(true);
+      setWorksIndex(false);
+      return undefined;
+    }
     if (isWorksIndex(window.location.pathname)) {
       setWorksIndex(true);
       return undefined;
@@ -435,10 +466,19 @@ const App = () => {
   useEffect(() => {
     const onPop = () => {
       const path = window.location.pathname;
+      if (isAboutPath(path)) {
+        openCoveredRef.current = null;
+        setHomeRevealing(false);
+        setProjectOpen(null);
+        setWorksIndex(false);
+        setAboutOpen(true);
+        return;
+      }
       if (isWorksIndex(path)) {
         openCoveredRef.current = null;
         setHomeRevealing(false);
         setProjectOpen(null);
+        setAboutOpen(false);
         setWorksIndex(true);
         return;
       }
@@ -448,10 +488,12 @@ const App = () => {
         setHomeRevealing(false);
         setProjectOpen(null);
         setWorksIndex(false);
+        setAboutOpen(false);
         return;
       }
       const index = findProjectIndexBySlug(projects, slug);
       setWorksIndex(false);
+      setAboutOpen(false);
       if (index >= 0) setProjectOpen({ index, fromRect: null });
       else setProjectOpen(null);
     };
@@ -461,7 +503,7 @@ const App = () => {
   }, []);
 
   return (
-    <div className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${worksIndex ? ' is-works-index' : ''}`}>
+    <div className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${worksIndex ? ' is-works-index' : ''}${aboutOpen ? ' is-about' : ''}`}>
       <SiteCursor suppressRef={cursorSuppressRef} />
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -470,9 +512,10 @@ const App = () => {
       <main id="main-content" tabIndex={-1} className="relative outline-none">
         <AugeLanding
           projects={projects}
-          stripPaused={caseOpen || worksIndex}
+          stripPaused={caseOpen || worksIndex || aboutOpen}
           cursorSuppressRef={cursorSuppressRef}
           onOpenWorksIndex={() => openWorksIndex()}
+          onOpenAbout={() => openAbout()}
           onOpenProject={(index, fromRect) => {
             setHomeRevealing(false);
             setWorksIndex(false);
@@ -504,17 +547,33 @@ const App = () => {
             openWorks(index, fromRect);
           }}
           onHome={closeWorksIndex}
+          onOpenAbout={() => openAbout()}
+          onOpenWorks={() => openWorksIndex()}
+          emailMailto={EMAIL_MAILTO}
         />
       ) : null}
 
-      {curtain ? (
-        <RouteCurtain
-          active
-          label={curtain.label}
-          onCovered={() => curtainCoveredRef.current?.()}
-          onDone={() => curtainDoneRef.current?.()}
+      {aboutOpen ? (
+        <AboutPage
+          projects={projects}
+          socialItems={SOCIAL_ITEMS}
+          emailMailto={EMAIL_MAILTO}
+          onHome={closeWorksIndex}
+          onOpenWorks={() => openWorksIndex()}
+          onOpenProject={(index) => {
+            setHomeRevealing(false);
+            setAboutOpen(false);
+            openWorks(index, null);
+          }}
         />
       ) : null}
+
+      <RouteCurtain
+        active={Boolean(curtain)}
+        label={curtain?.label || ''}
+        onCovered={() => curtainCoveredRef.current?.()}
+        onDone={() => curtainDoneRef.current?.()}
+      />
 
       <AnimatePresence>
         {caseOpen ? (
@@ -528,7 +587,8 @@ const App = () => {
             onCovered={() => openCoveredRef.current?.()}
             onHomeCovered={coverHome}
             onClose={closeWorks}
-            onOpenWorks={() => openWorksIndex({ fromDetail: true })}
+            onOpenWorks={() => openWorksIndex()}
+            onOpenAbout={() => openAbout()}
             onOpenNext={
               nextProjectIndex >= 0
                 ? () => {
