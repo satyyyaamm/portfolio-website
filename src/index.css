@@ -2426,6 +2426,7 @@ body.site-loader-active .site-loader-main {
 }
 
 .journey-root.is-about .auge-stage,
+.journey-root.is-contact .auge-stage,
 .journey-root.is-works-index .auge-stage {
   visibility: hidden;
   pointer-events: none;

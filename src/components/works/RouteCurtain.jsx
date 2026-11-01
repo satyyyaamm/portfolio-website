@@ -17,7 +17,7 @@ const PAGE_IN_MS = 700;
 const PAGE_HOLD_MS = 280;
 const PAGE_OUT_MS = 900;
 
-const EDITORIAL = new Set(['HOME', 'WORKS', 'ABOUT']);
+const EDITORIAL = new Set(['HOME', 'WORKS', 'ABOUT', "LET'S TALK", 'CONTACTS', 'CONTACT']);
 
 /**
  * Yellow page curtain — HOME / WORKS share the detail-logo close

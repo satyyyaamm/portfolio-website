@@ -85,6 +85,7 @@ export function ProjectOpenOverlay({
   onOpenNext,
   onOpenWorks,
   onOpenAbout,
+  onOpenContact,
 }) {
   const reducedMotion = useReducedMotion();
   /** Landing card fly-in; deep links and next-project skip arm/fly. */
@@ -625,9 +626,9 @@ export function ProjectOpenOverlay({
                     </span>
                     <span className="project-open__sr">About</span>
                   </button>
-                  <a
+                  <button
+                    type="button"
                     className="auge-drawer__link"
-                    href={emailMailto}
                     onPointerEnter={() => {
                       setDrawerLink('talk');
                       playHoverSound('hoverButton');
@@ -637,13 +638,14 @@ export function ProjectOpenOverlay({
                     onClick={() => {
                       playSound('clickMenuItem');
                       setDrawerOpen(false);
+                      if (onOpenContact) onOpenContact();
                     }}
                   >
                     <span className="auge-drawer__label">
                       <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
                     </span>
                     <span className="project-open__sr">Let's talk</span>
-                  </a>
+                  </button>
                 </nav>
                 <span className="auge-drawer__bars" aria-hidden>
                   <span />

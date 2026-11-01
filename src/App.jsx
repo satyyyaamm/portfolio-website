@@ -11,6 +11,7 @@ import gms1 from './assets/gms/gms1.png';
 import gms2 from './assets/gms/gms2.png';
 import gms3 from './assets/gms/gms3.png';
 import gms4 from './assets/gms/gms4.png';
+import gmsCarousel from './assets/gms/gms-carousel.jpg';
 import sa1 from './assets/sa/sa1.png';
 import sa2 from './assets/sa/sa2.png';
 import sa3 from './assets/sa/sa3.png';
@@ -33,13 +34,12 @@ import nanda4 from './assets/nanda/nanda4.png';
 import picksy1 from './assets/picksy/picksy1.png';
 import picksy2 from './assets/picksy/picksy2.png';
 import picksy3 from './assets/picksy/picksy3.png';
+import picksyCarousel from './assets/picksy/picksy-carousel.jpg';
 import picksyVideo from './assets/picksy/picksy.mp4';
 import nextoffer1 from './assets/nextoffer/nextoffer1.png';
 import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
 /** Temporary cinematic stills for the landing carousel (swap back to product shots later). */
-import cine1 from './assets/cinematic/cine1.jpg';
-import cine2 from './assets/cinematic/cine2.jpg';
 import cine3 from './assets/cinematic/cine3.jpg';
 import cine4 from './assets/cinematic/cine4.jpg';
 import cine5 from './assets/cinematic/cine5.jpg';
@@ -53,6 +53,7 @@ import { RouteCurtain } from './components/works/RouteCurtain.jsx';
 import { WorksPage } from './components/works/WorksPage.jsx';
 import { initSound } from './lib/siteSound.js';
 import { AboutPage } from './components/about/AboutPage.jsx';
+import { ContactPage } from './components/contact/ContactPage.jsx';
 import {
   findProjectIndexBySlug,
   isWorksIndex,
@@ -61,6 +62,7 @@ import {
   worksPath,
 } from './lib/worksUrl.js';
 import { aboutPath, isAboutPath } from './lib/aboutUrl.js';
+import { contactPath, isContactPath } from './lib/contactUrl.js';
 
 const GMS_GALLERY = [gms1, gms2, gms3, gms4];
 const SAFE_AGAIN_GALLERY = [sa1, sa2, sa3, sa4];
@@ -102,7 +104,10 @@ const App = () => {
   const [aboutOpen, setAboutOpen] = useState(() =>
     typeof window !== 'undefined' ? isAboutPath(window.location.pathname) : false
   );
-  const [curtain, setCurtain] = useState(null); // { to: 'works' | 'home' | 'about', label }
+  const [contactOpen, setContactOpen] = useState(() =>
+    typeof window !== 'undefined' ? isContactPath(window.location.pathname) : false
+  );
+  const [curtain, setCurtain] = useState(null); // { to: 'works' | 'home' | 'about' | 'contact', label }
   const [homeRevealing, setHomeRevealing] = useState(false);
   const openCoveredRef = useRef(null);
   const cursorSuppressRef = useRef(false);
@@ -189,7 +194,7 @@ const App = () => {
         "Admin: staff, inventory, workshop resources, profile/task templates for repeatable job creation.",
         "Stack: Flutter & Dart, Riverpod, GoRouter—designed for multi-role access and long-term maintainability.",
       ],
-      image: cine1,
+      image: gmsCarousel,
       gallery: GMS_GALLERY,
       previewFrame: 'web',
       href: "#",
@@ -212,7 +217,7 @@ const App = () => {
         "Swipe flow with like, maybe, and pass—plus social proof showing what friends in the room already picked.",
         "Group match celebrations, watchlist/history, and integrated chat to lock in plans without leaving the app.",
       ],
-      image: cine2,
+      image: picksyCarousel,
       previewImage: picksy3,
       gallery: PICKSY_GALLERY,
       video: picksyVideo,
@@ -349,6 +354,7 @@ const App = () => {
     openCoveredRef.current = fromRect?.onCovered || null;
     const { onCovered: _cb, ...rect } = fromRect || {};
     setAboutOpen(false);
+    setContactOpen(false);
     setProjectOpen({ index, fromRect: fromRect ? rect : null });
     const next = worksPath(project.slug);
     if (window.location.pathname !== next) {
@@ -367,6 +373,7 @@ const App = () => {
       setHomeRevealing(false);
       setProjectOpen(null);
       setAboutOpen(false);
+      setContactOpen(false);
       setWorksIndex(true);
       if (!isWorksIndex(window.location.pathname)) {
         window.history.pushState({ works: 'index' }, '', worksIndexPath());
@@ -380,6 +387,7 @@ const App = () => {
       setHomeRevealing(false);
       setProjectOpen(null);
       setWorksIndex(false);
+      setContactOpen(false);
       setAboutOpen(true);
       if (!isAboutPath(window.location.pathname)) {
         window.history.pushState({ about: true }, '', aboutPath());
@@ -388,14 +396,30 @@ const App = () => {
     runCurtain('about', 'ABOUT', go);
   };
 
+  const openContact = () => {
+    const go = () => {
+      setHomeRevealing(false);
+      setProjectOpen(null);
+      setWorksIndex(false);
+      setAboutOpen(false);
+      setContactOpen(true);
+      if (!isContactPath(window.location.pathname)) {
+        window.history.pushState({ contact: true }, '', contactPath());
+      }
+    };
+    runCurtain('contact', "LET'S TALK", go);
+  };
+
   const coverHome = () => {
     setHomeRevealing(true);
     setWorksIndex(false);
     setAboutOpen(false);
+    setContactOpen(false);
     if (
       parseWorksSlug(window.location.pathname) ||
       isWorksIndex(window.location.pathname) ||
-      isAboutPath(window.location.pathname)
+      isAboutPath(window.location.pathname) ||
+      isContactPath(window.location.pathname)
     ) {
       window.history.pushState({ works: null }, '', '/');
     }
@@ -419,21 +443,30 @@ const App = () => {
     runCurtain('home', 'HOME', () => {
       setWorksIndex(false);
       setAboutOpen(false);
+      setContactOpen(false);
       setProjectOpen(null);
       if (
         isWorksIndex(window.location.pathname) ||
         parseWorksSlug(window.location.pathname) ||
-        isAboutPath(window.location.pathname)
+        isAboutPath(window.location.pathname) ||
+        isContactPath(window.location.pathname)
       ) {
         window.history.pushState({ works: null }, '', '/');
       }
     });
   };
 
-  // Deep link: /works, /works/picksy, /about (and legacy /?case=0)
+  // Deep link: /works, /works/picksy, /about, /contacts (and legacy /?case=0)
   useEffect(() => {
+    if (isContactPath(window.location.pathname)) {
+      setContactOpen(true);
+      setAboutOpen(false);
+      setWorksIndex(false);
+      return undefined;
+    }
     if (isAboutPath(window.location.pathname)) {
       setAboutOpen(true);
+      setContactOpen(false);
       setWorksIndex(false);
       return undefined;
     }
@@ -466,11 +499,21 @@ const App = () => {
   useEffect(() => {
     const onPop = () => {
       const path = window.location.pathname;
+      if (isContactPath(path)) {
+        openCoveredRef.current = null;
+        setHomeRevealing(false);
+        setProjectOpen(null);
+        setWorksIndex(false);
+        setAboutOpen(false);
+        setContactOpen(true);
+        return;
+      }
       if (isAboutPath(path)) {
         openCoveredRef.current = null;
         setHomeRevealing(false);
         setProjectOpen(null);
         setWorksIndex(false);
+        setContactOpen(false);
         setAboutOpen(true);
         return;
       }
@@ -479,6 +522,7 @@ const App = () => {
         setHomeRevealing(false);
         setProjectOpen(null);
         setAboutOpen(false);
+        setContactOpen(false);
         setWorksIndex(true);
         return;
       }
@@ -489,11 +533,13 @@ const App = () => {
         setProjectOpen(null);
         setWorksIndex(false);
         setAboutOpen(false);
+        setContactOpen(false);
         return;
       }
       const index = findProjectIndexBySlug(projects, slug);
       setWorksIndex(false);
       setAboutOpen(false);
+      setContactOpen(false);
       if (index >= 0) setProjectOpen({ index, fromRect: null });
       else setProjectOpen(null);
     };
@@ -503,7 +549,9 @@ const App = () => {
   }, []);
 
   return (
-    <div className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${worksIndex ? ' is-works-index' : ''}${aboutOpen ? ' is-about' : ''}`}>
+    <div
+      className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${worksIndex ? ' is-works-index' : ''}${aboutOpen ? ' is-about' : ''}${contactOpen ? ' is-contact' : ''}`}
+    >
       <SiteCursor suppressRef={cursorSuppressRef} />
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -512,10 +560,11 @@ const App = () => {
       <main id="main-content" tabIndex={-1} className="relative outline-none">
         <AugeLanding
           projects={projects}
-          stripPaused={caseOpen || worksIndex || aboutOpen}
+          stripPaused={caseOpen || worksIndex || aboutOpen || contactOpen}
           cursorSuppressRef={cursorSuppressRef}
           onOpenWorksIndex={() => openWorksIndex()}
           onOpenAbout={() => openAbout()}
+          onOpenContact={() => openContact()}
           onOpenProject={(index, fromRect) => {
             setHomeRevealing(false);
             setWorksIndex(false);
@@ -548,6 +597,7 @@ const App = () => {
           }}
           onHome={closeWorksIndex}
           onOpenAbout={() => openAbout()}
+          onOpenContact={() => openContact()}
           onOpenWorks={() => openWorksIndex()}
           emailMailto={EMAIL_MAILTO}
         />
@@ -560,11 +610,23 @@ const App = () => {
           emailMailto={EMAIL_MAILTO}
           onHome={closeWorksIndex}
           onOpenWorks={() => openWorksIndex()}
+          onOpenContact={() => openContact()}
           onOpenProject={(index) => {
             setHomeRevealing(false);
             setAboutOpen(false);
             openWorks(index, null);
           }}
+        />
+      ) : null}
+
+      {contactOpen ? (
+        <ContactPage
+          projects={projects}
+          socialItems={SOCIAL_ITEMS}
+          emailMailto={EMAIL_MAILTO}
+          onHome={closeWorksIndex}
+          onOpenWorks={() => openWorksIndex()}
+          onOpenAbout={() => openAbout()}
         />
       ) : null}
 
@@ -589,6 +651,7 @@ const App = () => {
             onClose={closeWorks}
             onOpenWorks={() => openWorksIndex()}
             onOpenAbout={() => openAbout()}
+            onOpenContact={() => openContact()}
             onOpenNext={
               nextProjectIndex >= 0
                 ? () => {
