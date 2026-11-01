@@ -1,30 +1,29 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { DetailGlStage } from './DetailGlStage.jsx';
-import { Scramble, ScrambleHover, scrambleFrame } from './landing/Scramble.jsx';
+import { Scramble, ScrambleHover } from './landing/Scramble.jsx';
 import { ProjectDetailScroll } from './ProjectDetailScroll.jsx';
 import { preloadProjectImages } from '../lib/preloadProjectImages.js';
 import { SoundToggle } from './SoundToggle.jsx';
-import { playHoverSound, playScrambleSound, playSound } from '../lib/siteSound.js';
+import { playHoverSound, playSound } from '../lib/siteSound.js';
+import {
+  EASE_SOFT,
+  EditorialLine,
+  EXIT_EASE_CSS,
+  EXIT_NAME_MS,
+  HOME_CURTAIN_IN_MS,
+  HOME_CURTAIN_OUT_MS,
+  HOME_HOLD_MS,
+} from './curtainShared.jsx';
 import './project-open.css';
 
-const EASE_SOFT = [0.22, 1, 0.36, 1];
 const FLY_MS = 1600;
 const FLY_CSS = `${FLY_MS}ms cubic-bezier(0.33, 1, 0.28, 1)`;
 const EXIT_PHOTO_MS = 520;
-const EXIT_NAME_MS = 480;
 const EXIT_CURTAIN_MS = 2000;
 const CURTAIN_IN_MS = 700;
 /** Scramble settles, then hold on yellow before wipes. */
 const TITLE_HOLD_MS = 2000;
-/** Home close: slower curtain than project open. */
-const HOME_CURTAIN_IN_MS = 1150;
-const HOME_CURTAIN_OUT_MS = 3200;
-/** Home close: hold “HOME” on yellow before curtain lifts. */
-const HOME_HOLD_MS = 2100;
-const EXIT_EASE_CSS = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const SCRAMBLE_STEPS = 26;
-const SCRAMBLE_INTERVAL_MS = 38;
 
 const HOME_PHASES = new Set(['homeIn', 'homeHold', 'homeOut']);
 
@@ -39,54 +38,6 @@ function splitTitle(name = '') {
     line1: parts.slice(0, mid).join(' ').toUpperCase(),
     line2: parts.slice(mid).join(' ').toUpperCase(),
   };
-}
-
-/** Alternate italic / roman Didone glyphs — optionally scramble in. */
-function EditorialLine({ text, scramble = false }) {
-  const reduced = useReducedMotion();
-  const [shown, setShown] = useState(() => (scramble && !reduced ? scrambleFrame(text, 0) : text));
-
-  useEffect(() => {
-    if (!text) return undefined;
-    if (!scramble || reduced) {
-      setShown(text);
-      return undefined;
-    }
-    let frame = 0;
-    setShown(scrambleFrame(text, 0));
-    playScrambleSound('curtainTitle');
-    const id = window.setInterval(() => {
-      frame += 1;
-      playScrambleSound('curtainTitle');
-      if (frame >= SCRAMBLE_STEPS) {
-        setShown(text);
-        window.clearInterval(id);
-        return;
-      }
-      setShown(scrambleFrame(text, frame / SCRAMBLE_STEPS));
-    }, SCRAMBLE_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [text, scramble, reduced]);
-
-  if (!text) return null;
-  return (
-    <span className="project-open__didone-line" aria-hidden={false}>
-      {[...shown].map((ch, i) => (
-        <span
-          key={`${i}-${ch}`}
-          className={
-            ch === ' '
-              ? 'project-open__didone-space'
-              : i % 2 === 0
-                ? 'project-open__didone-ital'
-                : 'project-open__didone-roman'
-          }
-        >
-          {ch === ' ' ? '\u00a0' : ch}
-        </span>
-      ))}
-    </span>
-  );
 }
 
 function topCenterRect(fromRect, vw, vh) {
@@ -133,6 +84,7 @@ export function ProjectOpenOverlay({
   onHomeCovered,
   onOpenNext,
   onOpenWorks,
+  onOpenAbout,
 }) {
   const reducedMotion = useReducedMotion();
   /** Landing card fly-in; deep links and next-project skip arm/fly. */
@@ -656,21 +608,22 @@ export function ProjectOpenOverlay({
                     type="button"
                     className="auge-drawer__link"
                     onPointerEnter={() => {
-                      setDrawerLink('home');
+                      setDrawerLink('about');
                       playHoverSound('hoverButton');
                     }}
                     onPointerLeave={() => setDrawerLink(null)}
-                    onFocus={() => setDrawerLink('home')}
+                    onFocus={() => setDrawerLink('about')}
                     onClick={() => {
                       playSound('clickMenuItem');
                       setDrawerOpen(false);
-                      goHome();
+                      if (onOpenAbout) onOpenAbout();
+                      else goHome();
                     }}
                   >
                     <span className="auge-drawer__label">
-                      <Scramble text="Home" active={drawerOpen && drawerLink === 'home'} />
+                      <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
                     </span>
-                    <span className="project-open__sr">Home</span>
+                    <span className="project-open__sr">About</span>
                   </button>
                   <a
                     className="auge-drawer__link"
