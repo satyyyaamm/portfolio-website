@@ -185,13 +185,26 @@ export function AugeLanding({
             : riseProps(siteReady, reducedMotion, riseSettled, { from: '26vh', delay: 0.08, duration: 1.05 }))}
         >
           <div
+            id="auge-drawer-menu"
             className={`auge-drawer${drawerOpen ? ' is-open' : ''}`}
-            onPointerEnter={() => setDrawerOpen(true)}
-            onPointerLeave={() => {
-              setDrawerOpen(false);
-              setDrawerLink(null);
+            onPointerEnter={() => {
+              if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                setDrawerOpen(true);
+              }
             }}
-            onFocus={() => setDrawerOpen(true)}
+            onPointerLeave={() => {
+              if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                setDrawerOpen(false);
+                setDrawerLink(null);
+              }
+            }}
+            onFocus={() => {
+              // Keyboard / desktop only — mobile open is click-driven so the
+              // close button isn't immediately re-opened by focus-within.
+              if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                setDrawerOpen(true);
+              }
+            }}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
                 setDrawerOpen(false);
@@ -199,72 +212,140 @@ export function AugeLanding({
               }
             }}
           >
-            <div className="auge-drawer__panel" id="auge-drawer-menu">
-              <nav className="auge-drawer__nav" aria-label="Site">
-                <button
-                  type="button"
-                  className="auge-drawer__link"
-                  onPointerEnter={() => {
-                    setDrawerLink('works');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onFocus={() => setDrawerLink('works')}
-                  onClick={() => {
-                    playSound('clickMenuItem');
+            <div className="auge-drawer__panel">
+              <button
+                type="button"
+                className="auge-drawer__toggle"
+                aria-expanded={drawerOpen}
+                aria-controls="auge-drawer-menu"
+                aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  playSound('clickMenuItem');
+                  if (drawerOpen) {
+                    setDrawerLink(null);
                     setDrawerOpen(false);
-                    if (onOpenWorksIndex) onOpenWorksIndex();
-                    else stripRef.current?.wrap?.scrollIntoView?.({ block: 'nearest' });
-                  }}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
-                  </span>
-                  <span className="auge-sr">Works</span>
-                </button>
-                <button
-                  type="button"
-                  className="auge-drawer__link"
-                  onPointerEnter={() => {
-                    setDrawerLink('about');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onFocus={() => setDrawerLink('about')}
-                  onClick={() => {
-                    playSound('clickMenuItem');
-                    setDrawerOpen(false);
-                    if (onOpenAbout) onOpenAbout();
-                    else setMenuOpen(true);
-                  }}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
-                  </span>
-                  <span className="auge-sr">About</span>
-                </button>
-                <button
-                  type="button"
-                  className="auge-drawer__link"
-                  onPointerEnter={() => {
-                    setDrawerLink('talk');
-                    playHoverSound('hoverButton');
-                  }}
-                  onPointerLeave={() => setDrawerLink(null)}
-                  onFocus={() => setDrawerLink('talk')}
-                  onClick={() => {
-                    playSound('clickMenuItem');
-                    setDrawerOpen(false);
-                    if (onOpenContact) onOpenContact();
-                    else setMenuOpen(true);
-                  }}
-                >
-                  <span className="auge-drawer__label">
-                    <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
-                  </span>
-                  <span className="auge-sr">Let's talk</span>
-                </button>
-              </nav>
+                    event.currentTarget.blur();
+                  } else {
+                    setDrawerOpen(true);
+                  }
+                }}
+              >
+                <span className="auge-drawer__close" aria-hidden>
+                  ×
+                </span>
+              </button>
+
+              <div className="auge-drawer__body">
+                <nav className="auge-drawer__nav" aria-label="Site">
+                  <button
+                    type="button"
+                    className="auge-drawer__link"
+                    onPointerEnter={() => {
+                      setDrawerLink('works');
+                      playHoverSound('hoverButton');
+                    }}
+                    onPointerLeave={() => setDrawerLink(null)}
+                    onFocus={() => setDrawerLink('works')}
+                    onClick={() => {
+                      playSound('clickMenuItem');
+                      setDrawerOpen(false);
+                      if (onOpenWorksIndex) onOpenWorksIndex();
+                      else stripRef.current?.wrap?.scrollIntoView?.({ block: 'nearest' });
+                    }}
+                  >
+                    <span className="auge-drawer__label">
+                      <Scramble text="Works" active={drawerOpen && drawerLink === 'works'} />
+                    </span>
+                    <span className="auge-sr">Works</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="auge-drawer__link"
+                    onPointerEnter={() => {
+                      setDrawerLink('about');
+                      playHoverSound('hoverButton');
+                    }}
+                    onPointerLeave={() => setDrawerLink(null)}
+                    onFocus={() => setDrawerLink('about')}
+                    onClick={() => {
+                      playSound('clickMenuItem');
+                      setDrawerOpen(false);
+                      if (onOpenAbout) onOpenAbout();
+                      else setMenuOpen(true);
+                    }}
+                  >
+                    <span className="auge-drawer__label">
+                      <Scramble text="About" active={drawerOpen && drawerLink === 'about'} />
+                    </span>
+                    <span className="auge-sr">About</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="auge-drawer__link"
+                    onPointerEnter={() => {
+                      setDrawerLink('talk');
+                      playHoverSound('hoverButton');
+                    }}
+                    onPointerLeave={() => setDrawerLink(null)}
+                    onFocus={() => setDrawerLink('talk')}
+                    onClick={() => {
+                      playSound('clickMenuItem');
+                      setDrawerOpen(false);
+                      if (onOpenContact) onOpenContact();
+                      else setMenuOpen(true);
+                    }}
+                  >
+                    <span className="auge-drawer__label">
+                      <Scramble text="Let's talk" active={drawerOpen && drawerLink === 'talk'} />
+                    </span>
+                    <span className="auge-sr">Let's talk</span>
+                  </button>
+                </nav>
+
+                <div className="auge-drawer__meta">
+                  <nav className="auge-drawer__socials" aria-label="Social and legal">
+                    {socialItems.map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        target={item.href.startsWith('mailto:') ? undefined : '_blank'}
+                        rel={item.href.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
+                        onPointerEnter={() => playHoverSound('hoverFooterItem')}
+                        onClick={() => {
+                          playSound('clickMenuItem');
+                          setDrawerOpen(false);
+                        }}
+                      >
+                        {item.label}
+                      </a>
+                    ))}
+                    <a
+                      href="#privacy"
+                      onClick={() => {
+                        playSound('clickMenuItem');
+                        setDrawerOpen(false);
+                      }}
+                    >
+                      Privacy
+                    </a>
+                    <a
+                      href="#cookies"
+                      onClick={() => {
+                        playSound('clickMenuItem');
+                        setDrawerOpen(false);
+                      }}
+                    >
+                      Cookies
+                    </a>
+                  </nav>
+
+                  <div className="auge-drawer__legal">
+                    <span>© {new Date().getFullYear()}</span>
+                    <SoundToggle className="auge-drawer__sound" />
+                  </div>
+                </div>
+              </div>
 
               <div
                 className="auge-drawer__tune"

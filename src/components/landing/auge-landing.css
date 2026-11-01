@@ -672,6 +672,57 @@
   outline: none;
 }
 
+.auge-drawer__toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.auge-drawer.is-open .auge-drawer__toggle,
+.auge-drawer:focus-within .auge-drawer__toggle {
+  inset: auto;
+  top: 0.85rem;
+  left: 0.85rem;
+  right: auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 4px;
+}
+
+.auge-drawer__close {
+  display: none;
+  color: #fdf48b;
+  font-size: 1.85rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.auge-drawer.is-open .auge-drawer__close,
+.auge-drawer:focus-within .auge-drawer__close {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.auge-drawer__body {
+  display: contents;
+}
+
+.auge-drawer__meta,
+.auge-drawer__socials,
+.auge-drawer__legal,
+.auge-drawer__sound {
+  display: none;
+}
+
 .auge-drawer__bars {
   position: absolute;
   inset: 0;
@@ -918,17 +969,19 @@
     --auge-word-size: min(7rem, max(9vmin, 20vw));
   }
 
+  /* Carousel 60% / text in the remaining band, bottom-aligned */
   .auge-rail-window {
-    height: min(52vh, calc(100dvh - 14rem));
+    height: 60dvh;
   }
 
   .auge-lower {
     grid-template-columns: 1fr;
     align-items: end;
-    top: min(44vh, calc(100dvh - 18vmin));
+    align-content: end;
+    top: 60dvh;
     bottom: max(8vmin, 6.5rem);
     padding: 0 8vw 1vmin 7.5vw;
-    row-gap: 1.1rem;
+    row-gap: clamp(1.35rem, 4.5vmin, 2.25rem);
   }
 
   .auge-copy {
@@ -947,17 +1000,210 @@
     gap: 2rem;
   }
 
-  .auge-corner {
-    right: 1.65rem;
+  /* Mobile footer: © only — socials + sound live in the drawer */
+  .auge-footer {
+    left: 1.25rem;
+    right: 5.5rem;
+    bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+    z-index: 12;
+    font-size: 0.72rem;
   }
 
-  .auge-footer {
-    left: 1.4rem;
+  .auge-footer__sound {
+    display: none;
+  }
+
+  .auge-corner {
+    right: 1.25rem;
+    bottom: max(1.1rem, env(safe-area-inset-bottom, 0px));
+    gap: 0;
   }
 
   .auge-footer__links {
+    display: none;
+  }
+
+  .auge-drawer {
+    width: 54px;
+    height: 46px;
+  }
+
+  /* Don't let focus alone expand the mobile drawer — open is .is-open only. */
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__panel {
+    width: 54px;
+    height: 46px;
+    padding: 0;
+    border-radius: 4px;
+    border: 0;
+    place-items: center;
+  }
+
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__nav,
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__body,
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__meta,
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__socials,
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__legal,
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__sound,
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__close {
+    display: none;
+  }
+
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__bars {
+    opacity: 1;
+  }
+
+  .auge-drawer:focus-within:not(.is-open) .auge-drawer__toggle {
+    inset: 0;
+    width: auto;
+    height: auto;
+  }
+
+  /*
+    Mobile open state is .is-open only — :focus-within kept the panel open
+    after tapping × because the close button retained focus.
+  */
+  .auge-drawer.is-open {
+    z-index: 40;
+    width: auto;
+    height: auto;
+  }
+
+  .auge-drawer.is-open .auge-drawer__panel {
+    right: 0;
+    bottom: 0;
+    /* Span available width (corner sits at 1.25rem from each side) */
+    width: calc(100vw - 2.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
     max-width: none;
-    font-size: 13px;
+    height: auto;
+    padding: 1rem 1.15rem 1.1rem;
+    border: 0;
+    border-radius: 1rem;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    place-items: unset;
+  }
+
+  .auge-drawer.is-open .auge-drawer__toggle {
+    top: 0.65rem;
+    left: 0.65rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    z-index: 5;
+  }
+
+  .auge-drawer.is-open .auge-drawer__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    width: 100%;
+    height: auto;
+    padding: 2.35rem 0.1rem 0.05rem;
+    column-gap: 1.35rem;
+    row-gap: 1.35rem;
+    pointer-events: auto;
+  }
+
+  .auge-drawer.is-open .auge-drawer__nav {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    justify-self: end;
+    align-items: flex-end;
+    gap: 0.15rem;
+    width: auto;
+    max-width: 100%;
+    pointer-events: auto;
+  }
+
+  .auge-drawer.is-open .auge-drawer__link {
+    font-size: clamp(2.1rem, 9.5vw, 2.85rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    opacity: 1;
+    transform: none;
+    transition: color 0.2s ease;
+  }
+
+  .auge-drawer.is-open .auge-drawer__link:nth-child(1),
+  .auge-drawer.is-open .auge-drawer__link:nth-child(2),
+  .auge-drawer.is-open .auge-drawer__link:nth-child(3) {
+    transition-delay: 0s;
+  }
+
+  .auge-drawer.is-open .auge-drawer__meta {
+    display: contents;
+  }
+
+  .auge-drawer.is-open .auge-drawer__socials {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    justify-self: start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 0.55rem;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    pointer-events: auto;
+  }
+
+  .auge-drawer__socials a {
+    color: #edeee5;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    line-height: 1.15;
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: 0;
+  }
+
+  .auge-drawer__socials a:active,
+  .auge-drawer__socials a:focus-visible {
+    color: #fdf48b;
+    outline: none;
+  }
+
+  .auge-drawer.is-open .auge-drawer__legal {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    color: #edeee5;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: auto;
+  }
+
+  .auge-drawer.is-open .auge-drawer__sound {
+    display: inline-flex;
+    color: #edeee5;
+    pointer-events: auto;
+  }
+
+  .auge-drawer__sound:hover,
+  .auge-drawer__sound:focus-visible {
+    color: #fdf48b;
+    background: transparent;
+  }
+
+  /* Distortion tune stays desktop-only */
+  .auge-drawer__tune {
+    display: none !important;
   }
 }
 
