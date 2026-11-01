@@ -63,6 +63,8 @@ export function DistortSurface({
       // Detail gallery L/R wipe — landing leaves these at fully revealed
       uReveal: { value: 1 },
       uRevealFrom: { value: 0 },
+      /* Sticky stack clip — unused (-1) unless rect.clipBottom is set */
+      uClipBottom: { value: -1 },
       ...dropUniformDefaults(),
     };
   }, [texture, width, height]);
@@ -95,6 +97,13 @@ export function DistortSurface({
     if (mat.uniforms.uReveal) mat.uniforms.uReveal.value = reveal;
     if (mat.uniforms.uRevealFrom) {
       mat.uniforms.uRevealFrom.value = rect?.revealSide === 'right' ? 1 : 0;
+    }
+    if (mat.uniforms.uClipBottom) {
+      const clip =
+        typeof rect?.clipBottom === 'number' && Number.isFinite(rect.clipBottom)
+          ? rect.clipBottom
+          : -1;
+      mat.uniforms.uClipBottom.value = clip;
     }
 
     const cx = L + w * 0.5;

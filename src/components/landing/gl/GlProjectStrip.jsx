@@ -180,6 +180,7 @@ function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, 
       // Shared with detail gallery wipe — landing stays fully revealed
       uReveal: { value: 1 },
       uRevealFrom: { value: 0 },
+      uClipBottom: { value: -1 },
       ...dropUniformDefaults(),
     };
   }, [texture, width]);

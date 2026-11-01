@@ -175,6 +175,7 @@ uniform float uCoverHeight;
 uniform float uSpreadPx;
 uniform float uReveal;
 uniform float uRevealFrom;
+uniform float uClipBottom;
 varying vec2 vUv;
 varying vec2 vWorldXy;
 
@@ -198,6 +199,8 @@ vec2 coverUv(vec2 uv, vec2 imageSize, vec2 planeSize, float coverHeight) {
 }
 
 void main() {
+  if (uClipBottom >= 0.0 && -vWorldXy.y > uClipBottom) discard;
+
   // Scroll-in wipe: 0 = left origin, 1 = right origin (detail gallery)
   float reveal = clamp(uReveal, 0.0, 1.0);
   if (reveal < 0.999) {
@@ -239,6 +242,8 @@ uniform vec2 uMouse;
 uniform float uStrength;
 uniform vec2 uPlaneSize;
 uniform float uSpreadPx;
+/* Stage Y from top; >=0 clips fragments under a later sticky panel (Auge stack). */
+uniform float uClipBottom;
 varying vec2 vUv;
 varying vec2 vWorldXy;
 
@@ -246,6 +251,9 @@ ${EDGE_LIQUID_GLSL}
 ${DROP_WAVE_GLSL}
 
 void main() {
+  // Ortho world Y is negative-down; stage Y from top is -vWorldXy.y
+  if (uClipBottom >= 0.0 && -vWorldXy.y > uClipBottom) discard;
+
   vec2 dUv = vUv - uMouse;
   vec2 dPx = dUv * uPlaneSize;
   float dist = length(dPx);
