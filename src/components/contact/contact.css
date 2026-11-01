@@ -1,0 +1,574 @@
+.contact-page {
+  --auge-pad-x: clamp(2.1rem, 5.5vw, 5.25rem);
+  --auge-pad-l: clamp(2rem, 5.2vw, 5rem);
+  --auge-chrome: clamp(0.65rem, 1.05vw, 0.95rem);
+  --contact-cream: #edeee5;
+  --contact-yellow: #fdf48b;
+  --contact-ink: #000;
+  --contact-gutter: clamp(1.25rem, 4.2vw, 3.75rem);
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  background: var(--contact-cream);
+  color: var(--contact-ink);
+  font-family: var(--font-sans);
+  overscroll-behavior: contain;
+}
+
+.contact-page__scroll {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.contact-page__scroll--smooth {
+  overflow-y: auto;
+  overscroll-behavior: none;
+}
+
+.contact-page__scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.contact-page__stack {
+  position: relative;
+  isolation: isolate;
+}
+
+.contact-gl-stage {
+  position: absolute;
+  inset: 0;
+  /* Above scroll so warped type sits on panel bgs */
+  z-index: 1;
+  pointer-events: none !important;
+  transform: translateZ(0);
+}
+
+/* Live yellow accents — above GL so bake AA fringe can’t show */
+.contact-accent-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none !important;
+  overflow: hidden;
+}
+
+.contact-accent-overlay__glyph {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  color: var(--contact-yellow) !important;
+  -webkit-text-fill-color: var(--contact-yellow) !important;
+  -webkit-text-stroke: 0 !important;
+  /* Cream halo kills any residual dark fringe peeking from the GL bake */
+  text-shadow:
+    -1px 0 0 var(--contact-cream),
+    1px 0 0 var(--contact-cream),
+    0 -1px 0 var(--contact-cream),
+    0 1px 0 var(--contact-cream),
+    -1px -1px 0 var(--contact-cream),
+    1px 1px 0 var(--contact-cream);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.contact-accent-overlay__glyph.is-ital {
+  font-family: var(--font-didone);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.contact-accent-overlay__glyph.is-bold {
+  font-family: "Greed", "Schibsted Grotesk", var(--font-service);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.contact-accent-overlay__glyph.is-q {
+  display: flex;
+}
+
+/* Live GIF copies — above GL so animation isn’t trapped under the canvas */
+.contact-gif-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none !important;
+  overflow: hidden;
+}
+
+.contact-gif-overlay__item {
+  position: absolute;
+  overflow: hidden;
+  background: #111;
+}
+
+.contact-gif-overlay__item img,
+.contact-gif-overlay__item video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.contact-gl-stage__canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+.contact-gl-stage__canvas canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ghost after bake — warp lives in GL */
+.contact-page .is-gl-text {
+  opacity: 0 !important;
+}
+
+/* Lockup: keep media live; ghost all baked type (incl. scramble A / T) */
+.contact-page .contact-hero__lockup.is-gl-text {
+  opacity: 1 !important;
+}
+
+.contact-page .contact-hero__lockup.is-gl-text .contact-hero__tok {
+  opacity: 1 !important;
+}
+
+.contact-page .contact-hero__lockup.is-gl-text .contact-hero__tok-in > * {
+  opacity: 0 !important;
+}
+
+/* Source GIF slots keep layout; hide only once overlay copies are live */
+.contact-page.is-screen-warp.has-gif-overlay .contact-hero__lockup.is-gl-text .contact-hero__media,
+.contact-page.is-screen-warp.has-gif-overlay .contact-hero__media,
+.contact-page.is-screen-warp.has-gif-overlay .contact-panel__media {
+  opacity: 0 !important;
+}
+
+/* Email + Open IG/LI: ghost visual, keep hit target */
+.contact-page .contact-email.is-gl-text,
+.contact-page .contact-panel__link.is-gl-text {
+  opacity: 0 !important;
+  position: relative;
+  z-index: 6;
+  pointer-events: auto !important;
+}
+
+.contact-page.is-screen-warp .contact-email,
+.contact-page.is-screen-warp .contact-panel__link {
+  pointer-events: auto !important;
+}
+
+/* —— Sticky panels (Auge contacts stack) —— */
+.contact-panel {
+  position: relative;
+  z-index: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: clamp(5.5rem, 12vw, 8rem) var(--contact-gutter) clamp(4rem, 8vw, 6rem);
+  background: var(--contact-cream);
+  color: var(--contact-ink);
+}
+
+.contact-panel--hero {
+  z-index: 0;
+  display: grid;
+  align-content: center;
+  justify-items: stretch;
+  /* Leave room for fixed chrome; lockup fills the rest */
+  padding-top: clamp(4.5rem, 10vh, 7rem);
+  padding-bottom: clamp(5.5rem, 12vh, 8rem);
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.contact-panel--office {
+  margin-top: -1px;
+}
+
+@media (min-width: 1024px) {
+  .contact-panel {
+    position: sticky;
+    top: 0;
+    display: grid;
+    align-content: center;
+    padding: clamp(4rem, 8vw, 6rem) max(5.5rem, 10.2vw);
+  }
+}
+
+.contact-hero__lockup {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: "Greed", "Schibsted Grotesk", var(--font-service);
+  /* Aspirational size; fit() shrinks to the real panel width */
+  font-size: clamp(2.75rem, 13.5vw, 10.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.68;
+  text-transform: uppercase;
+  color: #000;
+  text-align: center;
+  padding: 0.1em 0.08em 0.18em;
+}
+
+.contact-hero__row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: 0.1em;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  overflow: visible;
+}
+
+.contact-hero__row + .contact-hero__row,
+.contact-hero__lockup > br + .contact-hero__row {
+  margin-top: -0.18em;
+}
+
+.contact-hero__tok {
+  display: inline-block;
+  /* Rise mask — pad for Didone italic slant */
+  overflow: hidden;
+  vertical-align: baseline;
+  white-space: nowrap;
+  padding: 0.18em 0.18em 0.28em 0.1em;
+  margin: -0.18em 0 -0.22em;
+}
+
+.contact-hero__tok-in {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* After hero rise, kill leftover motion transforms so GL rects stay honest */
+.contact-page.is-screen-warp .contact-hero__tok-in {
+  transform: none !important;
+}
+
+/* Standalone ? — unmasked, tucked tight against H (cancel row gap) */
+.contact-hero__tok:has(.contact-hero__q) {
+  overflow: visible;
+  padding: 0.18em 0.28em 0.28em 0;
+  margin: -0.18em 0 -0.22em -0.22em;
+}
+
+.contact-hero__q {
+  display: inline-block;
+  line-height: 1;
+}
+
+.contact-hero__bold {
+  font-family: "Greed", "Schibsted Grotesk", var(--font-service);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.contact-hero__ital {
+  font-family: var(--font-didone);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.contact-hero__accent {
+  color: var(--contact-yellow);
+  -webkit-text-fill-color: var(--contact-yellow);
+  -webkit-text-stroke: 0 !important;
+  paint-order: fill;
+  font-synthesis: none;
+  text-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.contact-hero__accent.contact-hero__ital {
+  font-family: var(--font-didone);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.contact-hero__accent.contact-hero__bold:not(.contact-hero__ital) {
+  font-family: "Greed", "Schibsted Grotesk", var(--font-service);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.contact-hero__scramble {
+  display: inline-block;
+  min-width: 0.52em;
+  text-align: center;
+}
+
+.contact-hero__media {
+  /* DOM source for the live GL media plane */
+  position: relative;
+  z-index: 5;
+  display: inline-block;
+  flex: none;
+  width: 0.92em;
+  height: 0.86em;
+  overflow: hidden;
+  vertical-align: baseline;
+  background: #111;
+  border-radius: 0.03em;
+  align-self: center;
+  margin-right: 0.04em;
+}
+
+.contact-hero__media video,
+.contact-hero__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contact-hero__arrow {
+  display: inline-grid;
+  place-items: center;
+  width: 0.55em;
+  height: 0.7em;
+  color: #000;
+  transform: translate(-0.05em, 0.12em);
+}
+
+.contact-hero__arrow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.contact-hero__meta {
+  display: grid;
+  gap: 1rem;
+  margin-top: clamp(1.75rem, 4.5vw, 3.25rem);
+}
+
+@media (min-width: 1024px) {
+  .contact-hero__meta {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: end;
+    gap: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .contact-hero__meta-link {
+    justify-self: end;
+  }
+}
+
+.contact-kicker {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.35vw, 1.2rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contact-email {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45em;
+  color: inherit;
+  font-size: clamp(1.15rem, 2.4vw, 2rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.contact-email__label {
+  text-decoration: underline;
+  text-decoration-thickness: 0.0625em;
+  text-underline-offset: 0.28em;
+  text-decoration-skip-ink: none;
+}
+
+.contact-email__arrow {
+  flex: none;
+}
+
+.contact-panel__grid {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.5rem);
+}
+
+@media (min-width: 1024px) {
+  .contact-panel__grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .contact-panel__grid > :last-child {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 100%;
+  }
+}
+
+.contact-panel__city {
+  margin: 1.75rem 0 0;
+  font-family: "Greed", "Schibsted Grotesk", var(--font-service);
+  font-size: clamp(3.2rem, 9vw, 7.5rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+
+.contact-panel__city-line {
+  display: block;
+  overflow: hidden;
+  padding: 0.04em 0 0.1em;
+  margin: -0.04em 0 -0.1em;
+}
+
+.contact-panel__city-in {
+  display: block;
+}
+
+.contact-panel__body {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+
+.contact-panel__address-row {
+  display: grid;
+  gap: 1.25rem;
+  align-items: end;
+}
+
+@media (min-width: 1024px) {
+  .contact-panel__address-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1.5rem;
+  }
+
+  .contact-panel__link {
+    justify-self: end;
+    align-self: end;
+    padding-bottom: 0.15em;
+  }
+}
+
+.contact-panel__lines {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.contact-panel__link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  color: inherit;
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.contact-panel__link span:first-child {
+  text-decoration: underline;
+  text-decoration-thickness: 0.0625em;
+  text-underline-offset: 0.28em;
+  text-decoration-skip-ink: none;
+}
+
+.contact-panel__social {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-panel__social a {
+  color: inherit;
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  text-decoration: none;
+}
+
+.contact-panel__social a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+.contact-panel__media {
+  position: relative;
+  width: min(100%, 32rem);
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #111;
+}
+
+.contact-panel__media-in {
+  position: absolute;
+  inset: 0;
+}
+
+.contact-panel__media img,
+.contact-panel__media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 1023px) {
+  .contact-panel__media--desktop {
+    display: none;
+  }
+
+  .contact-panel__media--mobile {
+    margin-inline: auto;
+    width: min(100%, 30rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .contact-panel__media--desktop {
+    width: min(100%, 30rem);
+    margin-inline: auto;
+  }
+
+  .contact-panel__media--mobile {
+    display: none;
+  }
+}
