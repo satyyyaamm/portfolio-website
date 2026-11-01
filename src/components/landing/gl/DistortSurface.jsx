@@ -171,14 +171,20 @@ export function DistortSurface({
       mat.uniforms.uImageSize.value.set(iw, ih);
     }
 
-    const dropping = syncDropUniforms(mat, simRef?.current);
+    const dropping = syncDropUniforms(mat, sim);
     if (dropping) {
       mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * 0.28;
       return;
     }
 
-    if (reducedMotion || !m.inside) {
-      mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * 0.14;
+    const openingLock =
+      Boolean(sim?.frozen) ||
+      Boolean(sim?.opening) ||
+      Boolean(sim?.openPending) ||
+      Boolean(sim?.openTimer) ||
+      Boolean(sim?.clickRipple);
+    if (reducedMotion || !m.inside || openingLock) {
+      mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * (openingLock ? 0.45 : 0.14);
       return;
     }
 

@@ -22,8 +22,8 @@ export function getAugeStageLayout(vw, vh) {
   else if (mid) fontSize = Math.min(fontSize, clamp(vmin * 0.078, vw * 0.12, 9 * 16));
 
   fontSize = Math.round(fontSize);
-  const wordH = Math.round(fontSize * 0.76);
-  const copyFont = Math.round(clamp(vmin * 0.015, fontSize * 0.115, fontSize * 0.125));
+  let wordH = Math.round(fontSize * 0.76);
+  let copyFont = Math.round(clamp(vmin * 0.015, fontSize * 0.115, fontSize * 0.125));
 
   const stacked = narrow;
   let padL;
@@ -36,10 +36,12 @@ export function getAugeStageLayout(vw, vh) {
   if (stacked) {
     padL = vw * 0.075;
     padR = vw * 0.08;
-    lowerTop = Math.round(Math.min(vh * 0.46, vh - vmin * 0.3));
+    // Mobile: carousel 60%, text in the remaining band (bottom-aligned)
+    lowerTop = Math.round(vh * 0.6);
     // Leave room above footer / socials
     lowerBottom = Math.round(vh - Math.max(vh * 0.09, vmin * 0.09, 6.5 * 16));
-    gap = vmin * 0.022;
+    // Extra air between SATYAM and the “Satyam Tiwari©” label
+    gap = Math.max(vmin * 0.045, vh * 0.028, 1.35 * 16);
     copyIndent = 0;
   } else {
     padL = vw * 0.052;
@@ -53,12 +55,24 @@ export function getAugeStageLayout(vw, vh) {
   }
 
   // DOM label height + gap before WebGL body (must clear “Satyam Tiwari©”)
-  const labelSlot = Math.round(copyFont * 1.35 + Math.max(22, vmin * 0.032));
-  const minBand = stacked
-    ? wordH + labelSlot + copyFont * 5 + gap
-    : wordH + 8;
-  if (lowerBottom - lowerTop < minBand) {
-    lowerTop = Math.max(vh * 0.32, lowerBottom - minBand);
+  let labelSlot = Math.round(copyFont * 1.35 + Math.max(22, vmin * 0.032));
+  // Keep the mobile 60/40 split — shrink type to fit the text band instead of
+  // pulling lowerTop up into the carousel.
+  if (stacked) {
+    const textBand = Math.max(64, lowerBottom - lowerTop);
+    let minBand = wordH + labelSlot + copyFont * 5 + gap;
+    while (minBand > textBand && fontSize > 36) {
+      fontSize = Math.max(36, Math.round(fontSize * 0.92));
+      wordH = Math.round(fontSize * 0.76);
+      copyFont = Math.round(clamp(vmin * 0.015, fontSize * 0.115, fontSize * 0.125));
+      labelSlot = Math.round(copyFont * 1.35 + Math.max(22, vmin * 0.032));
+      minBand = wordH + labelSlot + copyFont * 5 + gap;
+    }
+  } else {
+    const minBand = wordH + 8;
+    if (lowerBottom - lowerTop < minBand) {
+      lowerTop = Math.max(vh * 0.32, lowerBottom - minBand);
+    }
   }
   const lowerH = Math.max(64, Math.round(lowerBottom - lowerTop));
 
@@ -77,8 +91,9 @@ export function getAugeStageLayout(vw, vh) {
     col1 = inner;
     copyMaxW = Math.round(Math.min(inner - vw * 0.04, 40 * 16));
     copyW = Math.round(Math.min(vw * 0.62, 28 * 16, copyMaxW));
-    copyH = Math.max(copyFont * 5 + labelSlot, lowerH - wordH - gap);
-    wordTop = lowerTop + Math.max(0, lowerH - wordH - copyH - gap);
+    // Natural copy height — pack SATYAM + about against the bottom of the band
+    copyH = copyFont * 5 + labelSlot;
+    wordTop = Math.max(lowerTop, lowerBottom - copyH - gap - wordH);
     copyLeft = padL;
     copyTop = wordTop + wordH + gap;
   } else {
@@ -96,7 +111,7 @@ export function getAugeStageLayout(vw, vh) {
   }
 
   const railH = narrow
-    ? Math.min(vh * 0.52, vh - vmin * 0.22)
+    ? vh * 0.6
     : Math.min(vh * (short ? 0.56 : 0.66), vh - vmin * 0.14);
 
   return {

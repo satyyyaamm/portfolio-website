@@ -25,7 +25,8 @@ import { applyBottomHingeSkew, bendFromSkewDeg } from './skewMath.js';
 import { createCopyColumnTexture, createTextTexture } from './textTexture.js';
 import { createSoundSequence, playHoverSound, playSound } from '../../../lib/siteSound.js';
 
-const LOOP_COPIES = 4;
+/** One period + recycle — multi-copy group wraps flashed a seam every lap. */
+const LOOP_COPIES = 1;
 const SPEED = 160;
 /** Opening burst — strip starts fast, eases down to SPEED over BURST_MS */
 const SPEED_BURST = 560;
@@ -47,7 +48,7 @@ function cardWidthFor(index, vw) {
   const scales = [1, 1.08, 0.96, 1.12, 0.98, 1.04, 1.06];
   const scale = scales[index % scales.length];
   // Mean scale ≈ 1.034 — size so ~3.5 cards fit in the viewport (2.2 on narrow).
-  const visible = vw <= 720 ? 2.2 : 3.5;
+  const visible = vw <= 720 ? 1.5 : 3.5;
   const avgScale = 1.034;
   const base = vw / (visible * avgScale);
   return Math.round(base * scale);
@@ -72,21 +73,17 @@ function normalizeWheelDelta(event) {
   return raw;
 }
 
-/** Keep strip offset in (-setW, 0] so one period wrap is seamless. */
-function wrapOffset(value, setW) {
-  if (setW <= 0) return value;
-  let next = value % setW;
-  // JS % can be negative; normalize into (-setW, 0]
-  if (next > 0) next -= setW;
-  if (next <= -setW) next += setW;
-  return next;
-}
-
-/** True when wrapOffset jumped by a full period (seam frame). */
-function wrappedBy(prev, next, delta, setW) {
-  if (setW <= 0) return false;
-  const expected = prev + delta;
-  return Math.abs(next - expected) > setW * 0.5;
+/**
+ * Recycle cards that have fully left the period train.
+ * Partially visible cards stay put — teleporting those caused the loop-seam flash.
+ * Offset stays unbounded; float precision is fine for session-length runtimes.
+ */
+function recycleWorldLeft(worldLeft, width, setW) {
+  if (setW <= 0) return worldLeft;
+  let x = worldLeft;
+  for (let i = 0; i < 16 && x + width < 0; i += 1) x += setW;
+  for (let i = 0; i < 16 && x >= setW; i += 1) x -= setW;
+  return x;
 }
 
 function PixelCamera() {
@@ -145,7 +142,19 @@ function DropBackdrop({ simRef }) {
   );
 }
 
-function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, reducedMotion, onPointer }) {
+function DistortCard({
+  item,
+  texture,
+  left,
+  width,
+  setWidth,
+  simRef,
+  mouseRef,
+  paramsRef,
+  reducedMotion,
+  onPointer,
+  visible = true,
+}) {
   const matRef = useRef(null);
   const meshRef = useRef(null);
 
@@ -196,14 +205,20 @@ function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, 
     const vh = mouseRef.current.vh || window.innerHeight;
     const railH = mouseRef.current.railH || vh || 400;
     const maxH = railH * 0.9;
-    const minH = maxH * 0.5;
-    const centerX = left + width * 0.5 + sim.offset;
+    // Mobile: gentler left→right taper so cards stay closer in height.
+    const minH = maxH * (vw <= 720 ? 0.7 : 0.5);
+    // Screen-space recycle — group stays at x=0 so a period wrap never teleports meshes.
+    const worldLeft = recycleWorldLeft(left + sim.offset, width, setWidth);
+    const centerX = worldLeft + width * 0.5;
     const height = heightForCenterX(centerX, vw, maxH, minH);
-    const cx = left + width * 0.5;
+    const cx = worldLeft + width * 0.5;
     const skewDeg = reducedMotion ? 0 : sim.skew || 0;
-    // Tops locked; height shrinks from the bottom. 2px overlap hides seams.
-    const drawW = width + 2;
-    applyBottomHingeSkew(mesh, cx, -height, drawW, height, 0);
+    // Extra overlap + stable draw order kills hairline z-fight flicker on seams.
+    const drawW = width + 3;
+    // Tiny Z by stack order so overlaps don’t fight (left cards slightly in front).
+    const z = (item.projectIndex ?? 0) * -0.05;
+    applyBottomHingeSkew(mesh, cx, -height, drawW, height, 0, z);
+    mesh.renderOrder = 10 + (item.projectIndex ?? 0);
     mat.uniforms.uBend.value = bendFromSkewDeg(skewDeg, drawW, maxH) * 0.7;
     mat.uniforms.uBendPower.value = 1.35;
     mat.uniforms.uBendSpan.value = maxH;
@@ -230,7 +245,7 @@ function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, 
       mat.uniforms.uImageSize.value.set(img.naturalWidth || img.width, img.naturalHeight || img.height);
     }
     mesh.userData.height = height;
-    mesh.userData.left = left;
+    mesh.userData.left = worldLeft;
     mesh.userData.width = width;
 
     // Stage-space water droplet — same origin on every landing mesh.
@@ -239,23 +254,34 @@ function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, 
       return;
     }
 
-    if (reducedMotion || !m.inside) {
-      mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * 0.14;
+    // Keep cloth dead through open — when the ripple ends, mouse strength
+    // used to spring back onto the frozen strip and flash the whole carousel.
+    const openingLock =
+      sim.frozen ||
+      sim.opening ||
+      sim.openPending ||
+      Boolean(sim.openTimer) ||
+      Boolean(sim.clickRipple);
+    if (reducedMotion || !m.inside || openingLock) {
+      mat.uniforms.uStrength.value += (0 - mat.uniforms.uStrength.value) * (openingLock ? 0.45 : 0.14);
       return;
     }
 
     // Unclamped card-local UV so 30% viewport radius can reach neighboring cards.
-    const ru = (m.railX - left) / Math.max(width, 1);
+    const ru = (m.x - worldLeft) / Math.max(width, 1);
     const rv = m.railY / Math.max(height, 1);
     mat.uniforms.uMouse.value.set(ru, 1 - rv);
     const strengthMul = (paramsRef?.current?.strengthPct ?? 200) / 100;
-    const target = m.strength * strengthMul;
+    // While the strip translates, cloth on seams opens cream gaps — damp it.
+    const translating = Boolean(sim.stripTranslating);
+    const target = m.strength * strengthMul * (translating ? 0.2 : 1);
     mat.uniforms.uStrength.value += (target - mat.uniforms.uStrength.value) * 0.22;
   });
 
   return (
     <mesh
       ref={meshRef}
+      visible={visible}
       matrixAutoUpdate={false}
       // Manual matrices — default culling uses stale bounds and flashes on loop wrap
       frustumCulled={false}
@@ -280,6 +306,11 @@ function DistortCard({ item, texture, left, width, simRef, mouseRef, paramsRef, 
         vertexShader={DISTORT_VERT}
         fragmentShader={DISTORT_FRAG}
         toneMapped={false}
+        depthWrite={false}
+        depthTest
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
       />
     </mesh>
   );
@@ -300,11 +331,14 @@ function StripScene({
   onIdleChange,
   onHoverHeld,
   onViewTip,
+  onFeaturedChange,
   metaApiRef,
 }) {
   const groupRef = useRef(null);
   const { size, gl } = useThree();
   const stageRect = useRef({ left: 0, top: 0 });
+  const onFeaturedChangeRef = useRef(onFeaturedChange);
+  onFeaturedChangeRef.current = onFeaturedChange;
 
   const textures = useMemo(() => {
     const loader = new THREE.TextureLoader();
@@ -340,15 +374,100 @@ function StripScene({
     mouseRef.current.railH = getAugeStageLayout(size.width, size.height).railH;
 
     const ts = performance.now();
+    sim.stripTranslating = false;
     // Keep frozen while opening or while the project overlay is up.
-    // `opening` bridges the gap after ripple clears and before React sets stripPaused.
-    if (stripPaused || sim.opening) sim.frozen = true;
-    else if (sim.frozen && !sim.clickRipple && !sim.openTimer) {
+    // `opening` / `openPending` bridge ripple → decode → stripPaused.
+    if (stripPaused || sim.opening || sim.openPending) sim.frozen = true;
+    else if (sim.frozen && !sim.clickRipple && !sim.openTimer && !sim.openPending) {
       sim.frozen = false;
       sim.resumeAutoAt = performance.now() + 700;
     }
 
-    if (sim.frozen || stripPaused || menuOpen || sim.opening) {
+    const syncCardMeta = (preferFeatured) => {
+      const api = metaApiRef.current;
+      const m = mouseRef.current;
+      const narrow = size.width <= 720;
+      const featuredMode = preferFeatured && narrow && !menuOpen && !sim.opening && !stripPaused;
+
+      let hotMesh = null;
+      let featuredItem = null;
+      if (featuredMode) {
+        let bestVisible = -1;
+        group.traverse((obj) => {
+          if (!obj.isMesh || !obj.visible || !obj.userData?.item) return;
+          const left = obj.userData.left ?? 0;
+          const w = obj.userData.width ?? 0;
+          const visible = Math.max(0, Math.min(left + w, size.width) - Math.max(left, 0));
+          if (visible > bestVisible) {
+            bestVisible = visible;
+            hotMesh = obj;
+            featuredItem = obj.userData.item;
+          }
+        });
+        if (featuredItem && sim.featuredKey !== featuredItem.key) {
+          sim.featuredKey = featuredItem.key;
+          onFeaturedChangeRef.current?.(featuredItem);
+        }
+      } else {
+        if (sim.hoverKey) {
+          group.traverse((obj) => {
+            if (obj.isMesh && obj.userData?.item?.key === sim.hoverKey) hotMesh = obj;
+          });
+        }
+        if (sim.featuredKey) {
+          sim.featuredKey = null;
+          onFeaturedChangeRef.current?.(null);
+        }
+      }
+
+      const tipShow =
+        !featuredMode &&
+        Boolean(hotMesh) &&
+        sim.hoverHeld &&
+        !sim.drag.active &&
+        !menuOpen;
+
+      if (tipShow !== sim._tipShown) {
+        sim._tipShown = tipShow;
+        onViewTip?.(m.clientX || 0, m.clientY || 0, tipShow);
+      }
+
+      const overCard = Boolean(sim.hoverKey) && !sim.drag.active;
+      if (overCard !== sim._overCard) {
+        sim._overCard = overCard;
+        onHoverChange?.(overCard ? { key: sim.hoverKey, projectIndex: sim.hoverIndex } : null);
+      }
+
+      const showName =
+        Boolean(hotMesh) &&
+        !menuOpen &&
+        !sim.opening &&
+        !stripPaused &&
+        (featuredMode || (sim.hoverHeld && !sim.drag.active));
+
+      if (api?.el) {
+        if (showName && hotMesh) {
+          if ((sim._metaRectAt || 0) + 120 < ts) {
+            const rect = gl.domElement.getBoundingClientRect();
+            stageRect.current.left = rect.left;
+            stageRect.current.top = rect.top;
+            sim._metaRectAt = ts;
+          }
+          const left = hotMesh.userData.left ?? 0;
+          const height = hotMesh.userData.height ?? 0;
+          if (!sim._metaShown) {
+            sim._metaShown = true;
+            api.el.style.opacity = '1';
+          }
+          api.el.style.transform = `translate3d(${stageRect.current.left + left}px, ${stageRect.current.top + height + 12}px, 0)`;
+        } else if (sim._metaShown) {
+          sim._metaShown = false;
+          api.el.style.opacity = '0';
+        }
+      }
+    };
+
+    if (sim.frozen || stripPaused || menuOpen || sim.opening || sim.openPending) {
       sim.userVelocity = 0;
       sim.skewArmed = false;
       sim.skewTarget = 0;
@@ -358,14 +477,16 @@ function StripScene({
         sim.skew += (0 - sim.skew) * (1 - Math.pow(0.00008, dt));
         if (Math.abs(sim.skew) < 0.05) sim.skew = 0;
       }
-      group.position.x = sim.offset;
+      group.position.x = 0;
       group.position.y = 0;
       group.rotation.set(0, 0, 0);
       group.scale.set(1, 1, 1);
       // Still update mouse for ripple / idle meta, but never advance the strip.
       const mFreeze = mouseRef.current;
-      mFreeze.railX = mFreeze.x - sim.offset;
+      mFreeze.railX = mFreeze.x;
       mFreeze.railY = mFreeze.y;
+      // Keep the most-visible name parked while the strip is frozen (not opening).
+      syncCardMeta(true);
       return;
     }
 
@@ -395,9 +516,8 @@ function StripScene({
       sim.userVelocity *= Math.pow(SCROLL_COAST_HOVER, dt);
       if (Math.abs(sim.userVelocity) < 5) sim.userVelocity = 0;
       if (delta !== 0) {
-        const prev = sim.offset;
-        sim.offset = wrapOffset(sim.offset + delta, setWidth);
-        if (wrappedBy(prev, sim.offset, delta, setWidth)) sim._justWrapped = true;
+        sim.offset += delta;
+        sim.stripTranslating = true;
       }
     } else if (!sim.drag.active) {
       let delta = sim.userVelocity * dt;
@@ -421,7 +541,13 @@ function StripScene({
         sim.userVelocity = 0;
         sim.skewArmed = false;
         sim.skewTarget = 0;
-        if (!hoverLongEnough && ts >= sim.resumeAutoAt && !reducedMotion) {
+        // Auto-cruise is desktop-only — mobile is drag/swipe driven.
+        if (
+          !hoverLongEnough &&
+          ts >= sim.resumeAutoAt &&
+          !reducedMotion &&
+          size.width > 720
+        ) {
           // Fast start → ease into cruising speed
           const burstT = Math.max(0, Math.min(1, (sim.burstUntil - ts) / BURST_MS));
           const burstEase = burstT * burstT; // ease-out of the boost
@@ -430,12 +556,12 @@ function StripScene({
         }
       }
       if (delta !== 0) {
-        const prev = sim.offset;
-        sim.offset = wrapOffset(sim.offset + delta, setWidth);
-        if (wrappedBy(prev, sim.offset, delta, setWidth)) sim._justWrapped = true;
+        sim.offset += delta;
+        sim.stripTranslating = true;
       }
     } else if (sim.drag.active && sim.drag.moved) {
       // Only skew once the pointer actually dragged — a click must stay upright.
+      sim.stripTranslating = true;
       sim.skewArmed = true;
       sim.skewTarget = sim.autoDir > 0 ? -SCROLL_SKEW : SCROLL_SKEW;
     }
@@ -472,33 +598,8 @@ function StripScene({
       Math.abs(sim.skew) < 0.15 &&
       sim.skewTarget === 0;
 
-    // After a period wrap, retarget hover to the on-screen copy of the same project
-    // so tip/meta don't flash when index 0 comes back around.
-    if (sim._justWrapped) {
-      sim._justWrapped = false;
-      if (sim.hoverIndex != null && setWidth > 0) {
-        let bestKey = null;
-        let bestDist = Infinity;
-        group.traverse((obj) => {
-          if (!obj.isMesh || obj.userData?.item?.projectIndex !== sim.hoverIndex) return;
-          const l = obj.userData.left ?? 0;
-          const w = obj.userData.width ?? 0;
-          const cx = l + w * 0.5 + sim.offset;
-          const dist = Math.abs(cx - size.width * 0.5);
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestKey = obj.userData.item.key;
-          }
-        });
-        if (bestKey && bestKey !== sim.hoverKey) {
-          sim.hoverKey = bestKey;
-          if (sim.pendingHot) sim.pendingHot = { ...sim.pendingHot, key: bestKey };
-        }
-      }
-    }
-
-    // Horizontal scroll only — each card/text mesh applies its own bottom-hinged skew.
-    group.position.x = sim.offset;
+    // Cards position themselves in screen space; keep the group pinned.
+    group.position.x = 0;
     group.position.y = 0;
     group.rotation.set(0, 0, 0);
     group.scale.set(1, 1, 1);
@@ -507,7 +608,7 @@ function StripScene({
     const speed = Math.hypot(m.x - m.px, m.y - m.py) / Math.max(dt, 0.001);
     m.px = m.x;
     m.py = m.y;
-    m.railX = m.x - sim.offset;
+    m.railX = m.x;
     m.railY = m.y;
     // Light mouse response (−15% strength).
     const targetStrength =
@@ -529,65 +630,18 @@ function StripScene({
       }
     }
 
-    // Position HTML meta under the hot card (rect cached — layout thrash flickers)
-    const api = metaApiRef.current;
-    let hotMesh = null;
-    if (sim.hoverKey) {
-      group.traverse((obj) => {
-        if (obj.isMesh && obj.userData?.item?.key === sim.hoverKey) hotMesh = obj;
-      });
-    }
-    // Show tip/name as soon as hover is held — don't wait for the strip to fully stop.
-    const tipShow =
-      Boolean(hotMesh) &&
-      sim.hoverHeld &&
-      !sim.drag.active &&
-      !menuOpen;
-
-    // Tip must sync here — pointermove alone misses the first hover once pause completes.
-    if (tipShow !== sim._tipShown) {
-      sim._tipShown = tipShow;
-      onViewTip?.(m.clientX || 0, m.clientY || 0, tipShow);
-    }
-
-    // Keep card-hover flag fresh every frame (cursor diamond hide).
-    const overCard = Boolean(sim.hoverKey) && !sim.drag.active;
-    if (overCard !== sim._overCard) {
-      sim._overCard = overCard;
-      onHoverChange?.(overCard ? { key: sim.hoverKey, projectIndex: sim.hoverIndex } : null);
-    }
-
-    if (api?.el) {
-      if (tipShow && hotMesh) {
-        if ((sim._metaRectAt || 0) + 120 < ts) {
-          const rect = gl.domElement.getBoundingClientRect();
-          stageRect.current.left = rect.left;
-          stageRect.current.top = rect.top;
-          sim._metaRectAt = ts;
-        }
-        const left = (hotMesh.userData.left ?? 0) + sim.offset;
-        const height = hotMesh.userData.height ?? 0;
-        if (!sim._metaShown) {
-          sim._metaShown = true;
-          api.el.style.opacity = '1';
-        }
-        api.el.style.transform = `translate3d(${stageRect.current.left + left}px, ${stageRect.current.top + height + 12}px, 0)`;
-      } else if (sim._metaShown) {
-        sim._metaShown = false;
-        api.el.style.opacity = '0';
-      }
-    }
+    // Mobile: name under the most-visible card. Desktop: hover-held card.
+    syncCardMeta(true);
   });
 
   return (
     <group ref={groupRef}>
       {cards.map((card) => {
-        // Unmount every loop copy — cream gap left in the strip (not a hidden mesh).
-        if (hiddenProjectId != null && card.item.project?.id === hiddenProjectId) {
-          return null;
-        }
         const tex = textures.get(card.item.project.image);
         if (!tex) return null;
+        // Hide in place — unmounting the mesh mid-open flickered neighboring cards.
+        const blanked =
+          hiddenProjectId != null && card.item.project?.id === hiddenProjectId;
         return (
           <DistortCard
             key={card.item.key}
@@ -595,11 +649,13 @@ function StripScene({
             texture={tex}
             left={card.left}
             width={card.width}
+            setWidth={setWidth}
             simRef={simRef}
             mouseRef={mouseRef}
             paramsRef={paramsRef}
             reducedMotion={reducedMotion}
             onPointer={onPointer}
+            visible={!blanked}
           />
         );
       })}
@@ -792,6 +848,9 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
   paramsRef.current.strengthPct = strengthPct;
   const onOpenProjectRef = useRef(onOpenProject);
   onOpenProjectRef.current = onOpenProject;
+  const onViewTipRef = useRef(onViewTip);
+  onViewTipRef.current = onViewTip;
+  const openCardAtPointerRef = useRef(null);
   const simRef = useRef({
     offset: 0,
     userVelocity: 0,
@@ -818,6 +877,10 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     frozen: false,
     /** True from open click through overlay mount — blocks auto-unfreeze gap. */
     opening: false,
+    /** True while image decode runs after the ripple timer — keeps strip frozen. */
+    openPending: false,
+    /** Most-visible card key on mobile (drives project name under the strip). */
+    featuredKey: null,
     stepSeq: createSoundSequence('stepCarousel'),
     lastStepIndex: null,
     lastStepAt: 0,
@@ -840,6 +903,8 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
   const [hoverHeld, setHoverHeld] = useState(false);
   const [stripIdle, setStripIdle] = useState(true);
   const [hot, setHot] = useState(null);
+  /** Mobile: name stays on for the most-visible card without hover. */
+  const [featuredOn, setFeaturedOn] = useState(false);
   /** React-level blank: unmount all strip copies of this project id. */
   const [hiddenProjectId, setHiddenProjectId] = useState(null);
   const [vw, setVw] = useState(
@@ -879,15 +944,15 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     },
   }));
 
-  // After the loader, open with a fast strip that eases into cruise speed.
+  // After the loader, open with a fast strip that eases into cruise speed (desktop).
   useEffect(() => {
-    if (!siteReady || reducedMotion) return undefined;
+    if (!siteReady || reducedMotion || vw <= 720) return undefined;
     const sim = simRef.current;
     if (sim.burstArmed) return undefined;
     sim.burstArmed = true;
     sim.burstUntil = performance.now() + BURST_MS;
     return undefined;
-  }, [siteReady, reducedMotion]);
+  }, [siteReady, reducedMotion, vw]);
 
   // Overlay open → stay frozen. Close → restore strip cards + re-arm hover
   // (pointerenter won't re-fire if the cursor never left the card).
@@ -896,6 +961,9 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     if (stripPaused) {
       sim.frozen = true;
       sim.opening = false;
+      sim.openPending = false;
+      sim.featuredKey = null;
+      setFeaturedOn(false);
       sim._tipShown = false;
       sim._overCard = false;
       // Drop hover so a stale hoverKey can't block resume on the way back.
@@ -927,6 +995,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     sim.needsHoverResume = true;
     setHiddenProjectId(null);
     sim.opening = false;
+    sim.openPending = false;
     sim.frozen = false;
     sim._tipShown = false;
     sim._overCard = false;
@@ -1073,21 +1142,22 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     const list = cardsRef.current;
     if (!el || !list?.length || menuOpen) return null;
     const canvasRect = el.getBoundingClientRect();
-    const localX = clientX - canvasRect.left - sim.offset;
+    const stageX = clientX - canvasRect.left;
     const localY = clientY - canvasRect.top;
     const vw = mouseRef.current.vw || canvasRect.width || window.innerWidth;
     const vh = mouseRef.current.vh || canvasRect.height || window.innerHeight;
     const railH = mouseRef.current.railH || vh || 400;
     const maxH = railH * 0.9;
-    const minH = maxH * 0.5;
+    const minH = maxH * (vw <= 720 ? 0.7 : 0.5);
 
     for (let i = 0; i < list.length; i += 1) {
       const card = list[i];
-      const centerX = card.left + card.width * 0.5 + sim.offset;
+      const worldLeft = recycleWorldLeft(card.left + sim.offset, card.width, setWidth);
+      const centerX = worldLeft + card.width * 0.5;
       const height = heightForCenterX(centerX, vw, maxH, minH);
-      if (localX < card.left || localX >= card.left + card.width) continue;
+      if (stageX < worldLeft || stageX >= worldLeft + card.width) continue;
       if (localY < 0 || localY > height) continue;
-      return { card, canvasRect, height, localX, localY };
+      return { card, canvasRect, height, worldLeft, localY };
     }
     return null;
   };
@@ -1123,15 +1193,15 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     if (sim.openTimer) return true; // already opening
     const hit = pickCardAtPointer(clientX, clientY);
     if (!hit) return false;
-    const { card, canvasRect, height } = hit;
+    const { card, canvasRect, height, worldLeft } = hit;
     const src = card.item.project?.image;
     const projectId = card.item.project?.id;
-    // Match the GL draw size (cards use width+2 overlap).
+    // Match the GL draw size (cards use width+3 overlap).
     const fromRect = src
       ? {
-          left: canvasRect.left + card.left + sim.offset,
+          left: canvasRect.left + worldLeft,
           top: canvasRect.top,
-          width: card.width + 2,
+          width: card.width + 3,
           height,
           src,
         }
@@ -1151,8 +1221,9 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       sim.drag.active = false;
       sim.drag.moved = false;
       sim.resumeAutoAt = Number.POSITIVE_INFINITY;
+      mouseRef.current.strength = 0;
       playSound('clickProject');
-      onViewTip?.(0, 0, false);
+      onViewTipRef.current?.(0, 0, false);
       endHoverSession(0);
       const vw = mouseRef.current.vw || canvasRect.width || window.innerWidth;
       const vh = mouseRef.current.vh || canvasRect.height || window.innerHeight;
@@ -1175,23 +1246,30 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       if (sim.openTimer) window.clearTimeout(sim.openTimer);
       sim.openTimer = window.setTimeout(() => {
         sim.openTimer = 0;
+        sim.openPending = true;
         const id = projectId ?? card.item.projectIndex;
         const open = () => {
+          if (!sim.opening && !sim.openPending) return;
           // Keep GL card until overlay photo has painted over it (onCovered).
           onOpenProjectRef.current?.(card.item.projectIndex, {
             ...fromRect,
             onCovered: () => {
               setHiddenProjectId(id);
+              // Drop ripple only after the photo is seated — clearing it at mount
+              // left one bare frozen frame that sometimes flashed the strip.
+              sim.clickRipple = null;
+              mouseRef.current.strength = 0;
             },
           });
-          // Clear ripple only once overlay is mounting — avoids a bare frozen frame.
-          sim.clickRipple = null;
+          sim.openPending = false;
+          // `opening` stays true until stripPaused effect acknowledges the overlay.
         };
         decoded.then(open).catch(open);
       }, RIPPLE_MS);
       return true;
     }
   };
+  openCardAtPointerRef.current = openCardAtPointer;
 
   const onPointer = (type, item) => {
     const sim = simRef.current;
@@ -1206,6 +1284,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     if (!el) return undefined;
     const sim = simRef.current;
     const DRAG_THRESHOLD = 8;
+    const tip = (...args) => onViewTipRef.current?.(...args);
 
     const inStripBand = (clientY) => {
       const rect = el.getBoundingClientRect();
@@ -1215,7 +1294,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     };
 
     const onWheel = (event) => {
-      if (menuOpen || sim.frozen || sim.opening || !inStripBand(event.clientY)) return;
+      if (menuOpen || sim.frozen || sim.opening || sim.openPending || !inStripBand(event.clientY)) return;
       const raw = normalizeWheelDelta(event);
       if (!raw) return;
       event.preventDefault();
@@ -1241,7 +1320,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       m.x = event.clientX - rect.left;
       m.y = event.clientY - rect.top;
       if (sim._tipShown) {
-        onViewTip?.(event.clientX, event.clientY, true);
+        tip(event.clientX, event.clientY, true);
       }
 
       // After detail→home, pointerenter often never re-fires while still on a card.
@@ -1249,6 +1328,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       if (
         !sim.drag.active &&
         !sim.opening &&
+        !sim.openPending &&
         !sim.openTimer &&
         !menuOpen &&
         (sim.needsHoverResume || !sim.hoverKey)
@@ -1257,6 +1337,8 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       }
 
       if (!sim.drag.active) return;
+      // Don't drag-scroll while a project open is in flight.
+      if (sim.opening || sim.openPending) return;
       const dx = event.clientX - sim.drag.x;
       // Don't treat tiny jitter as a drag — that was swallowing opens + arming skew.
       if (!sim.drag.moved) {
@@ -1265,11 +1347,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
         sim.drag.moved = true;
       }
       sim.drag.x = event.clientX;
-      {
-        const prev = sim.offset;
-        sim.offset = wrapOffset(sim.offset + dx, setWidth);
-        if (wrappedBy(prev, sim.offset, dx, setWidth)) sim._justWrapped = true;
-      }
+      sim.offset += dx;
       if (dx !== 0) {
         sim.autoDir = dx > 0 ? 1 : -1;
         sim.userVelocity = Math.max(-720, Math.min(720, dx * 16));
@@ -1279,7 +1357,15 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     };
 
     const onDown = (event) => {
-      if (event.button !== 0 || sim.frozen || sim.opening || !inStripBand(event.clientY)) return;
+      if (
+        event.button !== 0 ||
+        sim.frozen ||
+        sim.opening ||
+        sim.openPending ||
+        !inStripBand(event.clientY)
+      ) {
+        return;
+      }
       sim.drag = {
         active: true,
         x: event.clientX,
@@ -1315,7 +1401,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       sim.skewArmed = false;
       sim.skewTarget = 0;
       sim.userVelocity = 0;
-      openCardAtPointer(event.clientX, event.clientY);
+      openCardAtPointerRef.current?.(event.clientX, event.clientY);
     };
 
     const onLeave = () => {
@@ -1325,7 +1411,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       mouseRef.current.inside = false;
       sim._tipShown = false;
       endHoverSession(400);
-      onViewTip?.(0, 0, false);
+      tip(0, 0, false);
     };
 
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -1342,17 +1428,15 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       el.removeEventListener('pointercancel', onUp);
       el.removeEventListener('pointerleave', onLeave);
       if (sim.hoverLeaveTimer) window.clearTimeout(sim.hoverLeaveTimer);
-      if (sim.openTimer) {
-        window.clearTimeout(sim.openTimer);
-        sim.openTimer = 0;
-      }
-      sim.clickRipple = null;
-      sim.opening = false;
+      // Never cancel an in-flight open here — this effect rebinds when setWidth /
+      // menuOpen change, and clearing opening/openTimer was dropping navigations
+      // after the ripple (carousel resumed instead of opening detail).
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menuOpen, setWidth, onViewTip, reducedMotion]);
+  }, [menuOpen, setWidth, reducedMotion]);
 
-  const showMeta = Boolean(hot) && hoverHeld && !menuOpen;
+  const showMeta =
+    Boolean(hot) && !menuOpen && (hoverHeld || (vw <= 720 && featuredOn));
 
   return (
     <div className="auge-gl-root" ref={wrapRef}>
@@ -1401,6 +1485,14 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
             }
           }}
           onViewTip={onViewTip}
+          onFeaturedChange={(item) => {
+            if (!item) {
+              setFeaturedOn(false);
+              return;
+            }
+            commitHot(item);
+            setFeaturedOn(true);
+          }}
           metaApiRef={metaApiRef}
         />
         <LowerDistort
