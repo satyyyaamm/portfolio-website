@@ -1,0 +1,709 @@
+.about-page {
+  --auge-pad-x: clamp(2.1rem, 5.5vw, 5.25rem);
+  --auge-pad-l: clamp(2rem, 5.2vw, 5rem);
+  --auge-chrome: clamp(0.65rem, 1.05vw, 0.95rem);
+  --about-gutter: clamp(1.25rem, 4.2vw, 3.75rem);
+  --about-gap: clamp(0.55rem, 1.2vw, 1rem);
+  --about-cream: #edeee5;
+  --about-yellow: #fdf48b;
+  --about-ink: #000;
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-sans);
+  overscroll-behavior: contain;
+}
+
+/* Scroll + absolute chrome — same shell as detail/works so difference can see content */
+.about-page__scroll {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.about-page__scroll--smooth {
+  overflow-y: auto;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+}
+
+.about-page__scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.about-page__scroll-inner {
+  min-height: 100%;
+}
+
+.about-gl-stage {
+  position: absolute;
+  inset: 0;
+  z-index: auto;
+  pointer-events: none !important;
+  contain: strict;
+  transform: translateZ(0);
+}
+
+.about-hero,
+.about-band,
+.about-actions {
+  contain: layout style;
+}
+
+.about-gl-stage__canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+.about-gl-stage__canvas canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ghost after bake — hover stays in GL (texture swap), so no live-DOM jump */
+.about-page .is-gl-text {
+  opacity: 0 !important;
+}
+
+/* CTAs are live DOM (not baked) — never ghost them even if a stale class lingers */
+.about-page .about-cta.is-gl-text,
+.about-page .about-cta[data-gl-ready='1'] {
+  opacity: 1 !important;
+}
+
+/* Type lockup: keep scramble bits live; ghost only baked toks/media */
+.about-page .about-type.is-gl-text {
+  opacity: 1 !important;
+}
+
+.about-page .about-type.is-gl-text .about-type__tok,
+.about-page .about-type.is-gl-text .about-type__media {
+  opacity: 0 !important;
+}
+
+.about-page .about-type.is-gl-text .about-type__scramble,
+.about-page .about-type.is-gl-text .about-type__tok.about-type__scramble {
+  opacity: 1 !important;
+  position: relative;
+  z-index: 6;
+}
+
+.about-page.is-screen-warp .about-reel,
+.about-page.is-screen-warp .about-us__cta,
+.about-page.is-screen-warp .about-cta,
+.about-page.is-screen-warp .about-actions,
+.about-page.is-screen-warp .about-shipped__row,
+.about-page.is-screen-warp .about-service {
+  pointer-events: auto !important;
+}
+
+/*
+  Chrome z-index auto so difference sees page pixels (not trapped in a stacking context).
+*/
+.about-page__chrome {
+  position: absolute;
+  inset: 0;
+  z-index: auto;
+  isolation: auto;
+  pointer-events: none;
+  background: transparent;
+}
+
+.about-page__chrome .auge-mark,
+.about-page__chrome .auge-footer,
+.about-page__chrome .auge-corner {
+  pointer-events: auto;
+}
+
+.about-page__chrome .auge-corner {
+  z-index: auto;
+}
+
+.about-page__chrome .auge-mark,
+.about-page__chrome .auge-footer,
+.about-page__chrome .auge-footer__links {
+  color: #fff;
+  mix-blend-mode: difference;
+  z-index: auto;
+}
+
+.about-page__chrome .auge-footer p,
+.about-page__chrome .auge-footer__sound,
+.about-page__chrome .auge-footer__links a,
+.about-page__chrome .auge-footer__links a:not(:last-child)::after {
+  color: inherit;
+  mix-blend-mode: normal;
+  background: transparent;
+}
+
+.about-page__chrome .auge-footer__sound:hover,
+.about-page__chrome .auge-footer__links a:hover {
+  background: transparent;
+  color: inherit;
+}
+
+.about-hero {
+  position: relative;
+  background: #000;
+  color: #fff;
+  padding: 18vh 0 0;
+}
+
+.about-hero__word {
+  margin: 0 auto;
+  padding: 0 var(--about-gutter) 10vh;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: clamp(5.75rem, 24vw, 18.5rem);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.72;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+  color: var(--about-yellow);
+  overflow: hidden;
+}
+
+.about-hero__story {
+  padding: 0 var(--about-gutter) clamp(3rem, 8vw, 6rem);
+}
+
+.about-hero__story > .about-kicker {
+  margin: 0 0 clamp(2.25rem, 5.5vh, 3.75rem);
+  padding: 0.55rem 0 0.85rem;
+  line-height: 1.85;
+  font-size: clamp(0.7rem, 0.88vw, 0.85rem);
+  letter-spacing: 0.12em;
+}
+
+.about-band {
+  position: relative;
+  isolation: isolate;
+  background: #000;
+  color: #fff;
+  padding: 0 var(--about-gutter) clamp(3rem, 8vw, 6rem);
+}
+
+.about-band--cream {
+  background: var(--about-cream);
+  color: var(--about-ink);
+  padding-top: clamp(4.5rem, 10vw, 8rem);
+  padding-bottom: clamp(4.5rem, 12vw, 10rem);
+}
+
+.about-kicker {
+  margin: 0 0 1.15rem;
+  text-align: center;
+  font-size: clamp(0.62rem, 0.72vw, 0.7rem);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.about-kicker--left {
+  text-align: left;
+}
+
+.about-type {
+  margin: 0;
+  text-align: justify;
+  text-align-last: justify;
+  font-family: "Greed", var(--font-service);
+  font-size: clamp(3.2rem, 13vw, 11.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  color: #fff;
+  /* room for italic descenders on the last line (TO LIVE) */
+  padding-bottom: 0.12em;
+}
+
+.about-type__tok {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: middle;
+  /* overflow:hidden clips the reveal — pad so descenders aren't cut */
+  padding: 0.06em 0 0.18em;
+  margin: -0.06em 0 -0.18em;
+}
+
+.about-type__tok-in {
+  display: inline-block;
+}
+
+.about-type__accent {
+  color: var(--about-yellow);
+}
+
+.about-type__ital {
+  font-family: var(--font-didone);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.about-type__year {
+  display: inline-block;
+  margin: 0 0.15em;
+  font-family: var(--font-sans);
+  font-size: max(10px, 0.11em);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--about-yellow);
+  transform: rotate(-90deg);
+  transform-origin: center;
+  vertical-align: middle;
+}
+
+.about-type__arrow,
+.about-type__star {
+  color: var(--about-yellow);
+}
+
+.about-type__closer,
+.about-type__closer-wrap {
+  white-space: nowrap;
+}
+
+.about-type__closer {
+  display: inline-block;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: default;
+}
+
+.about-type__media {
+  display: inline-block;
+  width: 1.12em;
+  height: 0.72em;
+  margin: 0 0.06em;
+  overflow: hidden;
+  vertical-align: middle;
+  background: #111;
+}
+
+.about-type__media--tall {
+  width: 0.92em;
+  height: 0.82em;
+}
+
+.about-type__media--wide {
+  width: 1.48em;
+  height: 0.7em;
+}
+
+.about-type__media img,
+.about-type__media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-reel {
+  display: block;
+  width: 100%;
+  margin: clamp(2.5rem, 6vw, 4.5rem) 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.about-manifesto {
+  margin: 0;
+  max-width: none;
+  font-family: "Greed", var(--font-service);
+  font-size: clamp(1.85rem, 5.6vw, 4.6rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.about-us {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2.75rem, 6vw, 5.5rem) clamp(3rem, 7vw, 7.5rem);
+}
+
+.about-us__copy {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.35vw, 3.05rem);
+  font-weight: 400;
+  letter-spacing: -0.038em;
+  line-height: 1.06;
+}
+
+.about-us__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(2.5rem, 5vw, 4.25rem);
+}
+
+.about-us.about-band--cream {
+  padding-bottom: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.about-shipped.about-band--cream {
+  padding-top: clamp(1.25rem, 2.4vw, 1.75rem);
+  padding-bottom: clamp(2rem, 4vw, 3rem);
+  background: var(--about-yellow);
+}
+
+.about-us__cta {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.95rem;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  border-radius: 0;
+  background: var(--about-yellow);
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  cursor: pointer;
+  /* Live DOM — never ghost if a stale bake class lingers */
+  opacity: 1 !important;
+}
+
+.about-us__cta:hover,
+.about-us__cta:focus-visible {
+  background: #000;
+  color: #fff;
+}
+
+.about-manifesto__text + .about-manifesto__gif,
+.about-manifesto__gif + .about-manifesto__text,
+.about-manifesto__text + .about-manifesto__cycle,
+.about-manifesto__cycle + .about-manifesto__gif,
+.about-manifesto__gif + .about-manifesto__cycle,
+.about-manifesto__cycle + .about-manifesto__text {
+  margin-left: 0.22em;
+}
+
+.about-manifesto__cycle {
+  display: inline-block;
+  min-width: 5.5ch;
+  font-style: italic;
+}
+
+.about-manifesto__gif {
+  display: inline-block;
+  width: 1.7em;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: -0.08em;
+  background: #111;
+  border-radius: 0.06em;
+}
+
+.about-manifesto__gif img,
+.about-manifesto__gif video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-services {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 4.5vw, 3.25rem) clamp(1.25rem, 3vw, 2.75rem);
+}
+
+.about-service h3 {
+  margin: 0 0 1.1rem;
+  font-size: clamp(0.62rem, 0.72vw, 0.7rem);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.about-service p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.about-shipped__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.about-shipped__count {
+  margin: 0;
+  font-family: "Greed", var(--font-service);
+  font-size: clamp(4.5rem, 14vw, 9rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 0.8;
+}
+
+.about-shipped__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.about-shipped__row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  gap: 0.75rem 1.25rem;
+  align-items: baseline;
+  padding: 1rem 0 0.85rem;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  background: none;
+  cursor: pointer;
+}
+
+.about-shipped__row:hover,
+.about-shipped__row:focus-visible {
+  background: #000;
+  color: #fff;
+}
+
+.about-shipped__name {
+  font-weight: 500;
+}
+
+.about-shipped__detail {
+  opacity: 0.72;
+  text-align: right;
+}
+
+.about-shipped__row:hover .about-shipped__detail,
+.about-shipped__row:focus-visible .about-shipped__detail {
+  opacity: 1;
+}
+
+.about-actions {
+  --about-cta-lg: 24px;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  padding: 2.5rem 1.25rem clamp(5.5rem, 12vw, 8rem);
+  background: var(--about-yellow);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Hide CTAs until entrance starts */
+.about-actions:not(.is-cta-in) .about-cta {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.about-actions.is-cta-in .about-cta {
+  opacity: 1;
+}
+
+.about-cta {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 0;
+  border: 1px solid #000;
+  border-radius: 9px;
+  background: transparent;
+  color: #000;
+  font-family: var(--font-sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.about-cta--secondary {
+  background: var(--about-yellow);
+}
+
+.about-cta__label {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-size: var(--about-cta-lg);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+.about-cta__arrow {
+  position: absolute;
+  top: 50%;
+  right: 2.5rem;
+  display: grid;
+  place-items: center;
+  width: 0.85em;
+  height: 0.85em;
+  color: inherit;
+  font-size: var(--about-cta-lg);
+  transform: translateY(-50%);
+}
+
+.about-cta__arrow svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.about-cta__mask {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transition: clip-path 0.5s cubic-bezier(0.87, 0, 0.13, 1);
+}
+
+.about-cta__mask--back {
+  z-index: -1;
+}
+
+.about-cta__mask--blend {
+  mix-blend-mode: difference;
+}
+
+.about-cta--primary .about-cta__mask {
+  clip-path: inset(0% 0% 0% 0%);
+}
+
+.about-cta--secondary .about-cta__mask {
+  clip-path: inset(0% 100% 0% 0%);
+}
+
+.about-actions.is-cta-swap .about-cta--primary .about-cta__mask {
+  clip-path: inset(0% 0% 0% 100%);
+}
+
+.about-actions.is-cta-swap .about-cta--secondary .about-cta__mask {
+  clip-path: inset(0% 0% 0% 0%);
+}
+
+@media (min-width: 1024px) {
+  .about-actions {
+    --about-cta-lg: max(24px, 3.54167vw);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: max(10px, 1.04167vw);
+    padding: 5rem max(5.5rem, 10.2vw) clamp(5.5rem, 12vw, 8rem);
+  }
+}
+
+.about-showreel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: #000;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.about-showreel video,
+.about-showreel img {
+  width: min(92vw, 1400px);
+  height: min(86dvh, 820px);
+  object-fit: contain;
+  background: #000;
+}
+
+.about-showreel__hint {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  color: #fff;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 760px) {
+  .about-us {
+    grid-template-columns: minmax(0, 1.12fr) minmax(16rem, 0.88fr);
+    align-items: start;
+  }
+
+  .about-us__aside {
+    padding-top: 2.05rem;
+  }
+
+  .about-shipped__row {
+    grid-template-columns: 6rem minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 699px) {
+  .about-hero__word {
+    font-size: 64vw;
+  }
+
+  .about-type {
+    text-align-last: auto;
+    font-size: clamp(2.2rem, 14vw, 3.6rem);
+  }
+
+  .about-shipped__row {
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+  }
+
+  .about-shipped__detail {
+    grid-column: 2;
+    text-align: left;
+    font-size: 0.78rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-type__tok-in {
+    transform: none !important;
+  }
+}

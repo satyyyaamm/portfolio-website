@@ -157,7 +157,7 @@ function textureFromCanvas(canvas) {
 }
 
 /** DOM → canvas at the live border box. DPR 1 keeps first-enter cheap. */
-async function bakeDomTexture(el) {
+export async function bakeDomTexture(el) {
   const rect = el.getBoundingClientRect();
   const width = Math.max(2, Math.ceil(rect.width));
   const height = Math.max(2, Math.ceil(rect.height));
