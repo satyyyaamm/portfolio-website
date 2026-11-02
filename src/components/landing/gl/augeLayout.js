@@ -40,8 +40,8 @@ export function getAugeStageLayout(vw, vh) {
     lowerTop = Math.round(vh * 0.6);
     // Leave room above footer / socials
     lowerBottom = Math.round(vh - Math.max(vh * 0.09, vmin * 0.09, 6.5 * 16));
-    // Extra air between SATYAM and the “Satyam Tiwari©” label
-    gap = Math.max(vmin * 0.045, vh * 0.028, 1.35 * 16);
+    // Clear space between SATYAM and the “Satyam Tiwari©” label on phones
+    gap = Math.max(vmin * 0.08, vh * 0.045, 2.25 * 16);
     copyIndent = 0;
   } else {
     padL = vw * 0.052;

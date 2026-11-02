@@ -195,16 +195,18 @@ export async function bakeDomTexture(el) {
     textAlign: cs.textAlign || 'left',
     textTransform: cs.textTransform,
     whiteSpace: cs.whiteSpace,
-    WebkitFontSmoothing: cs.webkitFontSmoothing || 'auto',
-    MozOsxFontSmoothing: cs.mozOsxFontSmoothing || 'auto',
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
     paddingTop: cs.paddingTop,
     paddingRight: cs.paddingRight,
     paddingBottom: cs.paddingBottom,
     paddingLeft: cs.paddingLeft,
   };
-  // Fonts already loaded — skipFonts avoids embedding @font-face into SVG (huge cost)
+  // Fonts already loaded — skipFonts avoids embedding @font-face into SVG (huge cost).
+  // Cap at 3 on phones so warped type stays sharp under the About-style 2x canvas.
+  const pixelRatio = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
   const canvas = await toCanvas(el, {
-    pixelRatio: Math.min(2, window.devicePixelRatio || 1),
+    pixelRatio,
     skipFonts: true,
     cacheBust: false,
     width,
@@ -266,8 +268,10 @@ export function useDetailCopyBakes({ scrollRef, enabled, projectKey }) {
       // Full rebuilds cancel; near/next top-ups must not abort an in-flight pass
       const token = preferNear ? gen : ++gen;
       try {
+        const narrow =
+          typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
         await (document.fonts?.ready || Promise.resolve());
-        await yieldIdle(preferNear ? 40 : 200);
+        await yieldIdle(preferNear ? (narrow ? 100 : 40) : narrow ? 360 : 200);
         if (dead || token !== gen) return;
 
         const nodes = blockNodes(scrollEl);
@@ -325,7 +329,11 @@ export function useDetailCopyBakes({ scrollRef, enabled, projectKey }) {
               else await yieldIdle(80);
             }
           }
-          await yieldIdle(preferNear || isNext(node) ? 32 : 160);
+          const narrowGap =
+            typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+          await yieldIdle(
+            preferNear || isNext(node) ? (narrowGap ? 90 : 32) : narrowGap ? 280 : 160
+          );
         }
       } finally {
         baking = false;
@@ -336,12 +344,18 @@ export function useDetailCopyBakes({ scrollRef, enabled, projectKey }) {
       }
     };
 
-    // Let the detail frame settle before first bake
-    const start = window.setTimeout(() => bakeQueue(false), 480);
+    // Phones: wait until scroll feels live, then bake near-fold only first.
+    // html-to-image on open was freezing touch for a few seconds.
+    const narrow =
+      typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+    const start = window.setTimeout(
+      () => bakeQueue(Boolean(narrow)),
+      narrow ? 1400 : 480
+    );
     let scrollBakeTimer = 0;
     const onScrollBake = () => {
       window.clearTimeout(scrollBakeTimer);
-      scrollBakeTimer = window.setTimeout(() => bakeQueue(true), 90);
+      scrollBakeTimer = window.setTimeout(() => bakeQueue(true), narrow ? 180 : 90);
     };
     scrollEl.addEventListener('scroll', onScrollBake, { passive: true });
     const onResize = () => {

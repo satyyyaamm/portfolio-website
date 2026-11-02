@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { AugeChrome } from '../chrome/AugeChrome.jsx';
 import { WorksCarousel } from './WorksCarousel.jsx';
@@ -18,6 +18,15 @@ export function WorksPage({
   onOpenWorks,
 }) {
   const reducedMotion = useReducedMotion();
+  const [warpOn, setWarpOn] = useState(() =>
+    typeof window !== 'undefined' ? !window.matchMedia('(max-width: 720px)').matches : true
+  );
+  useEffect(() => {
+    if (warpOn) return undefined;
+    /* Short defer — page must scroll immediately; warp is cosmetic */
+    const t = window.setTimeout(() => setWarpOn(true), 280);
+    return () => window.clearTimeout(t);
+  }, [warpOn]);
   const rootRef = useRef(null);
   const carouselHostRef = useRef(null);
   const velocityRef = useRef(0);
@@ -59,15 +68,17 @@ export function WorksPage({
           pulseRef={pulseRef}
           glRectsRef={glRectsRef}
         >
-          <WorksSurfaceWarp
-            rootRef={carouselHostRef}
-            projects={projects}
-            velocityRef={velocityRef}
-            dragRef={dragRef}
-            glRectsRef={glRectsRef}
-            reducedMotion={Boolean(reducedMotion)}
-            paused={paused}
-          />
+          {warpOn ? (
+            <WorksSurfaceWarp
+              rootRef={carouselHostRef}
+              projects={projects}
+              velocityRef={velocityRef}
+              dragRef={dragRef}
+              glRectsRef={glRectsRef}
+              reducedMotion={Boolean(reducedMotion)}
+              paused={paused}
+            />
+          ) : null}
         </WorksCarousel>
       </div>
 

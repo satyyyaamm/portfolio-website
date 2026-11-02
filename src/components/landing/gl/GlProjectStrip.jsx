@@ -34,10 +34,10 @@ const BURST_MS = 2400;
 const SCROLL_SKEW = 12;
 /** How long over a card before tip / name show (was 300 — felt sluggish). */
 const HOVER_PAUSE_MS = 70;
-/** Wheel → velocity (px/s per wheel-px). Soft-cap keeps mouse notches from jumping. */
-const WHEEL_GAIN = 48;
-const WHEEL_STEP_CAP = 88;
-const WHEEL_VEL_MAX = 2100;
+/** Wheel → velocity (px/s per wheel-px). Tuned so vertical scroll flings the strip fast. */
+const WHEEL_GAIN = 78;
+const WHEEL_STEP_CAP = 140;
+const WHEEL_VEL_MAX = 3600;
 /** Coast friction — lower = stops sooner at the end of a flick (applied as pow(k, dt)). */
 const SCROLL_COAST = 0.004;
 const SCROLL_COAST_HOVER = 0.01;
@@ -335,8 +335,7 @@ function StripScene({
   metaApiRef,
 }) {
   const groupRef = useRef(null);
-  const { size, gl } = useThree();
-  const stageRect = useRef({ left: 0, top: 0 });
+  const { size } = useThree();
   const onFeaturedChangeRef = useRef(onFeaturedChange);
   onFeaturedChangeRef.current = onFeaturedChange;
 
@@ -398,14 +397,35 @@ function StripScene({
           const left = obj.userData.left ?? 0;
           const w = obj.userData.width ?? 0;
           const visible = Math.max(0, Math.min(left + w, size.width) - Math.max(left, 0));
-          if (visible > bestVisible) {
+          if (visible > bestVisible + 0.5) {
             bestVisible = visible;
             hotMesh = obj;
             featuredItem = obj.userData.item;
           }
         });
+        // Prefer the card closest to center when two are similarly visible (1.5-up layout)
+        if (bestVisible > 0) {
+          let bestCenter = Infinity;
+          group.traverse((obj) => {
+            if (!obj.isMesh || !obj.visible || !obj.userData?.item) return;
+            const left = obj.userData.left ?? 0;
+            const w = obj.userData.width ?? 0;
+            const visible = Math.max(0, Math.min(left + w, size.width) - Math.max(left, 0));
+            if (visible < bestVisible * 0.85) return;
+            const mid = left + w * 0.5;
+            const dist = Math.abs(mid - size.width * 0.5);
+            if (dist < bestCenter) {
+              bestCenter = dist;
+              hotMesh = obj;
+              featuredItem = obj.userData.item;
+            }
+          });
+        }
         if (featuredItem && sim.featuredKey !== featuredItem.key) {
           sim.featuredKey = featuredItem.key;
+          onFeaturedChangeRef.current?.(featuredItem);
+        } else if (featuredItem && !sim._featuredReactOn) {
+          sim._featuredReactOn = true;
           onFeaturedChangeRef.current?.(featuredItem);
         }
       } else {
@@ -416,6 +436,7 @@ function StripScene({
         }
         if (sim.featuredKey) {
           sim.featuredKey = null;
+          sim._featuredReactOn = false;
           onFeaturedChangeRef.current?.(null);
         }
       }
@@ -447,19 +468,14 @@ function StripScene({
 
       if (api?.el) {
         if (showName && hotMesh) {
-          if ((sim._metaRectAt || 0) + 120 < ts) {
-            const rect = gl.domElement.getBoundingClientRect();
-            stageRect.current.left = rect.left;
-            stageRect.current.top = rect.top;
-            sim._metaRectAt = ts;
-          }
+          // Local to .auge-gl-root (absolute) — fixed+viewport math broke under Framer translateZ.
           const left = hotMesh.userData.left ?? 0;
           const height = hotMesh.userData.height ?? 0;
           if (!sim._metaShown) {
             sim._metaShown = true;
             api.el.style.opacity = '1';
           }
-          api.el.style.transform = `translate3d(${stageRect.current.left + left}px, ${stageRect.current.top + height + 12}px, 0)`;
+          api.el.style.transform = `translate3d(${left}px, ${height + 10}px, 0)`;
         } else if (sim._metaShown) {
           sim._metaShown = false;
           api.el.style.opacity = '0';
@@ -963,6 +979,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       sim.opening = false;
       sim.openPending = false;
       sim.featuredKey = null;
+      sim._featuredReactOn = false;
       setFeaturedOn(false);
       sim._tipShown = false;
       sim._overCard = false;
@@ -1294,7 +1311,8 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
     };
 
     const onWheel = (event) => {
-      if (menuOpen || sim.frozen || sim.opening || sim.openPending || !inStripBand(event.clientY)) return;
+      // Vertical (or horizontal) scroll anywhere on the landing stage drives the strip.
+      if (menuOpen || sim.frozen || sim.opening || sim.openPending) return;
       const raw = normalizeWheelDelta(event);
       if (!raw) return;
       event.preventDefault();
@@ -1303,12 +1321,12 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       const add = step * WHEEL_GAIN;
       sim.userVelocity = Math.max(
         -WHEEL_VEL_MAX,
-        Math.min(WHEEL_VEL_MAX, sim.userVelocity * 0.78 + add)
+        Math.min(WHEEL_VEL_MAX, sim.userVelocity * 0.55 + add)
       );
       if (step !== 0) sim.autoDir = step > 0 ? 1 : -1;
       sim.skewArmed = true;
       sim.skewTarget = step > 0 ? -SCROLL_SKEW : SCROLL_SKEW;
-      sim.resumeAutoAt = performance.now() + 1100;
+      sim.resumeAutoAt = performance.now() + 900;
     };
 
     const onMove = (event) => {
@@ -1340,6 +1358,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       // Don't drag-scroll while a project open is in flight.
       if (sim.opening || sim.openPending) return;
       const dx = event.clientX - sim.drag.x;
+      const dy = event.clientY - sim.drag.y;
       // Don't treat tiny jitter as a drag — that was swallowing opens + arming skew.
       if (!sim.drag.moved) {
         const dist = Math.hypot(event.clientX - sim.drag.startX, event.clientY - sim.drag.startY);
@@ -1347,12 +1366,15 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
         sim.drag.moved = true;
       }
       sim.drag.x = event.clientX;
-      sim.offset += dx;
-      if (dx !== 0) {
-        sim.autoDir = dx > 0 ? 1 : -1;
-        sim.userVelocity = Math.max(-720, Math.min(720, dx * 16));
+      sim.drag.y = event.clientY;
+      // Vertical swipe/scroll drives the strip too (up → next, down → prev).
+      const drive = Math.abs(dy) >= Math.abs(dx) ? -dy : dx;
+      sim.offset += drive;
+      if (drive !== 0) {
+        sim.autoDir = drive > 0 ? 1 : -1;
+        sim.userVelocity = Math.max(-1400, Math.min(1400, drive * 22));
         sim.skewArmed = true;
-        sim.skewTarget = dx > 0 ? -SCROLL_SKEW : SCROLL_SKEW;
+        sim.skewTarget = drive > 0 ? -SCROLL_SKEW : SCROLL_SKEW;
       }
     };
 
@@ -1369,6 +1391,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       sim.drag = {
         active: true,
         x: event.clientX,
+        y: event.clientY,
         startX: event.clientX,
         startY: event.clientY,
         moved: false,

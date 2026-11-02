@@ -439,7 +439,9 @@ function useAboutBakes(scrollRef, enabled, contentKey) {
           } catch (err) {
             console.warn('About bake skipped', node.id, err);
           }
-          await yieldIdle(preferNear ? 16 : 24);
+          const narrowGap =
+            typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+          await yieldIdle(preferNear ? (narrowGap ? 64 : 16) : narrowGap ? 140 : 24);
         }
         if (!dead && token === gen) setBakes(bakesRef.current);
       } finally {
@@ -451,11 +453,17 @@ function useAboutBakes(scrollRef, enabled, contentKey) {
       }
     };
 
-    const start = window.setTimeout(() => bakeQueue(false), 500);
+    // Phones: let Lenis/scroll settle before baking — instant bake froze touch for seconds.
+    const narrow =
+      typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+    const start = window.setTimeout(
+      () => bakeQueue(Boolean(narrow)),
+      narrow ? 1400 : 500
+    );
     let scrollBakeTimer = 0;
     const onScrollBake = () => {
       window.clearTimeout(scrollBakeTimer);
-      scrollBakeTimer = window.setTimeout(() => bakeQueue(true), 90);
+      scrollBakeTimer = window.setTimeout(() => bakeQueue(true), narrow ? 180 : 90);
     };
     scrollEl.addEventListener('scroll', onScrollBake, { passive: true });
 

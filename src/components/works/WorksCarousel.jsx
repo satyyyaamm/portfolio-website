@@ -138,10 +138,14 @@ export function WorksCarousel({
       sim.step = stepHeight(rect.height);
       sim.period = count * sim.step;
       if (!sim.entered) {
-        sim.S = reducedMotion ? 0 : -10 * sim.step;
+        // Mobile: land near the first project — a −10 intro felt like “can’t scroll”
+        // while the yellow curtain was still eating pointer events.
+        const introBack = reducedMotion ? 0 : sim.desktop ? 10 : 2;
+        sim.S = -introBack * sim.step;
         sim.target = 0;
         sim.lastS = sim.S;
         sim.entered = true;
+        if (!sim.desktop || reducedMotion) sim.introDone = true;
       }
       const t = scaleT(rect.width);
       const titlePx = sim.desktop ? Math.max(30, 60 * t) : 30;

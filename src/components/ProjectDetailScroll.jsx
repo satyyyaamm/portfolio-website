@@ -243,15 +243,35 @@ function lerp(a, b, t) {
 }
 
 function titleMaxPx(vw) {
-  // Mobile entry title was oversized (~0.1*vw+100 ≈ 140px on phones).
-  if (vw <= 720) return Math.max(52, Math.min(76, vw * 0.175));
+  // Mobile entry title — keep inside the lower 50vh cream band / screen width.
+  if (vw <= 720) return Math.max(44, Math.min(58, vw * 0.14));
   return Math.max(64, Math.min(TITLE_FS_MAX_PX, 0.1 * vw + 100));
 }
 
 function titleMinPx(vw) {
   // Docked size — keep readable but tighter on narrow screens
-  if (vw <= 720) return Math.max(28, Math.min(36, vw * 0.08));
+  if (vw <= 720) return Math.max(26, Math.min(34, vw * 0.075));
   return Math.max(40, Math.min(TITLE_FS_MIN_PX, 0.045 * vw + 28));
+}
+
+/** Shrink --title-fs so mega lines fit maxW / maxH (avoids clip on 50/50 entry). */
+function fitTitleFs(float, slot, fs, minFs, maxW, maxH) {
+  float.style.setProperty('--title-fs', `${fs}px`);
+  if (slot) slot.style.setProperty('--title-fs', `${fs}px`);
+  const mega = float.querySelector('.project-detail__mega');
+  if (!mega) return fs;
+  const kind = float.querySelector('.project-detail__kind');
+  const w = mega.scrollWidth;
+  const h = mega.scrollHeight + (kind?.offsetHeight || 0) + 10;
+  let next = fs;
+  if (maxW > 0 && w > maxW) next = Math.min(next, fs * (maxW / w));
+  if (maxH > 0 && h > maxH) next = Math.min(next, fs * (maxH / h));
+  next = Math.max(minFs, next);
+  if (Math.abs(next - fs) > 0.4) {
+    float.style.setProperty('--title-fs', `${next}px`);
+    if (slot) slot.style.setProperty('--title-fs', `${next}px`);
+  }
+  return next;
 }
 
 /**
@@ -316,20 +336,18 @@ export function ProjectDetailScroll({
     let lenis = null;
 
     if (!reducedMotion && content instanceof HTMLElement) {
-      const narrow =
-        typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+      /* Match About Lenis — same touch sync / lerp so GL type doesn’t shake */
       lenis = new Lenis({
         wrapper: root,
         content,
         autoRaf: true,
-        lerp: narrow ? 0.14 : 0.09,
+        lerp: 0.085,
         smoothWheel: true,
-        /* Native touch on phones — syncTouch + GL rect sampling reads as jelly/flicker. */
-        syncTouch: !narrow,
-        syncTouchLerp: 0.075,
+        syncTouch: true,
+        syncTouchLerp: 0.07,
         touchInertiaExponent: 1.55,
         wheelMultiplier: 0.85,
-        touchMultiplier: narrow ? 1 : 1.35,
+        touchMultiplier: 1.3,
         overscroll: false,
       });
       lenisRef.current = lenis;
@@ -396,14 +414,24 @@ export function ProjectDetailScroll({
       }
 
       const shrinkT = dockT * dockT; // bias toward staying larger longer
-      const fs = lerp(titleMaxPx(vw), titleMinPx(vw), shrinkT);
+      const minFs = titleMinPx(vw);
+      let fs = lerp(titleMaxPx(vw), minFs, shrinkT);
+      const maxW = Math.min(vw * 0.88, stageBox.width * 0.88);
+      // Entry 50/50: keep the name inside the cream band (no clip into hero / edges)
+      const maxH = y < entryY ? vh * 0.42 : 0;
+      fs = fitTitleFs(float, slot, fs, minFs, maxW, maxH);
+      if (y < entryY) {
+        const bandH = vh * 0.5;
+        const nameH = float.offsetHeight || 0;
+        if (nameH > 0 && nameH > bandH - 16) {
+          top = entryY + Math.max(8, (bandH - nameH) * 0.5);
+        }
+      }
       float.style.top = `${top}px`;
       float.style.opacity = '1';
       float.style.setProperty('--title-dock', String(dockT));
-      float.style.setProperty('--title-fs', `${fs}px`);
       float.dataset.pinned = pinned ? 'true' : 'false';
       float.dataset.zone = y < entryY ? 'hero' : 'sheet';
-      slot.style.setProperty('--title-fs', `${fs}px`);
     };
 
     update();

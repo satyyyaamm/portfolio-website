@@ -503,7 +503,9 @@ function useContactBakes(scrollRef, enabled, contentKey) {
       const token = preferNear ? gen : ++gen;
       try {
         await (document.fonts?.ready || Promise.resolve());
-        await yieldIdle(preferNear ? 40 : 200);
+        const narrow =
+          typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+        await yieldIdle(preferNear ? (narrow ? 100 : 40) : narrow ? 320 : 200);
         if (dead || token !== gen) return;
 
         /* Stable keys — never wipe bendKey mid-frame */
@@ -611,7 +613,9 @@ function useContactBakes(scrollRef, enabled, contentKey) {
           } catch (err) {
             console.warn('Contact bake skipped', node.id, err);
           }
-          await yieldIdle(preferNear ? 16 : 24);
+          const narrowGap =
+            typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+          await yieldIdle(preferNear ? (narrowGap ? 64 : 16) : narrowGap ? 140 : 24);
         }
         if (!dead && token === gen) setBakes(bakesRef.current);
       } finally {
@@ -623,12 +627,17 @@ function useContactBakes(scrollRef, enabled, contentKey) {
       }
     };
 
-    /* Wait for hero rise + font-fit so bakes match settled layout */
-    const start = window.setTimeout(() => bakeQueue(false), 400);
+    /* Wait for hero rise + font-fit; phones defer longer so open isn't frozen */
+    const narrow =
+      typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
+    const start = window.setTimeout(
+      () => bakeQueue(Boolean(narrow)),
+      narrow ? 1400 : 400
+    );
     let scrollBakeTimer = 0;
     const onScrollBake = () => {
       window.clearTimeout(scrollBakeTimer);
-      scrollBakeTimer = window.setTimeout(() => bakeQueue(true), 90);
+      scrollBakeTimer = window.setTimeout(() => bakeQueue(true), narrow ? 180 : 90);
     };
     scrollEl.addEventListener('scroll', onScrollBake, { passive: true });
 

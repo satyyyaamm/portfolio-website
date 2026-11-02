@@ -31,6 +31,14 @@ export function AboutPage({
 }) {
   const scrollRef = useRef(null);
   const reducedMotion = useReducedMotion();
+  const [warpOn, setWarpOn] = useState(() =>
+    typeof window !== 'undefined' ? !window.matchMedia('(max-width: 720px)').matches : true
+  );
+  useEffect(() => {
+    if (warpOn) return undefined;
+    const t = window.setTimeout(() => setWarpOn(true), 700);
+    return () => window.clearTimeout(t);
+  }, [warpOn]);
   const [reelOpen, setReelOpen] = useState(false);
   const [ctaSwap, setCtaSwap] = useState(false);
   const [ctaIn, setCtaIn] = useState(Boolean(reducedMotion));
@@ -244,7 +252,7 @@ export function AboutPage({
         </div>
       </div>
 
-      <AboutSurfaceWarp scrollRef={scrollRef} contentKey={contentKey} />
+      {warpOn ? <AboutSurfaceWarp scrollRef={scrollRef} contentKey={contentKey} /> : null}
 
       <AugeChrome
         socialItems={socialItems}

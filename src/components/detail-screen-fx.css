@@ -3,20 +3,16 @@
   inset: 0;
   z-index: 2;
   pointer-events: none !important;
+  background: transparent !important;
+  /* Same compositing hints as About — keeps alpha text sharp over cream */
+  contain: strict;
+  transform: translateZ(0);
 }
 
-/* White title bake inverts against cream / photos (Auge / landing S).
-   Mobile keeps the DOM title instead — a 2nd WebGL + difference layer flickers on iOS. */
+/* White title bake inverts against cream / photos (Auge / landing S). */
 .detail-gl-stage--title {
   z-index: 5;
   mix-blend-mode: difference;
-}
-
-@media (max-width: 720px) {
-  /* No second title canvas on phones — DOM titles keep difference blend */
-  .detail-gl-stage--title {
-    display: none !important;
-  }
 }
 
 .detail-gl-stage__canvas {
@@ -24,6 +20,7 @@
   width: 100% !important;
   height: 100% !important;
   pointer-events: none !important;
+  background: transparent !important;
 }
 
 .project-open__scroll--gl {
@@ -73,7 +70,7 @@
   color: transparent !important;
 }
 
-/* Body copy ghosted while GL shows scroll bend */
+/* Body copy ghosted while GL shows scroll bend (About-style) */
 .project-detail .is-gl-text {
   opacity: 0 !important;
 }
@@ -99,14 +96,68 @@
 }
 
 @media (max-width: 720px) {
-  /* No invert on phones — keeps title colors stable over media GL */
+  /* No difference title canvas — body warp uses the media canvas (About pattern) */
+  .detail-gl-stage--title {
+    display: none !important;
+  }
+
+  /*
+    About stacking: scroll under, transparent GL above.
+    Body bakes ghost via .is-gl-text; alpha planes draw dark ink over cream.
+  */
+  .project-open__scroll {
+    z-index: 0;
+    background: #edeee5 !important;
+  }
+
+  .detail-gl-stage {
+    z-index: 2;
+  }
+
+  /* Phones keep gallery as live DOM (heroOnly) */
+  .project-detail--gl-ghost.project-detail--gl-shots .project-detail__shot img,
+  .project-detail--gl-ghost.project-detail--gl-next .project-detail__next-media img {
+    opacity: 1 !important;
+  }
+
+  .project-detail--gl-ghost .project-detail__shot,
+  .project-detail--gl-ghost.project-detail--gl-next .project-detail__next-media {
+    background: transparent !important;
+  }
+
+  /* Solid titles — no difference invert shifting colors */
   .project-open__detail-stage--gl .project-detail__title-float {
     color: #000;
     mix-blend-mode: normal;
   }
 
-  .project-open__detail-stage--gl .project-detail__title-hero {
+  /* Top hero title — same difference invert as the S logo over the photo */
+  .project-open__detail-stage--gl .project-detail__title-hero,
+  .project-detail__title-hero {
     color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  /* Logo always difference-blends over hero / cream / GL */
+  .project-open--detail .project-open__mark {
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  /* Footer copy stays solid on phones (avoids washing body type) */
+  .project-open--detail .project-open__desk-copy {
+    color: #000;
     mix-blend-mode: normal;
+  }
+
+  /* Live ink until bake lands — then .is-gl-text ghosts and GL takes over */
+  .project-detail__intro,
+  .project-detail__section-label,
+  .project-detail__feature-list li,
+  .project-detail__year,
+  .project-detail__info-year,
+  .project-detail__info-mid,
+  .project-detail__info-end {
+    color: #111 !important;
   }
 }

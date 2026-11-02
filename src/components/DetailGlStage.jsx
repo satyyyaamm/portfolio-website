@@ -85,12 +85,17 @@ function DetailScene({
   measureCopy = true,
   /** 'media' = photos, 'title' = mega name (difference canvas), 'all' */
   layer = 'all',
+  /** Phones: hero only — sheet text/gallery stay DOM above the canvas */
+  heroOnly = false,
   onMediaReady,
   onShotsReady,
   onNextReady,
 }) {
   const readySent = useRef(false);
   const scrollSampleRef = useRef({ top: null, vel: 0 });
+  const bendElsRef = useRef([]);
+  const stageRef = useRef(null);
+  const measureTick = useRef(0);
   const { size, gl } = useThree();
   const [heroTex, setHeroTex] = useState(null);
   const [shotTex, setShotTex] = useState(() => new Map());
@@ -98,8 +103,18 @@ function DetailScene({
   const [fontsReady, setFontsReady] = useState(0);
 
   useLayoutEffect(() => {
-    gl.setClearColor(0xedeee5, 0);
+    // Fully transparent clear — RGB cream + 0 alpha can composite as a wash on iOS.
+    gl.setClearColor(0x000000, 0);
+    if (gl.domElement) gl.domElement.style.background = 'transparent';
   }, [gl]);
+
+  /* Cache bend targets like About — querySelectorAll every frame shakes type */
+  useLayoutEffect(() => {
+    const scrollEl = scrollRef?.current;
+    const stage = scrollEl?.closest('.project-open__detail-stage') || null;
+    stageRef.current = stage;
+    bendElsRef.current = stage ? [...stage.querySelectorAll('[data-bend-key]')] : [];
+  }, [scrollRef, copyBakes, measureCopy]);
 
   useEffect(() => {
     let alive = true;
@@ -319,13 +334,19 @@ function DetailScene({
     const speed = Math.hypot(m.x - m.px, m.y - m.py) / Math.max(dt, 0.001);
     m.px = m.x;
     m.py = m.y;
+    // Same mouse mess curve as About — quiet when still so type doesn’t jitter
+    const moving = speed > 28;
     const targetStrength =
-      m.inside && !reducedMotion ? Math.min(0.1615, 0.0323 + speed * 0.000226) : 0;
-    m.strength += (targetStrength - m.strength) * (m.inside ? 0.16 : 0.07);
+      m.inside && !reducedMotion && moving
+        ? Math.min(0.1615, 0.0323 + speed * 0.000226)
+        : m.inside && !reducedMotion
+          ? Math.min(0.05, speed * 0.0001)
+          : 0;
+    m.strength += (targetStrength - m.strength) * (m.inside ? 0.16 : 0.1);
 
+    const sample = scrollSampleRef.current;
     if (layer !== 'title') {
       const scroller = scrollRef?.current;
-      const sample = scrollSampleRef.current;
       if (scroller) {
         const top = scroller.scrollTop;
         if (sample.top == null) {
@@ -343,8 +364,14 @@ function DetailScene({
     }
 
     const scrollEl = scrollRef?.current;
-    const stage = scrollEl?.closest('.project-open__detail-stage');
+    const stage = stageRef.current || scrollEl?.closest('.project-open__detail-stage');
     if (!scrollEl || !stage) return;
+
+    // About: idle measures every 2nd frame — cuts subpixel shake when parked
+    const busy = Math.abs(sample.vel) > 6 || m.strength > 0.01 || moving;
+    measureTick.current += 1;
+    if (!busy && measureTick.current % 2 !== 0) return;
+
     const stageBox = stage.getBoundingClientRect();
 
     if (layer !== 'title') {
@@ -363,37 +390,44 @@ function DetailScene({
       }
       heroRectRef.current = heroBox;
 
-      const figs = scrollEl.querySelectorAll('.project-detail__shot');
-      figs.forEach((fig, i) => {
-        if (!shotRectRefs.current[i]) shotRectRefs.current[i] = { current: null };
-        const box = measure(fig, stageBox);
-        if (box) {
-          const raw = parseFloat(fig.style.getPropertyValue('--gl-reveal'));
-          box.reveal = Number.isFinite(raw) ? raw : fig.dataset.reveal ? 0 : 1;
-          box.revealSide = fig.dataset.reveal === 'right' ? 'right' : 'left';
-        }
-        shotRectRefs.current[i].current = box;
-      });
+      if (heroOnly) {
+        shotRectRefs.current.forEach((ref) => {
+          if (ref) ref.current = null;
+        });
+        if (nextRectRef) nextRectRef.current = null;
+      } else {
+        const figs = scrollEl.querySelectorAll('.project-detail__shot');
+        figs.forEach((fig, i) => {
+          if (!shotRectRefs.current[i]) shotRectRefs.current[i] = { current: null };
+          const box = measure(fig, stageBox);
+          if (box) {
+            const raw = parseFloat(fig.style.getPropertyValue('--gl-reveal'));
+            box.reveal = Number.isFinite(raw) ? raw : fig.dataset.reveal ? 0 : 1;
+            box.revealSide = fig.dataset.reveal === 'right' ? 'right' : 'left';
+          }
+          shotRectRefs.current[i].current = box;
+        });
 
-      if (nextRectRef) {
-        const nextEl = scrollEl.querySelector('.project-detail__next-media');
-        const nextHit = scrollEl.querySelector('.project-detail__next-hit');
-        let nextBox = measure(nextEl, stageBox);
-        const hot =
-          nextEl?.matches(':hover') || nextHit?.matches(':hover, :focus-visible');
-        if (nextBox && hot) {
-          const s = 1.04;
-          const cx = nextBox.left + nextBox.width * 0.5;
-          const cy = nextBox.top + nextBox.height * 0.5;
-          nextBox = {
-            ...nextBox,
-            width: nextBox.width * s,
-            height: nextBox.height * s,
-            left: cx - (nextBox.width * s) * 0.5,
-            top: cy - (nextBox.height * s) * 0.5,
-          };
+        if (nextRectRef) {
+          const nextEl = scrollEl.querySelector('.project-detail__next-media');
+          const nextHit = scrollEl.querySelector('.project-detail__next-hit');
+          let nextBox = measure(nextEl, stageBox);
+          const hot =
+            nextEl?.matches(':hover') || nextHit?.matches(':hover, :focus-visible');
+          if (nextBox && hot) {
+            const s = 1.04;
+            const cx = nextBox.left + nextBox.width * 0.5;
+            const cy = nextBox.top + nextBox.height * 0.5;
+            nextBox = {
+              ...nextBox,
+              width: nextBox.width * s,
+              height: nextBox.height * s,
+              left: cx - (nextBox.width * s) * 0.5,
+              top: cy - (nextBox.height * s) * 0.5,
+            };
+          }
+          nextRectRef.current = nextBox;
         }
-        nextRectRef.current = nextBox;
       }
     }
 
@@ -438,15 +472,17 @@ function DetailScene({
       }
     }
 
-    if (measureCopy && layer !== 'title') {
-      stage.querySelectorAll('[data-bend-key]').forEach((el) => {
+    if (measureCopy && layer !== 'title' && copyRectsRef) {
+      const els = bendElsRef.current;
+      for (let i = 0; i < els.length; i += 1) {
+        const el = els[i];
         const id = el.dataset.bendKey;
-        if (!id || !copyRectsRef) return;
+        if (!id) continue;
         if (!copyRectsRef.current[id]) copyRectsRef.current[id] = { current: null };
         const box = measure(el, stageBox);
         if (box) box.suppress = el.dataset.glLive === '1';
         copyRectsRef.current[id].current = box;
-      });
+      }
     }
   });
 
@@ -469,7 +505,7 @@ function DetailScene({
           segments={mediaSegments}
         />
       ) : null}
-      {showMedia
+      {showMedia && !heroOnly
         ? shots.map((src, i) => {
             const tex = shotTex.get(src);
             if (!tex) return null;
@@ -490,7 +526,7 @@ function DetailScene({
             );
           })
         : null}
-      {showMedia && nextTex && nextRectRef ? (
+      {showMedia && !heroOnly && nextTex && nextRectRef ? (
         <DistortSurface
           texture={nextTex}
           rectRef={nextRectRef}
@@ -543,6 +579,7 @@ function DetailScene({
                   reducedMotion={reducedMotion}
                   mode="alpha"
                   depthWrite={false}
+                  segments={[24, 32]}
                 />
               );
             })
@@ -582,10 +619,27 @@ export function DetailGlStage({
 }) {
   const reducedMotion = useReducedMotion();
   const narrow = useIsNarrowDetail(720);
-  /* Media distort on all sizes. Title/copy GL stays desktop-only (iOS dual-canvas flicker). */
+  /*
+    Media + body copy warp on all sizes (About-style alpha text over cream).
+    Title difference canvas stays desktop-only — that path washed iOS type.
+  */
   const enabled = Boolean(active) && !reducedMotion;
   const titleFxOn = Boolean(titleFx) && !narrow;
-  const copyFxOn = Boolean(copyFx) && !narrow;
+  /* Phones: defer text bakes so scroll/touch work immediately on open */
+  const [copyAllowed, setCopyAllowed] = useState(() => !narrow);
+  useEffect(() => {
+    if (!narrow) {
+      setCopyAllowed(true);
+      return undefined;
+    }
+    setCopyAllowed(false);
+    if (!enabled || !copyFx) return undefined;
+    const t = window.setTimeout(() => setCopyAllowed(true), 1200);
+    return () => window.clearTimeout(t);
+  }, [narrow, enabled, copyFx, project?.id, project?.name]);
+  const copyFxOn = Boolean(copyFx) && copyAllowed;
+  /* Phones: hero photo in GL; gallery stays DOM to keep one light context */
+  const heroOnly = narrow;
   const [mediaReady, setMediaReady] = useState(false);
   const [shotsReady, setShotsReady] = useState(false);
   const [nextReady, setNextReady] = useState(!nextSrc);
@@ -626,25 +680,37 @@ export function DetailGlStage({
     edgeAxis: 'tb',
     edgeWidth: 0.42,
     edgeRefractMul: 0,
-    scrollBendVh: 0.12,
+    scrollBendVh: 0.06,
+    scrollBendSpeed: 1200,
+    scrollBendEase: 0.032,
+    scrollBendTop: 1,
   });
-  // Body / next-project type: same mouse mess + bend; edge liquid still off
+  // Body copy — mirror AboutSurfaceWarp params (soft ease kills shake)
   const copyParamsRef = useRef({
     spreadPct: 60,
     strengthPct: 200,
     edgeAxis: 'tb',
     edgeWidth: 0.42,
     edgeRefractMul: 0,
-    scrollBendVh: 0.12,
+    scrollBendVh: 0.06,
+    scrollBendSpeed: 1200,
+    scrollBendEase: 0.032,
+    scrollBendTop: 1,
   });
-  /* Slightly lighter edge/bend on phones — still readable while scrolling */
+  /* Photos can stay a bit livelier; type always uses About soft bend */
   useEffect(() => {
     const edge = narrow ? 52 : 72;
-    const bend = narrow ? 0.1 : 0.12;
+    const photoBend = narrow ? 0.1 : 0.12;
     paramsRef.current.edgeRefractMul = edge;
-    paramsRef.current.scrollBendVh = bend;
-    textParamsRef.current.scrollBendVh = bend;
-    copyParamsRef.current.scrollBendVh = bend;
+    paramsRef.current.scrollBendVh = photoBend;
+    paramsRef.current.scrollBendEase = narrow ? 0.1 : 0.16;
+    textParamsRef.current.scrollBendVh = 0.06;
+    textParamsRef.current.scrollBendSpeed = 1200;
+    textParamsRef.current.scrollBendEase = 0.032;
+    copyParamsRef.current.scrollBendVh = 0.06;
+    copyParamsRef.current.scrollBendSpeed = 1200;
+    copyParamsRef.current.scrollBendEase = 0.032;
+    copyParamsRef.current.edgeRefractMul = 0;
   }, [narrow]);
   const { bakes: copyBakes, rectsRef: copyRectsRef } = useDetailCopyBakes({
     scrollRef,
@@ -712,18 +778,18 @@ export function DetailGlStage({
   }, [enabled, mediaReady, scrollRef]);
 
   useEffect(() => {
-    if (!enabled || !mediaReady || !shotsReady) return undefined;
+    if (!enabled || !mediaReady || !shotsReady || heroOnly) return undefined;
     const detail = scrollRef?.current?.querySelector('.project-detail');
     detail?.classList.add('project-detail--gl-shots');
     return () => detail?.classList.remove('project-detail--gl-shots');
-  }, [enabled, mediaReady, shotsReady, scrollRef]);
+  }, [enabled, mediaReady, shotsReady, heroOnly, scrollRef]);
 
   useEffect(() => {
-    if (!enabled || !mediaReady || !nextReady) return undefined;
+    if (!enabled || !mediaReady || !nextReady || heroOnly) return undefined;
     const detail = scrollRef?.current?.querySelector('.project-detail');
     detail?.classList.add('project-detail--gl-next');
     return () => detail?.classList.remove('project-detail--gl-next');
-  }, [enabled, mediaReady, nextReady, scrollRef]);
+  }, [enabled, mediaReady, nextReady, heroOnly, scrollRef]);
 
   useEffect(() => {
     if (!enabled || !titleFxOn) return undefined;
@@ -758,23 +824,31 @@ export function DetailGlStage({
     mediaSegments,
     measureTitle: titleFxOn,
     measureCopy: copyFxOn,
+    heroOnly,
   };
 
+  /* Match About: retina DPR + antialias so baked body type stays sharp when warped */
   const mediaCanvasProps = {
     orthographic: true,
-    dpr: narrow ? 1 : [1, 1.25],
+    flat: true,
+    linear: true,
+    dpr: [1, 2],
     camera: { position: [0, 0, 400], near: 0.1, far: 4000 },
     gl: {
       alpha: true,
-      antialias: false,
+      antialias: true,
       powerPreference: narrow ? 'default' : 'high-performance',
       premultipliedAlpha: false,
     },
-    style: { pointerEvents: 'none' },
+    style: { pointerEvents: 'none', background: 'transparent' },
   };
   const titleCanvasProps = {
     ...mediaCanvasProps,
-    dpr: 1,
+    dpr: [1, 1.5],
+    gl: {
+      ...mediaCanvasProps.gl,
+      antialias: false,
+    },
   };
 
   return (

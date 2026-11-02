@@ -192,6 +192,14 @@ export function ContactPage({
   onOpenAbout,
 }) {
   const scrollRef = useRef(null);
+  const [warpOn, setWarpOn] = useState(() =>
+    typeof window !== 'undefined' ? !window.matchMedia('(max-width: 720px)').matches : true
+  );
+  useEffect(() => {
+    if (warpOn) return undefined;
+    const t = window.setTimeout(() => setWarpOn(true), 700);
+    return () => window.clearTimeout(t);
+  }, [warpOn]);
   const lockupRef = useRef(null);
   const reducedMotion = useReducedMotion();
   const media = useMemo(() => contactMediaFromProjects(projects), [projects]);
@@ -424,7 +432,7 @@ export function ContactPage({
         </div>
       </div>
 
-      {riseDone && fitTick > 0 ? (
+      {riseDone && fitTick > 0 && warpOn ? (
         <ContactSurfaceWarp scrollRef={scrollRef} contentKey={contentKey} />
       ) : null}
 

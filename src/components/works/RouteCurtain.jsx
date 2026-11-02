@@ -31,10 +31,13 @@ export function RouteCurtain({ active, label = '', onCovered, onDone }) {
   onCoveredRef.current = onCovered;
   onDoneRef.current = onDone;
 
-  const editorial = EDITORIAL.has(String(label).toUpperCase());
-  const inMs = editorial ? HOME_CURTAIN_IN_MS : PAGE_IN_MS;
-  const holdMs = editorial ? HOME_HOLD_MS : PAGE_HOLD_MS;
-  const outMs = editorial ? HOME_CURTAIN_OUT_MS : PAGE_OUT_MS;
+  const labelKey = String(label).toUpperCase();
+  const editorial = EDITORIAL.has(labelKey);
+  /* Long home close only for HOME — WORKS/ABOUT/CONTACT use the snappy page curtain */
+  const homeClose = labelKey === 'HOME';
+  const inMs = homeClose ? HOME_CURTAIN_IN_MS : PAGE_IN_MS;
+  const holdMs = homeClose ? HOME_HOLD_MS : PAGE_HOLD_MS;
+  const outMs = homeClose ? HOME_CURTAIN_OUT_MS : PAGE_OUT_MS;
 
   useEffect(() => {
     if (!active) {
@@ -74,7 +77,11 @@ export function RouteCurtain({ active, label = '', onCovered, onDone }) {
   return createPortal(
     <div
       className={`project-open${editorial ? ' project-open--home' : ''}`}
-      style={{ zIndex: 200, pointerEvents: phase === 'idle' ? 'none' : 'auto' }}
+      style={{
+        zIndex: 200,
+        // After cover, page is live underneath — don’t trap scroll while yellow lifts
+        pointerEvents: phase === 'in' ? 'auto' : 'none',
+      }}
       aria-hidden
     >
       <motion.div

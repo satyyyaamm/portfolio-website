@@ -581,27 +581,31 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   justify-self: start;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.45rem;
   max-width: 16rem;
   min-width: 0;
+  text-align: center;
 }
 
 .project-detail__next-name {
   display: flex;
   flex-direction: column;
+  align-items: center;
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: clamp(1.35rem, 2.8vw, 2.35rem);
   line-height: 0.92;
   letter-spacing: -0.04em;
   text-transform: uppercase;
+  text-align: center;
   color: #111;
 }
 
 .project-detail__next-name-line {
   display: block;
   white-space: nowrap;
+  text-align: center;
 }
 
 .project-detail__next-kind {
@@ -609,6 +613,7 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  text-align: center;
   color: #111;
 }
 
@@ -626,13 +631,18 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   .project-detail__next-hit {
     grid-template-columns: 1fr;
     gap: 1rem;
-    text-align: left;
+    text-align: center;
   }
 
   .project-detail__next-label,
   .project-detail__next-copy,
   .project-detail__next-media {
     justify-self: center;
+  }
+
+  .project-detail__next-copy {
+    align-items: center;
+    text-align: center;
   }
 
   .project-detail__next-media {
@@ -720,11 +730,31 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   .project-detail__title-float {
     color: var(--detail-ink);
     mix-blend-mode: normal;
+    max-width: min(88vw, 100%);
+    box-sizing: border-box;
   }
 
+  .project-detail__title-slot {
+    max-width: min(88vw, 100%);
+  }
+
+  .project-detail__title-float .project-detail__mega,
+  .project-detail__title-slot .project-detail__mega,
+  .project-detail__title-float .project-detail__mega-line,
+  .project-detail__title-slot .project-detail__mega-line {
+    max-width: 100%;
+  }
+
+  /* Entry cream band — contain the name so it doesn’t spill into the hero half */
+  .project-detail__band {
+    overflow: hidden;
+    padding-inline: 0.5rem;
+  }
+
+  /* Full-bleed hero title blends like the logo */
   .project-detail__title-hero {
     color: #fff;
-    mix-blend-mode: normal;
+    mix-blend-mode: difference;
   }
 }
 
