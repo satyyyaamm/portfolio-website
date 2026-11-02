@@ -316,17 +316,20 @@ export function ProjectDetailScroll({
     let lenis = null;
 
     if (!reducedMotion && content instanceof HTMLElement) {
+      const narrow =
+        typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches;
       lenis = new Lenis({
         wrapper: root,
         content,
         autoRaf: true,
-        lerp: 0.09,
+        lerp: narrow ? 0.14 : 0.09,
         smoothWheel: true,
-        syncTouch: true,
+        /* Native touch on phones — syncTouch + GL rect sampling reads as jelly/flicker. */
+        syncTouch: !narrow,
         syncTouchLerp: 0.075,
         touchInertiaExponent: 1.55,
         wheelMultiplier: 0.85,
-        touchMultiplier: 1.35,
+        touchMultiplier: narrow ? 1 : 1.35,
         overscroll: false,
       });
       lenisRef.current = lenis;

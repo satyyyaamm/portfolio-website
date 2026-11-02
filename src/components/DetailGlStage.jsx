@@ -80,6 +80,9 @@ function DetailScene({
   copyBakes,
   copyRectsRef,
   reducedMotion,
+  mediaSegments = [32, 48],
+  measureTitle = true,
+  measureCopy = true,
   /** 'media' = photos, 'title' = mega name (difference canvas), 'all' */
   layer = 'all',
   onMediaReady,
@@ -344,88 +347,94 @@ function DetailScene({
     if (!scrollEl || !stage) return;
     const stageBox = stage.getBoundingClientRect();
 
-    heroRectRef.current = measure(scrollEl.querySelector('.project-detail__hero'), stageBox);
+    if (layer !== 'title') {
+      heroRectRef.current = measure(scrollEl.querySelector('.project-detail__hero'), stageBox);
 
-    const figs = scrollEl.querySelectorAll('.project-detail__shot');
-    figs.forEach((fig, i) => {
-      if (!shotRectRefs.current[i]) shotRectRefs.current[i] = { current: null };
-      const box = measure(fig, stageBox);
-      if (box) {
-        const raw = parseFloat(fig.style.getPropertyValue('--gl-reveal'));
-        box.reveal = Number.isFinite(raw) ? raw : fig.dataset.reveal ? 0 : 1;
-        box.revealSide = fig.dataset.reveal === 'right' ? 'right' : 'left';
-      }
-      shotRectRefs.current[i].current = box;
-    });
+      const figs = scrollEl.querySelectorAll('.project-detail__shot');
+      figs.forEach((fig, i) => {
+        if (!shotRectRefs.current[i]) shotRectRefs.current[i] = { current: null };
+        const box = measure(fig, stageBox);
+        if (box) {
+          const raw = parseFloat(fig.style.getPropertyValue('--gl-reveal'));
+          box.reveal = Number.isFinite(raw) ? raw : fig.dataset.reveal ? 0 : 1;
+          box.revealSide = fig.dataset.reveal === 'right' ? 'right' : 'left';
+        }
+        shotRectRefs.current[i].current = box;
+      });
 
-    if (nextRectRef) {
-      const nextEl = scrollEl.querySelector('.project-detail__next-media');
-      const nextHit = scrollEl.querySelector('.project-detail__next-hit');
-      let nextBox = measure(nextEl, stageBox);
-      const hot =
-        nextEl?.matches(':hover') || nextHit?.matches(':hover, :focus-visible');
-      if (nextBox && hot) {
-        const s = 1.04;
-        const cx = nextBox.left + nextBox.width * 0.5;
-        const cy = nextBox.top + nextBox.height * 0.5;
-        nextBox = {
-          ...nextBox,
-          width: nextBox.width * s,
-          height: nextBox.height * s,
-          left: cx - (nextBox.width * s) * 0.5,
-          top: cy - (nextBox.height * s) * 0.5,
-        };
+      if (nextRectRef) {
+        const nextEl = scrollEl.querySelector('.project-detail__next-media');
+        const nextHit = scrollEl.querySelector('.project-detail__next-hit');
+        let nextBox = measure(nextEl, stageBox);
+        const hot =
+          nextEl?.matches(':hover') || nextHit?.matches(':hover, :focus-visible');
+        if (nextBox && hot) {
+          const s = 1.04;
+          const cx = nextBox.left + nextBox.width * 0.5;
+          const cy = nextBox.top + nextBox.height * 0.5;
+          nextBox = {
+            ...nextBox,
+            width: nextBox.width * s,
+            height: nextBox.height * s,
+            left: cx - (nextBox.width * s) * 0.5,
+            top: cy - (nextBox.height * s) * 0.5,
+          };
+        }
+        nextRectRef.current = nextBox;
       }
-      nextRectRef.current = nextBox;
     }
 
     // Mega scales to the live mega box; kind is 1:1 with the live kind box (hero-sized).
-    const megaEl =
-      stage.querySelector('.project-detail__title-float .project-detail__mega') ||
-      scrollEl.querySelector('.project-detail__title-slot .project-detail__mega');
-    const kindEl =
-      stage.querySelector('.project-detail__title-float .project-detail__kind') ||
-      scrollEl.querySelector('.project-detail__title-slot .project-detail__kind');
-    const megaBox = measure(megaEl, stageBox);
-    const titleBakeSize = titleBakeSizeRef.current;
-    if (megaBox && titleBakeSize?.height > 0) {
-      const scale = megaBox.height / titleBakeSize.height;
-      const w = titleBakeSize.width * scale;
-      const h = titleBakeSize.height * scale;
-      titleRectRef.current = {
-        left: megaBox.left + (megaBox.width - w) * 0.5,
-        top: megaBox.top,
-        width: w,
-        height: h,
-      };
-    } else {
-      titleRectRef.current = megaBox;
+    if (measureTitle && (layer === 'title' || layer === 'all')) {
+      const megaEl =
+        stage.querySelector('.project-detail__title-float .project-detail__mega') ||
+        scrollEl.querySelector('.project-detail__title-slot .project-detail__mega');
+      const kindEl =
+        stage.querySelector('.project-detail__title-float .project-detail__kind') ||
+        scrollEl.querySelector('.project-detail__title-slot .project-detail__kind');
+      const megaBox = measure(megaEl, stageBox);
+      const titleBakeSize = titleBakeSizeRef.current;
+      if (megaBox && titleBakeSize?.height > 0) {
+        const scale = megaBox.height / titleBakeSize.height;
+        const w = titleBakeSize.width * scale;
+        const h = titleBakeSize.height * scale;
+        titleRectRef.current = {
+          left: megaBox.left + (megaBox.width - w) * 0.5,
+          top: megaBox.top,
+          width: w,
+          height: h,
+        };
+      } else {
+        titleRectRef.current = megaBox;
+      }
+
+      const kindBox = measure(kindEl, stageBox);
+      const kindBakeSize = kindBakeSizeRef.current;
+      if (kindBox && kindBakeSize?.width > 0 && kindRectRef) {
+        // Keep baked kind at its native CSS px — center on the live kind box
+        const w = kindBakeSize.width;
+        const h = kindBakeSize.height;
+        kindRectRef.current = {
+          left: kindBox.left + (kindBox.width - w) * 0.5,
+          top: kindBox.top + (kindBox.height - h) * 0.5,
+          width: w,
+          height: h,
+        };
+      } else if (kindRectRef) {
+        kindRectRef.current = kindBox;
+      }
     }
 
-    const kindBox = measure(kindEl, stageBox);
-    const kindBakeSize = kindBakeSizeRef.current;
-    if (kindBox && kindBakeSize?.width > 0 && kindRectRef) {
-      // Keep baked kind at its native CSS px — center on the live kind box
-      const w = kindBakeSize.width;
-      const h = kindBakeSize.height;
-      kindRectRef.current = {
-        left: kindBox.left + (kindBox.width - w) * 0.5,
-        top: kindBox.top + (kindBox.height - h) * 0.5,
-        width: w,
-        height: h,
-      };
-    } else if (kindRectRef) {
-      kindRectRef.current = kindBox;
+    if (measureCopy && layer !== 'title') {
+      stage.querySelectorAll('[data-bend-key]').forEach((el) => {
+        const id = el.dataset.bendKey;
+        if (!id || !copyRectsRef) return;
+        if (!copyRectsRef.current[id]) copyRectsRef.current[id] = { current: null };
+        const box = measure(el, stageBox);
+        if (box) box.suppress = el.dataset.glLive === '1';
+        copyRectsRef.current[id].current = box;
+      });
     }
-
-    stage.querySelectorAll('[data-bend-key]').forEach((el) => {
-      const id = el.dataset.bendKey;
-      if (!id || !copyRectsRef) return;
-      if (!copyRectsRef.current[id]) copyRectsRef.current[id] = { current: null };
-      const box = measure(el, stageBox);
-      if (box) box.suppress = el.dataset.glLive === '1';
-      copyRectsRef.current[id].current = box;
-    });
   });
 
   const showMedia = layer === 'all' || layer === 'media';
@@ -444,6 +453,7 @@ function DetailScene({
           reducedMotion={reducedMotion}
           mode="cover"
           depthWrite={false}
+          segments={mediaSegments}
         />
       ) : null}
       {showMedia
@@ -462,6 +472,7 @@ function DetailScene({
                 reducedMotion={reducedMotion}
                 mode="cover"
                 depthWrite={false}
+                segments={mediaSegments}
               />
             );
           })
@@ -476,6 +487,7 @@ function DetailScene({
           reducedMotion={reducedMotion}
           mode="cover"
           depthWrite={false}
+          segments={mediaSegments}
         />
       ) : null}
       {showTitle && titleBake?.texture ? (
@@ -530,6 +542,21 @@ function DetailScene({
  * WebGL: hero + gallery + next thumb + mega title + body copy scroll bend.
  * `titleFx` / `copyFx` stay off during the yellow % hold so load stays smooth.
  */
+function useIsNarrowDetail(max = 720) {
+  const [narrow, setNarrow] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${max}px)`).matches : false
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const mq = window.matchMedia(`(max-width: ${max}px)`);
+    const onChange = () => setNarrow(mq.matches);
+    onChange();
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, [max]);
+  return narrow;
+}
+
 export function DetailGlStage({
   scrollRef,
   project,
@@ -541,7 +568,11 @@ export function DetailGlStage({
   copyFx = true,
 }) {
   const reducedMotion = useReducedMotion();
+  const narrow = useIsNarrowDetail(720);
   const enabled = Boolean(active) && !reducedMotion;
+  /* Phones: one media canvas only — no difference title layer / body text bakes. */
+  const titleFxOn = Boolean(titleFx) && !narrow;
+  const copyFxOn = Boolean(copyFx) && !narrow;
   const [mediaReady, setMediaReady] = useState(false);
   const [shotsReady, setShotsReady] = useState(false);
   const [nextReady, setNextReady] = useState(!nextSrc);
@@ -593,9 +624,18 @@ export function DetailGlStage({
     edgeRefractMul: 0,
     scrollBendVh: 0.12,
   });
+  /* Softer edge/bend on phones — less liquid while scrolling under sticky layout */
+  useEffect(() => {
+    const edge = narrow ? 36 : 72;
+    const bend = narrow ? 0.06 : 0.12;
+    paramsRef.current.edgeRefractMul = edge;
+    paramsRef.current.scrollBendVh = bend;
+    textParamsRef.current.scrollBendVh = bend;
+    copyParamsRef.current.scrollBendVh = bend;
+  }, [narrow]);
   const { bakes: copyBakes, rectsRef: copyRectsRef } = useDetailCopyBakes({
     scrollRef,
-    enabled: enabled && mediaReady && copyFx,
+    enabled: enabled && mediaReady && copyFxOn,
     projectKey: project?.id || project?.name || '',
   });
   const heroRectRef = useRef(null);
@@ -673,14 +713,16 @@ export function DetailGlStage({
   }, [enabled, mediaReady, nextReady, scrollRef]);
 
   useEffect(() => {
-    if (!enabled || !titleFx) return undefined;
+    if (!enabled || !titleFxOn) return undefined;
     const stage =
       scrollRef?.current?.closest('.project-open__detail-stage') || scrollRef?.current?.parentElement;
     stage?.classList.add('project-open__detail-stage--gl-title');
     return () => stage?.classList.remove('project-open__detail-stage--gl-title');
-  }, [enabled, titleFx, scrollRef]);
+  }, [enabled, titleFxOn, scrollRef]);
 
   if (!enabled) return null;
+
+  const mediaSegments = narrow ? [16, 24] : [32, 48];
 
   const sharedScene = {
     scrollRef,
@@ -700,16 +742,19 @@ export function DetailGlStage({
     copyBakes,
     copyRectsRef,
     reducedMotion: Boolean(reducedMotion),
+    mediaSegments,
+    measureTitle: titleFxOn,
+    measureCopy: copyFxOn,
   };
 
   const mediaCanvasProps = {
     orthographic: true,
-    dpr: [1, 1.25],
+    dpr: narrow ? 1 : [1, 1.25],
     camera: { position: [0, 0, 400], near: 0.1, far: 4000 },
     gl: {
       alpha: true,
       antialias: false,
-      powerPreference: 'high-performance',
+      powerPreference: narrow ? 'default' : 'high-performance',
       premultipliedAlpha: false,
     },
     style: { pointerEvents: 'none' },
@@ -741,8 +786,8 @@ export function DetailGlStage({
           />
         </Canvas>
       </div>
-      {/* Title difference canvas — deferred past yellow % hold */}
-      {titleFx ? (
+      {/* Title difference canvas — desktop only (iOS mix-blend + 2nd context flickers) */}
+      {titleFxOn ? (
         <div className="detail-gl-stage detail-gl-stage--title" aria-hidden>
           <Canvas className="detail-gl-stage__canvas" {...titleCanvasProps}>
             <DetailScene {...sharedScene} layer="title" />

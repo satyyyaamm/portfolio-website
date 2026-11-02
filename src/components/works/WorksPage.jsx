@@ -66,6 +66,7 @@ export function WorksPage({
             dragRef={dragRef}
             glRectsRef={glRectsRef}
             reducedMotion={Boolean(reducedMotion)}
+            paused={paused}
           />
         </WorksCarousel>
       </div>

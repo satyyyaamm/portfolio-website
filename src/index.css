@@ -2425,9 +2425,18 @@ body.site-loader-active .site-loader-main {
   overflow: hidden;
 }
 
+.journey-root.is-case-open .auge-stage,
 .journey-root.is-about .auge-stage,
 .journey-root.is-contact .auge-stage,
 .journey-root.is-works-index .auge-stage {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Case overlay sits on top — freeze / hide underlying route GL */
+.journey-root.is-case-open .works-page,
+.journey-root.is-case-open .about-page,
+.journey-root.is-case-open .contact-page {
   visibility: hidden;
   pointer-events: none;
 }

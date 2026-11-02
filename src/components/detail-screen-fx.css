@@ -5,10 +5,17 @@
   pointer-events: none !important;
 }
 
-/* White title bake inverts against cream / photos (Auge / landing S) */
+/* White title bake inverts against cream / photos (Auge / landing S).
+   Mobile keeps the DOM title instead — a 2nd WebGL + difference layer flickers on iOS. */
 .detail-gl-stage--title {
   z-index: 5;
   mix-blend-mode: difference;
+}
+
+@media (max-width: 720px) {
+  .detail-gl-stage--title {
+    display: none;
+  }
 }
 
 .detail-gl-stage__canvas {

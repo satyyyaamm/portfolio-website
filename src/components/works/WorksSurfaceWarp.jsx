@@ -313,12 +313,13 @@ export function WorksSurfaceWarp({
   dragRef,
   glRectsRef,
   reducedMotion = false,
+  paused = false,
 }) {
   if (reducedMotion || !projects.length) return null;
   return (
     <div className="works-warp" aria-hidden>
       <Canvas
-        frameloop="always"
+        frameloop={paused ? 'never' : 'always'}
         orthographic
         flat
         linear

@@ -1444,6 +1444,8 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
         orthographic
         flat
         linear
+        /* Stop the RAF loop while a case/route covers the strip — frees GPU on phones. */
+        frameloop={stripPaused ? 'never' : 'always'}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance', premultipliedAlpha: false }}
         style={{ width: '100%', height: '100%', display: 'block', background: 'transparent' }}
