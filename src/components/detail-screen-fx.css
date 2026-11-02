@@ -138,16 +138,19 @@
     mix-blend-mode: difference;
   }
 
-  /* Logo always difference-blends over hero / cream / GL */
-  .project-open--detail .project-open__mark {
-    color: #fff;
-    mix-blend-mode: difference;
+  /* Logo + footer always difference-blend like landing chrome */
+  .project-open--detail .project-open__mark,
+  .project-open--detail .project-open__desk-copy,
+  .project-open--detail .project-open__desk-socials {
+    color: #fff !important;
+    mix-blend-mode: difference !important;
   }
 
-  /* Footer copy stays solid on phones (avoids washing body type) */
-  .project-open--detail .project-open__desk-copy {
-    color: #000;
-    mix-blend-mode: normal;
+  .project-open--detail .project-open__desk-sound,
+  .project-open--detail .project-open__desk-socials a {
+    color: inherit !important;
+    mix-blend-mode: normal !important;
+    background: transparent !important;
   }
 
   /* Live ink until bake lands — then .is-gl-text ghosts and GL takes over */

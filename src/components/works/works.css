@@ -13,11 +13,17 @@
   user-select: none;
 }
 
-/* Keep chrome above the carousel hit layer so the drawer can open on tap */
+/*
+  Keep chrome above the carousel hit layer so the drawer can open on tap.
+  z-index stays auto on the wrapper — a stacking context here traps
+  mark/footer mix-blend difference (same rule as .auge-chrome).
+  Children already carry z-index: 40 via auge-landing chrome rules.
+*/
 .works-page .auge-chrome {
   position: absolute;
   inset: 0;
-  z-index: 50;
+  z-index: auto;
+  isolation: auto;
   pointer-events: none;
 }
 

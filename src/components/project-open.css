@@ -293,7 +293,7 @@ body.project-open-active .auge-view-tip {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 14;
+  z-index: auto;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -302,6 +302,7 @@ body.project-open-active .auge-view-tip {
   pointer-events: none;
   background: transparent;
   color: #fff;
+  isolation: auto;
 }
 
 .project-open__desk-copy {
@@ -327,6 +328,8 @@ body.project-open-active .auge-view-tip {
 .project-open__desk-sound {
   font-size: 1.15em;
   color: inherit;
+  mix-blend-mode: normal;
+  background: transparent;
 }
 
 .project-open__desk-corner {
@@ -336,6 +339,8 @@ body.project-open-active .auge-view-tip {
   gap: 0;
   pointer-events: auto;
   background: transparent;
+  z-index: auto;
+  isolation: auto;
 }
 
 /* Mobile: socials live in the drawer — same as landing */
@@ -402,9 +407,8 @@ body.project-open-active .auge-view-tip {
   }
 
   .project-open__desk-sound:hover {
-    background: #fdf48b;
-    color: #000;
-    mix-blend-mode: normal;
+    background: transparent;
+    color: inherit;
   }
 
   .project-open__desk-corner {
@@ -444,6 +448,8 @@ body.project-open-active .auge-view-tip {
   }
 
   .project-open__desk-socials {
+    position: relative;
+    z-index: 12;
     display: flex;
     flex-wrap: nowrap;
     justify-content: flex-end;
@@ -460,22 +466,22 @@ body.project-open-active .auge-view-tip {
     text-transform: uppercase;
     pointer-events: auto;
     color: #fff;
+    mix-blend-mode: difference;
+    background: transparent;
   }
 
   .project-open__desk-socials a {
-    position: relative;
-    z-index: 12;
     padding: 0.15rem 0.35rem;
-    color: #fff;
+    color: inherit;
     text-decoration: none;
-    mix-blend-mode: difference;
+    mix-blend-mode: normal;
+    background: transparent;
   }
 
   .project-open__desk-socials a:hover,
   .project-open__desk-socials a:focus-visible {
-    background: #fdf48b;
-    color: #000;
-    mix-blend-mode: normal;
+    background: transparent;
+    color: inherit;
   }
 
   .project-open__desk-socials a:not(:last-child)::after {
