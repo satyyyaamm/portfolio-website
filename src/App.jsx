@@ -576,7 +576,7 @@ const App = () => {
 
   return (
     <div
-      className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${worksIndex ? ' is-works-index' : ''}${aboutOpen ? ' is-about' : ''}${contactOpen ? ' is-contact' : ''}`}
+      className={`journey-root font-sans relative${caseOpen ? ' is-case-open' : ''}${homeRevealing ? ' is-home-revealing' : ''}${worksIndex ? ' is-works-index' : ''}${aboutOpen ? ' is-about' : ''}${contactOpen ? ' is-contact' : ''}`}
     >
       <SiteCursor suppressRef={cursorSuppressRef} />
       <a href="#main-content" className="skip-link">
@@ -586,7 +586,7 @@ const App = () => {
       <main id="main-content" tabIndex={-1} className="relative outline-none">
         <AugeLanding
           projects={projects}
-          stripPaused={caseOpen || worksIndex || aboutOpen || contactOpen}
+          stripPaused={(caseOpen && !homeRevealing) || worksIndex || aboutOpen || contactOpen}
           cursorSuppressRef={cursorSuppressRef}
           onOpenWorksIndex={() => openWorksIndex()}
           onOpenAbout={() => openAbout()}

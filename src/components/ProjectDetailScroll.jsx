@@ -362,6 +362,10 @@ export function ProjectDetailScroll({
       else root.scrollTop = entryY;
     }
 
+    /* Last written values — skip no-op style writes that thrash layout + GL measure */
+    const last = { top: NaN, fs: NaN, dock: NaN, pinned: '', zone: '' };
+    let entryFitted = false;
+
     const update = () => {
       const vh = root.clientHeight || window.innerHeight;
       const vw = root.clientWidth || window.innerWidth;
@@ -417,9 +421,21 @@ export function ProjectDetailScroll({
       const minFs = titleMinPx(vw);
       let fs = lerp(titleMaxPx(vw), minFs, shrinkT);
       const maxW = Math.min(vw * 0.88, stageBox.width * 0.88);
-      // Entry 50/50: keep the name inside the cream band (no clip into hero / edges)
-      const maxH = y < entryY ? vh * 0.42 : 0;
-      fs = fitTitleFs(float, slot, fs, minFs, maxW, maxH);
+      /*
+        Fit only on entry / until first dock — measuring scrollWidth every Lenis
+        tick while shrinking caused font ↔ layout feedback (desktop flicker).
+      */
+      if (y < entryY) {
+        fs = fitTitleFs(float, slot, fs, minFs, maxW, vh * 0.42);
+        entryFitted = true;
+      } else {
+        if (!entryFitted) {
+          fitTitleFs(float, slot, titleMaxPx(vw), minFs, maxW, vh * 0.42);
+          entryFitted = true;
+        }
+        /* Keep slot at entry size so pin math doesn’t jump while the float shrinks */
+        fs = Math.max(minFs, fs);
+      }
       if (y < entryY) {
         const bandH = vh * 0.5;
         const nameH = float.offsetHeight || 0;
@@ -427,24 +443,54 @@ export function ProjectDetailScroll({
           top = entryY + Math.max(8, (bandH - nameH) * 0.5);
         }
       }
-      float.style.top = `${top}px`;
+
+      /* Whole pixels — subpixel top + difference blend + GL measure = flicker */
+      top = Math.round(top);
+      fs = Math.round(fs * 2) / 2;
+
+      if (top !== last.top) {
+        last.top = top;
+        float.style.top = `${top}px`;
+      }
+      if (fs !== last.fs) {
+        last.fs = fs;
+        float.style.setProperty('--title-fs', `${fs}px`);
+      }
+      if (dockT !== last.dock) {
+        last.dock = dockT;
+        float.style.setProperty('--title-dock', String(dockT));
+      }
       float.style.opacity = '1';
-      float.style.setProperty('--title-dock', String(dockT));
-      float.dataset.pinned = pinned ? 'true' : 'false';
-      float.dataset.zone = y < entryY ? 'hero' : 'sheet';
+      const pinnedStr = pinned ? 'true' : 'false';
+      const zone = y < entryY ? 'hero' : 'sheet';
+      if (pinnedStr !== last.pinned) {
+        last.pinned = pinnedStr;
+        float.dataset.pinned = pinnedStr;
+      }
+      if (zone !== last.zone) {
+        last.zone = zone;
+        float.dataset.zone = zone;
+      }
     };
 
     update();
     const id = requestAnimationFrame(update);
-    root.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update, { passive: true });
-    lenis?.on('scroll', update);
+    const onResize = () => {
+      entryFitted = false;
+      last.top = NaN;
+      last.fs = NaN;
+      update();
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+    /* Lenis already emits scroll — don’t also bind the native listener (2× writes/frame) */
+    if (lenis) lenis.on('scroll', update);
+    else root.addEventListener('scroll', update, { passive: true });
 
     return () => {
       cancelAnimationFrame(id);
-      root.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-      lenis?.off('scroll', update);
+      window.removeEventListener('resize', onResize);
+      if (lenis) lenis.off('scroll', update);
+      else root.removeEventListener('scroll', update);
       root.classList.remove('project-open__scroll--smooth');
       lenis?.destroy();
       lenisRef.current = null;

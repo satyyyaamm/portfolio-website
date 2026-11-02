@@ -388,8 +388,12 @@ export function ProjectOpenOverlay({
   const nameRisingOut = phase === 'exitName' || phase === 'exitCurtain';
   const homeTitleOut = phase === 'homeOut';
   const lifting = phase === 'arm' || phase === 'fly';
-  // Wait until yellow fully covers before mounting detail — during curtain rise
-  // the ellipse still leaves gaps, and cream detail would flash over the landing.
+  /*
+    Open: cream detail only after yellow has covered (title+).
+    Home (S logo): keep detail mounted through homeIn so landing doesn’t
+    pop in before the curtain covers — swap to landing at homeHold.
+    nextIn: keep current detail under the rising yellow until title swap.
+  */
   const showDetailUnder =
     phase === 'homeIn' ||
     phase === 'nextIn' ||
@@ -399,7 +403,7 @@ export function ProjectOpenOverlay({
         phase === 'exitName' ||
         phase === 'exitCurtain' ||
         phase === 'detail'));
-  const warmGl = showDetailUnder && phase !== 'homeIn' && phase !== 'nextIn';
+  const warmGl = showDetailUnder && phase !== 'nextIn' && phase !== 'homeIn';
   const loadLabel = glReady ? 100 : Math.min(99, Math.max(0, loadPct));
   // Next-project path: yellow + title + % only — no floating half-image on the curtain
   const photoRect =

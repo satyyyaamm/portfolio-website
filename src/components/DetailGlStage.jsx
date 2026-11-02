@@ -441,19 +441,26 @@ function DetailScene({
         scrollEl.querySelector('.project-detail__title-slot .project-detail__kind');
       const megaBox = measure(megaEl, stageBox);
       const titleBakeSize = titleBakeSizeRef.current;
+      let nextTitle = null;
       if (megaBox && titleBakeSize?.height > 0) {
         const scale = megaBox.height / titleBakeSize.height;
         const w = titleBakeSize.width * scale;
         const h = titleBakeSize.height * scale;
-        titleRectRef.current = {
-          left: megaBox.left + (megaBox.width - w) * 0.5,
-          top: megaBox.top,
-          width: w,
-          height: h,
+        nextTitle = {
+          left: Math.round(megaBox.left + (megaBox.width - w) * 0.5),
+          top: Math.round(megaBox.top),
+          width: Math.max(1, Math.round(w)),
+          height: Math.max(1, Math.round(h)),
         };
-      } else {
-        titleRectRef.current = megaBox;
+      } else if (megaBox) {
+        nextTitle = {
+          left: Math.round(megaBox.left),
+          top: Math.round(megaBox.top),
+          width: Math.max(1, Math.round(megaBox.width)),
+          height: Math.max(1, Math.round(megaBox.height)),
+        };
       }
+      titleRectRef.current = nextTitle;
 
       const kindBox = measure(kindEl, stageBox);
       const kindBakeSize = kindBakeSizeRef.current;
@@ -673,14 +680,14 @@ export function DetailGlStage({
     edgeRefractMul: 72,
     scrollBendVh: 0.12,
   });
-  // Mega + kind: same mouse mess + scroll bend as photos; no edge liquid (slices glyphs)
+  // Mega + kind: mouse mess only — no scroll bend (dock shrink + bend = desktop flicker)
   const textParamsRef = useRef({
     spreadPct: 60,
-    strengthPct: 200,
+    strengthPct: 140,
     edgeAxis: 'tb',
     edgeWidth: 0.42,
     edgeRefractMul: 0,
-    scrollBendVh: 0.06,
+    scrollBendVh: 0,
     scrollBendSpeed: 1200,
     scrollBendEase: 0.032,
     scrollBendTop: 1,
@@ -704,9 +711,10 @@ export function DetailGlStage({
     paramsRef.current.edgeRefractMul = edge;
     paramsRef.current.scrollBendVh = photoBend;
     paramsRef.current.scrollBendEase = narrow ? 0.1 : 0.16;
-    textParamsRef.current.scrollBendVh = 0.06;
+    textParamsRef.current.scrollBendVh = 0;
     textParamsRef.current.scrollBendSpeed = 1200;
     textParamsRef.current.scrollBendEase = 0.032;
+    textParamsRef.current.strengthPct = 140;
     copyParamsRef.current.scrollBendVh = 0.06;
     copyParamsRef.current.scrollBendSpeed = 1200;
     copyParamsRef.current.scrollBendEase = 0.032;

@@ -2425,7 +2425,10 @@ body.site-loader-active .site-loader-main {
   overflow: hidden;
 }
 
-.journey-root.is-case-open .auge-stage,
+/*
+  Keep landing painted under an open case — hiding it on click showed cream
+  before the yellow curtain. Overlay covers it; stripPaused freezes the GL.
+*/
 .journey-root.is-about .auge-stage,
 .journey-root.is-contact .auge-stage,
 .journey-root.is-works-index .auge-stage {
