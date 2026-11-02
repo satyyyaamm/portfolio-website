@@ -569,10 +569,13 @@ export function DetailGlStage({
 }) {
   const reducedMotion = useReducedMotion();
   const narrow = useIsNarrowDetail(720);
-  const enabled = Boolean(active) && !reducedMotion;
-  /* Phones: one media canvas only — no difference title layer / body text bakes. */
-  const titleFxOn = Boolean(titleFx) && !narrow;
-  const copyFxOn = Boolean(copyFx) && !narrow;
+  /*
+    Phones: skip detail WebGL entirely. Sticky-hero planes sit above the cream
+    sheet and white+difference titles wash out on iOS (white type on cream).
+  */
+  const enabled = Boolean(active) && !reducedMotion && !narrow;
+  const titleFxOn = Boolean(titleFx) && enabled;
+  const copyFxOn = Boolean(copyFx) && enabled;
   const [mediaReady, setMediaReady] = useState(false);
   const [shotsReady, setShotsReady] = useState(false);
   const [nextReady, setNextReady] = useState(!nextSrc);
@@ -580,6 +583,13 @@ export function DetailGlStage({
   onReadyRef.current = onReady;
   const shotsReadySent = useRef(false);
   const nextReadySent = useRef(false);
+
+  /* Still dismiss the yellow % hold when GL is intentionally off on phones. */
+  useEffect(() => {
+    if (!active || !narrow) return undefined;
+    onReadyRef.current?.();
+    return undefined;
+  }, [active, narrow]);
   const mouseRef = useRef({
     x: 0,
     y: 0,

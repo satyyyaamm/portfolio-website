@@ -13,8 +13,25 @@
 }
 
 @media (max-width: 720px) {
+  .detail-gl-stage,
   .detail-gl-stage--title {
-    display: none;
+    display: none !important;
+  }
+
+  .project-open__detail-stage--gl .project-detail__title-float,
+  .project-open__detail-stage--gl .project-detail__title-hero {
+    color: #000;
+    mix-blend-mode: normal;
+  }
+
+  .project-detail--gl-ghost .project-detail__hero-img,
+  .project-detail--gl-ghost.project-detail--gl-shots .project-detail__shot img,
+  .project-detail--gl-ghost.project-detail--gl-next .project-detail__next-media img {
+    opacity: 1 !important;
+  }
+
+  .project-detail .is-gl-text {
+    opacity: 1 !important;
   }
 }
 

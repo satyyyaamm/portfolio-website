@@ -712,6 +712,16 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   .project-detail__title-hero {
     will-change: auto;
   }
+
+  /*
+    Plain DOM case on phones — ink on cream. White + difference washes to
+    near-invisible type when detail WebGL is off.
+  */
+  .project-detail__title-float,
+  .project-detail__title-hero {
+    color: var(--detail-ink);
+    mix-blend-mode: normal;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
