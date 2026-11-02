@@ -348,7 +348,20 @@ function DetailScene({
     const stageBox = stage.getBoundingClientRect();
 
     if (layer !== 'title') {
-      heroRectRef.current = measure(scrollEl.querySelector('.project-detail__hero'), stageBox);
+      // Sticky hero fills the viewport in DOM; clip its GL plane to the cream sheet
+      // so photos don't paint over body copy (the bug that washed mobile detail).
+      const heroEl = scrollEl.querySelector('.project-detail__hero');
+      const sheetEl = scrollEl.querySelector('.project-detail__sheet');
+      let heroBox = measure(heroEl, stageBox);
+      if (heroBox && sheetEl) {
+        const sheetTop = sheetEl.getBoundingClientRect().top - stageBox.top;
+        if (sheetTop <= heroBox.top + 1) {
+          heroBox = null;
+        } else if (sheetTop < heroBox.top + heroBox.height) {
+          heroBox.clipBottom = sheetTop;
+        }
+      }
+      heroRectRef.current = heroBox;
 
       const figs = scrollEl.querySelectorAll('.project-detail__shot');
       figs.forEach((fig, i) => {
@@ -569,13 +582,10 @@ export function DetailGlStage({
 }) {
   const reducedMotion = useReducedMotion();
   const narrow = useIsNarrowDetail(720);
-  /*
-    Phones: skip detail WebGL entirely. Sticky-hero planes sit above the cream
-    sheet and white+difference titles wash out on iOS (white type on cream).
-  */
-  const enabled = Boolean(active) && !reducedMotion && !narrow;
-  const titleFxOn = Boolean(titleFx) && enabled;
-  const copyFxOn = Boolean(copyFx) && enabled;
+  /* Media distort on all sizes. Title/copy GL stays desktop-only (iOS dual-canvas flicker). */
+  const enabled = Boolean(active) && !reducedMotion;
+  const titleFxOn = Boolean(titleFx) && !narrow;
+  const copyFxOn = Boolean(copyFx) && !narrow;
   const [mediaReady, setMediaReady] = useState(false);
   const [shotsReady, setShotsReady] = useState(false);
   const [nextReady, setNextReady] = useState(!nextSrc);
@@ -583,13 +593,6 @@ export function DetailGlStage({
   onReadyRef.current = onReady;
   const shotsReadySent = useRef(false);
   const nextReadySent = useRef(false);
-
-  /* Still dismiss the yellow % hold when GL is intentionally off on phones. */
-  useEffect(() => {
-    if (!active || !narrow) return undefined;
-    onReadyRef.current?.();
-    return undefined;
-  }, [active, narrow]);
   const mouseRef = useRef({
     x: 0,
     y: 0,
@@ -634,10 +637,10 @@ export function DetailGlStage({
     edgeRefractMul: 0,
     scrollBendVh: 0.12,
   });
-  /* Softer edge/bend on phones — less liquid while scrolling under sticky layout */
+  /* Slightly lighter edge/bend on phones — still readable while scrolling */
   useEffect(() => {
-    const edge = narrow ? 36 : 72;
-    const bend = narrow ? 0.06 : 0.12;
+    const edge = narrow ? 52 : 72;
+    const bend = narrow ? 0.1 : 0.12;
     paramsRef.current.edgeRefractMul = edge;
     paramsRef.current.scrollBendVh = bend;
     textParamsRef.current.scrollBendVh = bend;

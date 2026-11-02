@@ -13,19 +13,9 @@
 }
 
 @media (max-width: 720px) {
-  .detail-gl-stage,
+  /* No second title canvas on phones — DOM titles keep difference blend */
   .detail-gl-stage--title {
     display: none !important;
-  }
-
-  .project-detail--gl-ghost .project-detail__hero-img,
-  .project-detail--gl-ghost.project-detail--gl-shots .project-detail__shot img,
-  .project-detail--gl-ghost.project-detail--gl-next .project-detail__next-media img {
-    opacity: 1 !important;
-  }
-
-  .project-detail .is-gl-text {
-    opacity: 1 !important;
   }
 }
 
@@ -101,9 +91,21 @@
   opacity: 1 !important;
 }
 
-/* Small hero-overlay name stays live DOM (curtain slide) — invert over the photo */
+/* Small hero-overlay name stays live DOM (curtain slide) — invert over the GL photo */
 .project-open__detail-stage--gl .project-detail__title-hero {
   z-index: 9;
   color: #fff;
   mix-blend-mode: difference;
+}
+
+@media (max-width: 720px) {
+  /*
+    Titles sit above the single media canvas and difference against it.
+    No title/copy GL on phones — avoids the dual-context washout.
+  */
+  .project-open__detail-stage--gl .project-detail__title-float,
+  .project-open__detail-stage--gl .project-detail__title-hero {
+    color: #fff;
+    mix-blend-mode: difference;
+  }
 }
