@@ -246,35 +246,58 @@ function startSource(packed, delay = 0) {
   return true;
 }
 
+async function ensureRunning() {
+  if (!ctx || !master || isSoundMuted()) return false;
+  if (ctx.state === 'running') return true;
+  await resumeSound();
+  return Boolean(ctx && ctx.state === 'running' && !isSoundMuted());
+}
+
 function playInternal(action, opts = {}) {
   if (!inited) initSound();
   if (!ctx || !master || isSoundMuted()) return;
 
-  const { url, commit } = resolveUrl(action, opts.cursor);
-  if (!url) return;
-
-  const run = (packed) => {
-    if (!packed) return;
-    commit?.();
-    if (ctx.state === 'running') {
-      startSource(packed, opts.delay ?? 0);
-      return;
-    }
-    resumeSound().then(() => {
-      if (!isSoundMuted()) startSource(packed, opts.delay ?? 0);
-    });
-  };
-
-  const packed = buffers.get(url);
-  if (packed) {
-    run(packed);
+  const cursor = opts.cursor;
+  // Sequence cues must not overlap — concurrent plays used to advance the
+  // cursor several times while the context was still suspended/decoding.
+  if (cursor?.busy) {
+    cursor.queued = true;
     return;
   }
 
-  // First visit — decode may still be in flight; play as soon as ready.
-  decodeUrl(ctx, url).then((decoded) => {
-    if (decoded && !isSoundMuted()) run(decoded);
-  });
+  const delay = opts.delay ?? 0;
+
+  const run = async () => {
+    if (cursor) cursor.busy = true;
+    try {
+      if (!(await ensureRunning())) return;
+
+      const { url, commit } = resolveUrl(action, cursor);
+      if (!url) return;
+
+      let packed = buffers.get(url);
+      if (!packed) packed = await decodeUrl(ctx, url);
+      if (!packed || isSoundMuted()) return;
+
+      // Context can suspend again while a decode is in flight.
+      if (!(await ensureRunning())) return;
+
+      // Only advance the sequence after the buffer actually starts —
+      // otherwise early auto-cruise steps were eaten while AudioContext
+      // was still locked and never heard until a later hover/gesture.
+      if (startSource(packed, delay)) commit?.();
+    } finally {
+      if (cursor) {
+        cursor.busy = false;
+        if (cursor.queued) {
+          cursor.queued = false;
+          playInternal(action, { cursor, delay });
+        }
+      }
+    }
+  };
+
+  void run();
 }
 
 export function playSound(action, opts) {
@@ -283,9 +306,6 @@ export function playSound(action, opts) {
 
 export function playHoverSound(action) {
   if (!canHover()) return;
-  // First pointer gesture on the strip often arrives as hover after a click
-  // elsewhere — ensure the context is live when preference is already on.
-  if (!isSoundMuted() && unlocked) resumeSound();
   playInternal(action);
 }
 
@@ -299,13 +319,15 @@ export function playScrambleSound(group = 'default') {
 }
 
 export function createSoundSequence(action) {
-  const cursor = { step: 0 };
+  const cursor = { step: 0, busy: false, queued: false };
   return {
     play() {
       playInternal(action, { cursor });
     },
     reset() {
       cursor.step = 0;
+      cursor.busy = false;
+      cursor.queued = false;
     },
   };
 }
