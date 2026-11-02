@@ -480,6 +480,28 @@ export function ProjectDetailScroll({
           <div className="project-detail__hero-media" ref={heroMediaRef}>
             <img src={heroSrc} alt="" className="project-detail__hero-img" decoding="async" />
           </div>
+          {/*
+            Live inside the hero so mix-blend:difference samples the photo.
+            Portaling to the stage breaks invert on iOS (sibling of overflow scroll).
+          */}
+          <div
+            ref={heroTitleRef}
+            className={`project-detail__title-hero${heroTitleIn ? ' is-in' : ''}`}
+            aria-hidden={!heroTitleIn}
+          >
+            <p className="project-detail__title-hero-mega">
+              <Scramble text={title.line1} active={heroTitleIn} steps={12} />
+              {title.line2 ? (
+                <>
+                  {' '}
+                  <Scramble text={title.line2} active={heroTitleIn} steps={12} />
+                </>
+              ) : null}
+            </p>
+            <p className="project-detail__title-hero-kind">
+              <Scramble text={kind} active={heroTitleIn} steps={10} />
+            </p>
+          </div>
         </header>
       </div>
 
@@ -552,34 +574,13 @@ export function ProjectDetailScroll({
 
       {stageEl
         ? createPortal(
-            <>
-              {/* Cream / sheet title — stays on the cream canvas */}
-              <div ref={floatRef} className="project-detail__title-float">
-                <h1 id={titleId} className="project-detail__mega">
-                  {titleInner}
-                </h1>
-                <p className="project-detail__kind">{kind}</p>
-              </div>
-              {/* Full-photo title — small, slides down like the yellow curtain */}
-              <div
-                ref={heroTitleRef}
-                className={`project-detail__title-hero${heroTitleIn ? ' is-in' : ''}`}
-                aria-hidden={!heroTitleIn}
-              >
-                <p className="project-detail__title-hero-mega">
-                  <Scramble text={title.line1} active={heroTitleIn} steps={12} />
-                  {title.line2 ? (
-                    <>
-                      {' '}
-                      <Scramble text={title.line2} active={heroTitleIn} steps={12} />
-                    </>
-                  ) : null}
-                </p>
-                <p className="project-detail__title-hero-kind">
-                  <Scramble text={kind} active={heroTitleIn} steps={10} />
-                </p>
-              </div>
-            </>,
+            /* Cream / sheet title — portaled above the scroll for dock pin */
+            <div ref={floatRef} className="project-detail__title-float">
+              <h1 id={titleId} className="project-detail__mega">
+                {titleInner}
+              </h1>
+              <p className="project-detail__kind">{kind}</p>
+            </div>,
             stageEl
           )
         : null}

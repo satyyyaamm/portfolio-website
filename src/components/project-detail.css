@@ -132,7 +132,7 @@
   position: absolute;
   left: 50%;
   top: max(1.15rem, env(safe-area-inset-top, 0px));
-  z-index: 9;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -714,13 +714,13 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   }
 
   /*
-    Plain DOM case on phones — ink on cream. White + difference washes to
-    near-invisible type when detail WebGL is off.
+    Keep white + difference so the top title inverts over hero / cream
+    (same as desktop). Safe now that mobile detail WebGL is off.
   */
   .project-detail__title-float,
   .project-detail__title-hero {
-    color: var(--detail-ink);
-    mix-blend-mode: normal;
+    color: #fff;
+    mix-blend-mode: difference;
   }
 }
 
