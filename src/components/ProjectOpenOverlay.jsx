@@ -211,6 +211,12 @@ export function ProjectOpenOverlay({
 
   useEffect(() => {
     if (phase !== 'homeOut') return undefined;
+    /*
+      Landing is already under the lifting yellow — free pointer/scroll now.
+      Waiting until onClose (~3.2s) left the strip dead while the curtain rose.
+    */
+    document.body.classList.remove('project-open-active');
+    document.body.style.overflow = '';
     const id = window.setTimeout(() => onCloseRef.current?.(), HOME_CURTAIN_OUT_MS);
     return () => window.clearTimeout(id);
   }, [phase]);
@@ -429,17 +435,21 @@ export function ProjectOpenOverlay({
   const showIntroPhoto =
     !nextIntro && playingYellowIntro && inIntro && Boolean(photoRect) && phase !== 'nextIn';
 
+  /* Once home curtain lifts, pass events through to the live landing underneath */
+  const passThrough = phase === 'homeOut';
+
   return (
     <motion.div
       className={`project-open${phase === 'detail' ? ' project-open--detail' : ''}${
         goingHome ? ' project-open--home' : ''
       }`}
       role="dialog"
-      aria-modal="true"
+      aria-modal={!passThrough}
       aria-labelledby="project-open-title"
       initial={false}
       exit={{ opacity: 0 }}
       transition={{ duration: goingHome ? 0 : 0.2, ease: EASE_SOFT }}
+      style={{ pointerEvents: passThrough ? 'none' : undefined }}
     >
       {/* Detail sits under the exit stack so the curtain reveals it. */}
       {showDetailUnder ? (

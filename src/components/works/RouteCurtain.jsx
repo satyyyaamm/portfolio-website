@@ -22,8 +22,9 @@ const READY_MAX_WAIT_MS = 8000;
 const EDITORIAL = new Set(['HOME', 'WORKS', 'ABOUT', "LET'S TALK", 'CONTACTS', 'CONTACT']);
 
 /**
- * Yellow page curtain — always plays the full in → hold → out animation.
- * If the destination isn’t ready when the hold ends, stay covered until it is.
+ * Yellow page curtain = the “not ready” cover.
+ * Rise → mount destination under cover → play full hold → if still not ready,
+ * stay yellow until it is → then lift. No invisible blocker after lift.
  */
 export function RouteCurtain({ active, label = '', ready = false, onCovered, onDone }) {
   const reducedMotion = useReducedMotion();
@@ -100,15 +101,15 @@ export function RouteCurtain({ active, label = '', ready = false, onCovered, onD
   const out = phase === 'out';
   const rising = phase === 'in';
   const showTitle = phase === 'hold' || phase === 'out';
-  /* Block until lift starts — destination is ready by then */
-  const blocking = phase === 'in' || phase === 'hold';
+  /* Yellow still covering (in/hold) — block. Lifting/gone — pass through. */
+  const covering = phase === 'in' || phase === 'hold';
 
   return createPortal(
     <div
       className={`project-open${editorial ? ' project-open--home' : ''}`}
       style={{
         zIndex: 200,
-        pointerEvents: blocking ? 'auto' : 'none',
+        pointerEvents: covering ? 'auto' : 'none',
       }}
       aria-hidden
     >

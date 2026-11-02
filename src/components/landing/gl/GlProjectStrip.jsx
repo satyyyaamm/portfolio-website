@@ -25,8 +25,12 @@ import { applyBottomHingeSkew, bendFromSkewDeg } from './skewMath.js';
 import { createCopyColumnTexture, createTextTexture } from './textTexture.js';
 import { createSoundSequence, playHoverSound, playSound } from '../../../lib/siteSound.js';
 
-/** One period + recycle — multi-copy group wraps flashed a seam every lap. */
-const LOOP_COPIES = 1;
+/**
+ * Three laid-out periods + offset kept in (-period, 0].
+ * Positive offset (L→R scroll) previously left [0, offset) as cream on the left
+ * until the next RAF wrap — drag must wrap on every write.
+ */
+const LOOP_COPIES = 3;
 const SPEED = 160;
 /** Opening burst — strip starts fast, eases down to SPEED over BURST_MS */
 const SPEED_BURST = 560;
@@ -73,17 +77,19 @@ function normalizeWheelDelta(event) {
   return raw;
 }
 
-/**
- * Recycle cards that have fully left the period train.
- * Partially visible cards stay put — teleporting those caused the loop-seam flash.
- * Offset stays unbounded; float precision is fine for session-length runtimes.
- */
-function recycleWorldLeft(worldLeft, width, setW) {
-  if (setW <= 0) return worldLeft;
-  let x = worldLeft;
-  for (let i = 0; i < 16 && x + width < 0; i += 1) x += setW;
-  for (let i = 0; i < 16 && x >= setW; i += 1) x -= setW;
-  return x;
+/** Keep strip offset in (-period, 0] so laid-out periods always cover x≤0…vw. */
+function wrapStripOffset(offset, period) {
+  if (!(period > 0) || !Number.isFinite(offset)) return offset || 0;
+  let o = offset % period;
+  if (o > 0) o -= period;
+  if (o <= -period) o += period;
+  return o;
+}
+
+function bumpStripOffset(sim, delta, period) {
+  if (!delta) return;
+  sim.offset = wrapStripOffset(sim.offset + delta, period);
+  sim.stripTranslating = true;
 }
 
 function PixelCamera() {
@@ -147,7 +153,6 @@ function DistortCard({
   texture,
   left,
   width,
-  setWidth,
   simRef,
   mouseRef,
   paramsRef,
@@ -207,14 +212,16 @@ function DistortCard({
     const maxH = railH * 0.9;
     // Mobile: gentler left→right taper so cards stay closer in height.
     const minH = maxH * (vw <= 720 ? 0.7 : 0.5);
-    // Screen-space recycle — group stays at x=0 so a period wrap never teleports meshes.
-    const worldLeft = recycleWorldLeft(left + sim.offset, width, setWidth);
+    const period = sim.period || 0;
+    const offset = period > 0 ? wrapStripOffset(sim.offset, period) : sim.offset;
+    const worldLeft = left + offset;
     const centerX = worldLeft + width * 0.5;
     const height = heightForCenterX(centerX, vw, maxH, minH);
     const cx = worldLeft + width * 0.5;
     const skewDeg = reducedMotion ? 0 : sim.skew || 0;
-    // Extra overlap + stable draw order kills hairline z-fight flicker on seams.
-    const drawW = width + 3;
+    // Overlap must cover bend lean or cream shows through seams (esp. left edge).
+    const skewPad = Math.abs(Math.tan((skewDeg * Math.PI) / 180)) * height;
+    const drawW = width + 3 + skewPad;
     // Tiny Z by stack order so overlaps don’t fight (left cards slightly in front).
     const z = (item.projectIndex ?? 0) * -0.05;
     applyBottomHingeSkew(mesh, cx, -height, drawW, height, 0, z);
@@ -232,13 +239,13 @@ function DistortCard({
     mat.uniforms.uResolution.value.set(vw * dpr, vh * dpr);
     mat.uniforms.uViewport.value.set(vw, vh);
     mat.uniforms.uScrollBend.value = 0;
-    mat.uniforms.uEdgeWidth.value = 0.03; // 3% of viewport (fraction)
-    // Liquid glass only on user scroll/drag — ease in/out, ignore auto cruise
+    mat.uniforms.uEdgeWidth.value = 0.03;
+    // Mild edge liquid — strong L refract washed the left card during scroll
     const userSpeed = Math.abs(sim.userVelocity || 0);
     const userScrolling = Boolean(sim.drag?.active) || userSpeed > 10;
     const edgeTarget = reducedMotion || !userScrolling
       ? 0
-      : (sim.drag?.active ? Math.max(0.4, Math.min(1, userSpeed / 520)) : Math.min(1, userSpeed / 520)) * 110 * dpr;
+      : (sim.drag?.active ? Math.max(0.25, Math.min(1, userSpeed / 520)) : Math.min(1, userSpeed / 520)) * 36 * dpr;
     mat.uniforms.uEdgeRefract.value += (edgeTarget - mat.uniforms.uEdgeRefract.value) * 0.14;
     const img = texture?.image;
     if (img && (img.naturalWidth || img.width)) {
@@ -531,10 +538,7 @@ function StripScene({
       let delta = sim.userVelocity * dt;
       sim.userVelocity *= Math.pow(SCROLL_COAST_HOVER, dt);
       if (Math.abs(sim.userVelocity) < 5) sim.userVelocity = 0;
-      if (delta !== 0) {
-        sim.offset += delta;
-        sim.stripTranslating = true;
-      }
+      bumpStripOffset(sim, delta, setWidth);
     } else if (!sim.drag.active) {
       let delta = sim.userVelocity * dt;
       // Soft coast after wheel/drag — reads as momentum, not stepped ticks.
@@ -571,10 +575,7 @@ function StripScene({
           delta += sim.autoDir * cruise * dt;
         }
       }
-      if (delta !== 0) {
-        sim.offset += delta;
-        sim.stripTranslating = true;
-      }
+      bumpStripOffset(sim, delta, setWidth);
     } else if (sim.drag.active && sim.drag.moved) {
       // Only skew once the pointer actually dragged — a click must stay upright.
       sim.stripTranslating = true;
@@ -589,6 +590,11 @@ function StripScene({
         : 1 - Math.pow(0.000015, dt);
     sim.skew += (sim.skewTarget - sim.skew) * skewEase;
     if (Math.abs(sim.skew) < 0.08 && Math.abs(sim.skewTarget) < 0.2) sim.skew = 0;
+
+    sim.period = setWidth;
+    if (setWidth > 0) {
+      sim.offset = wrapStripOffset(sim.offset, setWidth);
+    }
 
     // Carousel step tones — one cue per card-width of travel (Auge stepCarousel).
     const projectCount = Math.max(1, projects.length);
@@ -665,7 +671,6 @@ function StripScene({
             texture={tex}
             left={card.left}
             width={card.width}
-            setWidth={setWidth}
             simRef={simRef}
             mouseRef={mouseRef}
             paramsRef={paramsRef}
@@ -869,6 +874,7 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
   const openCardAtPointerRef = useRef(null);
   const simRef = useRef({
     offset: 0,
+    period: 0,
     userVelocity: 0,
     autoDir: -1,
     drag: { active: false, x: 0, moved: false },
@@ -1169,7 +1175,8 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
 
     for (let i = 0; i < list.length; i += 1) {
       const card = list[i];
-      const worldLeft = recycleWorldLeft(card.left + sim.offset, card.width, setWidth);
+      const worldLeft =
+        card.left + wrapStripOffset(sim.offset, setWidth || sim.period || 0);
       const centerX = worldLeft + card.width * 0.5;
       const height = heightForCenterX(centerX, vw, maxH, minH);
       if (stageX < worldLeft || stageX >= worldLeft + card.width) continue;
@@ -1369,7 +1376,8 @@ export const GlProjectStrip = forwardRef(function GlProjectStrip(
       sim.drag.y = event.clientY;
       // Vertical swipe/scroll drives the strip too (up → next, down → prev).
       const drive = Math.abs(dy) >= Math.abs(dx) ? -dy : dx;
-      sim.offset += drive;
+      // Wrap immediately — waiting for RAF left cream on the left during L→R drag
+      bumpStripOffset(sim, drive, setWidth);
       if (drive !== 0) {
         sim.autoDir = drive > 0 ? 1 : -1;
         sim.userVelocity = Math.max(-1400, Math.min(1400, drive * 22));
