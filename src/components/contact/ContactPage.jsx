@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import Lenis from 'lenis';
+import { useRouteInteractive } from '../../lib/useRouteInteractive.js';
 import { Scramble, ScrambleHover } from '../landing/Scramble.jsx';
 import { AugeChrome } from '../chrome/AugeChrome.jsx';
 import { playHoverSound, playSound } from '../../lib/siteSound.js';
@@ -187,6 +188,8 @@ export function ContactPage({
   projects = [],
   socialItems = [],
   emailMailto = CONTACT_EMAIL_HREF,
+  readyRequestId = 0,
+  onInteractive,
   onHome,
   onOpenWorks,
   onOpenAbout,
@@ -208,8 +211,16 @@ export function ContactPage({
   const [revealed, setRevealed] = useState(() => new Set(reducedMotion ? CONTACT_PANELS.map((p) => p.id) : []));
   const [fitTick, setFitTick] = useState(0);
   const [riseDone, setRiseDone] = useState(Boolean(reducedMotion));
+  const isReady = useCallback(() => {
+    const root = scrollRef.current;
+    if (!root) return false;
+    const box = root.getBoundingClientRect();
+    /* Layout + first font-fit — don’t wait on the 1.4s rise animation */
+    return box.width > 2 && box.height > 2 && (fitTick > 0 || reducedMotion);
+  }, [fitTick, reducedMotion]);
+  useRouteInteractive(readyRequestId, onInteractive, isReady);
   const contentKey = [
-    'warp-accent-cream-pad-v7',
+    'warp-no-lockup-box-v9',
     CONTACT_HERO_GIF.src,
     ...CONTACT_PANELS.map((p) => p.gif?.src || p.id),
     `fit-${fitTick}`,

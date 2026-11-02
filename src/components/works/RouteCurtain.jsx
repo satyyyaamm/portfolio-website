@@ -14,34 +14,37 @@ import {
 import '../project-open.css';
 
 const PAGE_IN_MS = 700;
-const PAGE_HOLD_MS = 280;
+const PAGE_HOLD_MS = 480;
 const PAGE_OUT_MS = 900;
+/** Extra wait only if the destination still isn’t interactive after the full hold */
+const READY_MAX_WAIT_MS = 8000;
 
 const EDITORIAL = new Set(['HOME', 'WORKS', 'ABOUT', "LET'S TALK", 'CONTACTS', 'CONTACT']);
 
 /**
- * Yellow page curtain — HOME / WORKS share the detail-logo close
- * (rise from below → hold Didone word → slow lift).
+ * Yellow page curtain — always plays the full in → hold → out animation.
+ * If the destination isn’t ready when the hold ends, stay covered until it is.
  */
-export function RouteCurtain({ active, label = '', onCovered, onDone }) {
+export function RouteCurtain({ active, label = '', ready = false, onCovered, onDone }) {
   const reducedMotion = useReducedMotion();
   const [phase, setPhase] = useState(active ? 'in' : 'idle');
   const onCoveredRef = useRef(onCovered);
   const onDoneRef = useRef(onDone);
+  const holdStartedRef = useRef(0);
   onCoveredRef.current = onCovered;
   onDoneRef.current = onDone;
 
   const labelKey = String(label).toUpperCase();
   const editorial = EDITORIAL.has(labelKey);
-  /* Long home close only for HOME — WORKS/ABOUT/CONTACT use the snappy page curtain */
-  const homeClose = labelKey === 'HOME';
-  const inMs = homeClose ? HOME_CURTAIN_IN_MS : PAGE_IN_MS;
-  const holdMs = homeClose ? HOME_HOLD_MS : PAGE_HOLD_MS;
-  const outMs = homeClose ? HOME_CURTAIN_OUT_MS : PAGE_OUT_MS;
+  /* WORKS / ABOUT / CONTACT share the long Didone hold — ready never shortens it */
+  const inMs = editorial ? HOME_CURTAIN_IN_MS : PAGE_IN_MS;
+  const holdMs = editorial ? HOME_HOLD_MS : PAGE_HOLD_MS;
+  const outMs = editorial ? HOME_CURTAIN_OUT_MS : PAGE_OUT_MS;
 
   useEffect(() => {
     if (!active) {
       setPhase('idle');
+      holdStartedRef.current = 0;
       return undefined;
     }
     if (reducedMotion) {
@@ -51,36 +54,61 @@ export function RouteCurtain({ active, label = '', onCovered, onDone }) {
       return undefined;
     }
     setPhase('in');
+    holdStartedRef.current = 0;
     playSound('raiseCurtain', { delay: 0.12 });
     const a = window.setTimeout(() => {
       onCoveredRef.current?.();
+      holdStartedRef.current = performance.now();
       setPhase('hold');
     }, inMs);
-    const b = window.setTimeout(() => setPhase('out'), inMs + holdMs);
+    return () => window.clearTimeout(a);
+  }, [active, label, inMs, reducedMotion]);
+
+  useEffect(() => {
+    if (phase !== 'hold') return undefined;
+    const tryLift = () => {
+      const started = holdStartedRef.current || performance.now();
+      const elapsed = performance.now() - started;
+      if (ready && elapsed >= holdMs) {
+        setPhase('out');
+        return true;
+      }
+      return false;
+    };
+    if (tryLift()) return undefined;
+    const id = window.setInterval(() => {
+      if (tryLift()) window.clearInterval(id);
+    }, 40);
+    const max = window.setTimeout(() => setPhase('out'), holdMs + READY_MAX_WAIT_MS);
+    return () => {
+      window.clearInterval(id);
+      window.clearTimeout(max);
+    };
+  }, [phase, ready, holdMs]);
+
+  useEffect(() => {
+    if (phase !== 'out') return undefined;
     const c = window.setTimeout(() => {
       setPhase('idle');
       onDoneRef.current?.();
-    }, inMs + holdMs + outMs);
-    return () => {
-      window.clearTimeout(a);
-      window.clearTimeout(b);
-      window.clearTimeout(c);
-    };
-  }, [active, label, inMs, holdMs, outMs, reducedMotion]);
+    }, outMs);
+    return () => window.clearTimeout(c);
+  }, [phase, outMs]);
 
   if (phase === 'idle') return null;
 
   const out = phase === 'out';
   const rising = phase === 'in';
   const showTitle = phase === 'hold' || phase === 'out';
+  /* Block until lift starts — destination is ready by then */
+  const blocking = phase === 'in' || phase === 'hold';
 
   return createPortal(
     <div
       className={`project-open${editorial ? ' project-open--home' : ''}`}
       style={{
         zIndex: 200,
-        // After cover, page is live underneath — don’t trap scroll while yellow lifts
-        pointerEvents: phase === 'in' ? 'auto' : 'none',
+        pointerEvents: blocking ? 'auto' : 'none',
       }}
       aria-hidden
     >

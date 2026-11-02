@@ -81,6 +81,8 @@ export function ProjectOpenOverlay({
   emailMailto = 'mailto:satyamt5152@gmail.com',
   onClose,
   onCovered,
+  homeReady = false,
+  onHomeBegin,
   onHomeCovered,
   onOpenNext,
   onOpenWorks,
@@ -110,10 +112,13 @@ export function ProjectOpenOverlay({
   onCoveredRef.current = onCovered;
   const onHomeCoveredRef = useRef(onHomeCovered);
   onHomeCoveredRef.current = onHomeCovered;
+  const onHomeBeginRef = useRef(onHomeBegin);
+  onHomeBeginRef.current = onHomeBegin;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const onOpenNextRef = useRef(onOpenNext);
   onOpenNextRef.current = onOpenNext;
+  const homeHoldStartedRef = useRef(0);
 
   const src = fromRect?.src || project?.image;
   const title = splitTitle(project?.name || '');
@@ -150,6 +155,7 @@ export function ProjectOpenOverlay({
       return;
     }
     homeClosingRef.current = true;
+    onHomeBeginRef.current?.();
     setPhase('homeIn');
   };
 
@@ -183,9 +189,25 @@ export function ProjectOpenOverlay({
   useEffect(() => {
     if (phase !== 'homeHold') return undefined;
     onHomeCoveredRef.current?.();
-    const id = window.setTimeout(() => setPhase('homeOut'), HOME_HOLD_MS);
-    return () => window.clearTimeout(id);
-  }, [phase]);
+    homeHoldStartedRef.current = performance.now();
+    const tryLift = () => {
+      const elapsed = performance.now() - homeHoldStartedRef.current;
+      if (homeReady && elapsed >= HOME_HOLD_MS) {
+        setPhase('homeOut');
+        return true;
+      }
+      return false;
+    };
+    if (tryLift()) return undefined;
+    const id = window.setInterval(() => {
+      if (tryLift()) window.clearInterval(id);
+    }, 40);
+    const max = window.setTimeout(() => setPhase('homeOut'), HOME_HOLD_MS + 8000);
+    return () => {
+      window.clearInterval(id);
+      window.clearTimeout(max);
+    };
+  }, [phase, homeReady]);
 
   useEffect(() => {
     if (phase !== 'homeOut') return undefined;

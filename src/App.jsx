@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   Github,
@@ -109,10 +109,14 @@ const App = () => {
   );
   const [curtain, setCurtain] = useState(null); // { to: 'works' | 'home' | 'about' | 'contact', label }
   const [homeRevealing, setHomeRevealing] = useState(false);
+  /** Destination screen may interact — curtain lifts only after this */
+  const [routeLiftReady, setRouteLiftReady] = useState(false);
+  const [routeReadyRequestId, setRouteReadyRequestId] = useState(0);
   const openCoveredRef = useRef(null);
   const cursorSuppressRef = useRef(false);
   const curtainCoveredRef = useRef(null);
   const curtainDoneRef = useRef(null);
+  const routeCoveredRef = useRef(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -362,9 +366,31 @@ const App = () => {
     }
   };
 
+  const markRouteLiftReady = useCallback(() => {
+    if (!routeCoveredRef.current) return;
+    setRouteLiftReady(true);
+  }, []);
+
+  const signalHomeReady = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => markRouteLiftReady());
+    });
+  }, [markRouteLiftReady]);
+
   const runCurtain = (to, label, apply) => {
-    curtainCoveredRef.current = apply;
-    curtainDoneRef.current = () => setCurtain(null);
+    routeCoveredRef.current = false;
+    setRouteLiftReady(false);
+    curtainCoveredRef.current = () => {
+      apply();
+      routeCoveredRef.current = true;
+      setRouteReadyRequestId((n) => n + 1);
+      if (to === 'home') signalHomeReady();
+    };
+    curtainDoneRef.current = () => {
+      setCurtain(null);
+      routeCoveredRef.current = false;
+      setRouteLiftReady(false);
+    };
     setCurtain({ to, label });
   };
 
@@ -591,6 +617,8 @@ const App = () => {
           paused={caseOpen}
           cursorSuppressRef={cursorSuppressRef}
           socialItems={SOCIAL_ITEMS}
+          readyRequestId={curtain?.to === 'works' ? routeReadyRequestId : 0}
+          onInteractive={curtain?.to === 'works' ? markRouteLiftReady : undefined}
           onOpenProject={(index, fromRect) => {
             setHomeRevealing(false);
             openWorks(index, fromRect);
@@ -608,6 +636,8 @@ const App = () => {
           projects={projects}
           socialItems={SOCIAL_ITEMS}
           emailMailto={EMAIL_MAILTO}
+          readyRequestId={curtain?.to === 'about' ? routeReadyRequestId : 0}
+          onInteractive={curtain?.to === 'about' ? markRouteLiftReady : undefined}
           onHome={closeWorksIndex}
           onOpenWorks={() => openWorksIndex()}
           onOpenContact={() => openContact()}
@@ -624,6 +654,8 @@ const App = () => {
           projects={projects}
           socialItems={SOCIAL_ITEMS}
           emailMailto={EMAIL_MAILTO}
+          readyRequestId={curtain?.to === 'contact' ? routeReadyRequestId : 0}
+          onInteractive={curtain?.to === 'contact' ? markRouteLiftReady : undefined}
           onHome={closeWorksIndex}
           onOpenWorks={() => openWorksIndex()}
           onOpenAbout={() => openAbout()}
@@ -633,6 +665,7 @@ const App = () => {
       <RouteCurtain
         active={Boolean(curtain)}
         label={curtain?.label || ''}
+        ready={routeLiftReady}
         onCovered={() => curtainCoveredRef.current?.()}
         onDone={() => curtainDoneRef.current?.()}
       />
@@ -647,7 +680,16 @@ const App = () => {
             socialItems={SOCIAL_ITEMS}
             emailMailto={EMAIL_MAILTO}
             onCovered={() => openCoveredRef.current?.()}
-            onHomeCovered={coverHome}
+            homeReady={routeLiftReady}
+            onHomeBegin={() => {
+              routeCoveredRef.current = false;
+              setRouteLiftReady(false);
+            }}
+            onHomeCovered={() => {
+              coverHome();
+              routeCoveredRef.current = true;
+              signalHomeReady();
+            }}
             onClose={closeWorks}
             onOpenWorks={() => openWorksIndex()}
             onOpenAbout={() => openAbout()}

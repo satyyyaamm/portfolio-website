@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import Lenis from 'lenis';
+import { useRouteInteractive } from '../../lib/useRouteInteractive.js';
 import { ScrambleHover } from '../landing/Scramble.jsx';
 import { playHoverSound, playSound } from '../../lib/siteSound.js';
 import {
@@ -24,6 +25,8 @@ export function AboutPage({
   projects = [],
   socialItems = [],
   emailMailto = 'mailto:satyamt5152@gmail.com',
+  readyRequestId = 0,
+  onInteractive,
   onHome,
   onOpenWorks,
   onOpenContact,
@@ -39,6 +42,13 @@ export function AboutPage({
     const t = window.setTimeout(() => setWarpOn(true), 700);
     return () => window.clearTimeout(t);
   }, [warpOn]);
+  const isReady = useCallback(() => {
+    const root = scrollRef.current;
+    if (!root) return false;
+    const box = root.getBoundingClientRect();
+    return box.width > 2 && box.height > 2 && root.scrollHeight > 2;
+  }, []);
+  useRouteInteractive(readyRequestId, onInteractive, isReady);
   const [reelOpen, setReelOpen] = useState(false);
   const [ctaSwap, setCtaSwap] = useState(false);
   const [ctaIn, setCtaIn] = useState(Boolean(reducedMotion));

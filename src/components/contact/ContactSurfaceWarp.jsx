@@ -385,26 +385,14 @@ function bakeElement(el, paint = null, opts = {}) {
   if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
 
   paintSolids(ctx, el, host, paint);
-  /*
-   * Light glyphs (yellow R/Y/?) on transparent canvas get a dark premultiplied AA
-   * fringe. Bake hero lockup onto page cream first, then punch GIF holes.
-   */
-  const lockupCream = el.classList.contains('contact-hero__lockup');
-  if (lockupCream && !parseColor(paint?.backgroundColor) && !parseColor(getComputedStyle(el).backgroundColor)) {
-    ctx.fillStyle = '#edeee5';
-    ctx.fillRect(0, 0, width, height);
-  }
+  /* Transparent lockup bake — a full cream fill read as a box outline around the title */
+  const lockup = el.classList.contains('contact-hero__lockup');
   paintMedia(ctx, el, host);
   paintHeroArrows(ctx, el, host, paint);
 
-  /*
-   * Skip yellow accents in the bake — ContactAccentOverlay paints them above GL.
-   * After ink, cream-pad accent boxes so dark neighbor AA can’t peek as an “outline”.
-   */
+  /* Bake yellow R/Y/? with the lockup so they share the same mesh bend */
   for (const run of runs) {
-    if (run.accent) continue;
     ctx.font = run.font;
-    ctx.fillStyle = run.color;
     if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = run.letterSpacing;
     const metrics = ctx.measureText('Hg');
     const ascent = metrics.fontBoundingBoxAscent || metrics.actualBoundingBoxAscent || 0;
@@ -414,23 +402,17 @@ function bakeElement(el, paint = null, opts = {}) {
       // Snap to device pixels — subpixel fillText reads soft on retina
       const x = Math.round((line.left - host.left) * dpr) / dpr;
       const baseline = Math.round((line.top - host.top + line.height * ratio) * dpr) / dpr;
+      /* Local cream underpaint for yellow only — kills dark AA fringe without a title box */
+      if (run.accent) {
+        ctx.fillStyle = '#edeee5';
+        ctx.fillText(line.text, x, baseline);
+      }
+      ctx.fillStyle = run.color;
       ctx.fillText(line.text, x, baseline);
     }
   }
 
-  if (lockupCream) {
-    ctx.fillStyle = '#edeee5';
-    el.querySelectorAll('.contact-hero__accent').forEach((accentEl) => {
-      const box = accentEl.getBoundingClientRect();
-      if (box.width < 1 || box.height < 1) return;
-      const pad = Math.max(4, box.height * 0.08);
-      ctx.fillRect(
-        box.left - host.left - pad,
-        box.top - host.top - pad,
-        box.width + pad * 2,
-        box.height + pad * 2
-      );
-    });
+  if (lockup) {
     el.querySelectorAll('.contact-hero__media').forEach((media) => {
       const box = media.getBoundingClientRect();
       if (box.width < 2 || box.height < 2) return;
@@ -987,108 +969,7 @@ export function ContactSurfaceWarp({ scrollRef, contentKey = '' }) {
       </div>
       {/* Above GL — animated GIFs (warp canvas was covering live DOM media) */}
       <ContactGifOverlay scrollRef={scrollRef} />
-      {/* Above GL — yellow R/Y/? stay CSS-crisp (no dark bake AA fringe) */}
-      <ContactAccentOverlay scrollRef={scrollRef} />
     </>
-  );
-}
-
-/** Live yellow accents above the warp canvas — avoids dark premultiplied outlines. */
-function ContactAccentOverlay({ scrollRef }) {
-  const [items, setItems] = useState([]);
-
-  useEffect(() => {
-    let raf = 0;
-    const page = () => scrollRef?.current?.closest('.contact-page');
-
-    const sync = () => {
-      const root = page();
-      if (!root || !root.classList.contains('is-screen-warp')) {
-        setItems((prev) => (prev.length ? [] : prev));
-        raf = window.requestAnimationFrame(sync);
-        return;
-      }
-      const stage = root.getBoundingClientRect();
-      const next = [];
-      root.querySelectorAll('.contact-hero__lockup .contact-hero__accent').forEach((el, i) => {
-        const r = el.getBoundingClientRect();
-        if (r.width < 1 || r.height < 1) return;
-        const cs = getComputedStyle(el);
-        if (!el.dataset.accentOverlayKey) {
-          el.dataset.accentOverlayKey = `accent-${i}-${Math.random().toString(36).slice(2, 7)}`;
-        }
-        next.push({
-          key: el.dataset.accentOverlayKey,
-          text: el.textContent || '',
-          left: r.left - stage.left,
-          top: r.top - stage.top,
-          width: r.width,
-          height: r.height,
-          font: cs.font,
-          letterSpacing: cs.letterSpacing,
-          lineHeight: cs.lineHeight,
-          ital: el.classList.contains('contact-hero__ital'),
-          bold: el.classList.contains('contact-hero__bold'),
-          q: el.classList.contains('contact-hero__q'),
-        });
-      });
-      setItems((prev) => {
-        if (
-          prev.length === next.length &&
-          prev.every((p, idx) => {
-            const n = next[idx];
-            return (
-              p.key === n.key &&
-              p.text === n.text &&
-              Math.abs(p.left - n.left) < 0.5 &&
-              Math.abs(p.top - n.top) < 0.5 &&
-              Math.abs(p.width - n.width) < 0.5 &&
-              Math.abs(p.height - n.height) < 0.5
-            );
-          })
-        ) {
-          return prev;
-        }
-        return next;
-      });
-      root.classList.toggle('has-accent-overlay', next.length > 0);
-      raf = window.requestAnimationFrame(sync);
-    };
-
-    raf = window.requestAnimationFrame(sync);
-    return () => {
-      window.cancelAnimationFrame(raf);
-      page()?.classList.remove('has-accent-overlay');
-    };
-  }, [scrollRef]);
-
-  return (
-    <div className="contact-accent-overlay" aria-hidden>
-      {items.map((item) => (
-        <span
-          key={item.key}
-          className={[
-            'contact-accent-overlay__glyph',
-            item.ital ? 'is-ital' : '',
-            item.bold ? 'is-bold' : '',
-            item.q ? 'is-q' : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          style={{
-            left: item.left,
-            top: item.top,
-            width: item.width,
-            height: item.height,
-            font: item.font,
-            letterSpacing: item.letterSpacing,
-            lineHeight: item.lineHeight,
-          }}
-        >
-          {item.text}
-        </span>
-      ))}
-    </div>
   );
 }
 

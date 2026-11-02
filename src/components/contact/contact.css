@@ -52,55 +52,6 @@
   transform: translateZ(0);
 }
 
-/* Live yellow accents — above GL so bake AA fringe can’t show */
-.contact-accent-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none !important;
-  overflow: hidden;
-}
-
-.contact-accent-overlay__glyph {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0;
-  white-space: pre;
-  color: var(--contact-yellow) !important;
-  -webkit-text-fill-color: var(--contact-yellow) !important;
-  -webkit-text-stroke: 0 !important;
-  /* Cream halo kills any residual dark fringe peeking from the GL bake */
-  text-shadow:
-    -1px 0 0 var(--contact-cream),
-    1px 0 0 var(--contact-cream),
-    0 -1px 0 var(--contact-cream),
-    0 1px 0 var(--contact-cream),
-    -1px -1px 0 var(--contact-cream),
-    1px 1px 0 var(--contact-cream);
-  font-synthesis: none;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
-}
-
-.contact-accent-overlay__glyph.is-ital {
-  font-family: var(--font-didone);
-  font-style: italic;
-  font-weight: 500;
-}
-
-.contact-accent-overlay__glyph.is-bold {
-  font-family: "Greed", "Schibsted Grotesk", var(--font-service);
-  font-style: normal;
-  font-weight: 700;
-}
-
-.contact-accent-overlay__glyph.is-q {
-  display: flex;
-}
-
 /* Live GIF copies — above GL so animation isn’t trapped under the canvas */
 .contact-gif-overlay {
   position: absolute;

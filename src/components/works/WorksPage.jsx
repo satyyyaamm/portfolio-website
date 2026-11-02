@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { useRouteInteractive } from '../../lib/useRouteInteractive.js';
 import { AugeChrome } from '../chrome/AugeChrome.jsx';
 import { WorksCarousel } from './WorksCarousel.jsx';
 import { WorksSurfaceWarp } from './WorksSurfaceWarp.jsx';
@@ -11,6 +12,8 @@ export function WorksPage({
   paused = false,
   cursorSuppressRef,
   socialItems = [],
+  readyRequestId = 0,
+  onInteractive,
   onOpenProject,
   onHome,
   onOpenAbout,
@@ -34,6 +37,14 @@ export function WorksPage({
   const pulseRef = useRef(null);
   const glRectsRef = useRef({ media: [], thumbs: [], fill: null });
   const viewTipOnRef = useRef(false);
+
+  const isReady = useCallback(() => {
+    const host = carouselHostRef.current;
+    if (!host) return false;
+    const box = host.getBoundingClientRect();
+    return box.width > 2 && box.height > 2;
+  }, []);
+  useRouteInteractive(readyRequestId, onInteractive, isReady);
 
   const syncTip = (_x, _y, visible) => {
     if (viewTipOnRef.current === visible) return;
