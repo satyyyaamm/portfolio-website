@@ -172,6 +172,8 @@ uniform float uStrength;
 uniform vec2 uImageSize;
 uniform vec2 uPlaneSize;
 uniform float uCoverHeight;
+uniform float uFitContain;
+uniform float uCornerRadius;
 uniform float uSpreadPx;
 uniform float uReveal;
 uniform float uRevealFrom;
@@ -196,6 +198,19 @@ vec2 coverUv(vec2 uv, vec2 imageSize, vec2 planeSize, float coverHeight) {
   vec2 fullUv = vec2(uv.x, yFull);
   vec2 base = (fullUv - vec2(0.5, 1.0)) * ratio + vec2(0.5, 1.0);
   return clamp(base, 0.0, 1.0);
+}
+
+/* Fit whole image in the plane — letterbox / pillarbox, never crop. */
+vec2 containUv(vec2 uv, vec2 imageSize, vec2 planeSize) {
+  float imgAspect = imageSize.x / max(imageSize.y, 1.0);
+  float planeAspect = planeSize.x / max(planeSize.y, 1.0);
+  vec2 scale = vec2(1.0);
+  if (imgAspect > planeAspect) {
+    scale.y = planeAspect / imgAspect;
+  } else {
+    scale.x = imgAspect / planeAspect;
+  }
+  return (uv - 0.5) / scale + 0.5;
 }
 
 void main() {
@@ -230,8 +245,25 @@ void main() {
   );
 
   warped = edgeLiquidUv(warped);
-  vec2 uv = coverUv(warped, uImageSize, uPlaneSize, uCoverHeight);
-  gl_FragColor = texture2D(uMap, uv);
+  vec2 uv = uFitContain > 0.5
+    ? containUv(warped, uImageSize, uPlaneSize)
+    : coverUv(warped, uImageSize, uPlaneSize, uCoverHeight);
+  if (uFitContain > 0.5 && (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)) {
+    discard;
+  }
+
+  /* Soft rounded clip for landscape gallery frames (contain mode) */
+  if (uCornerRadius > 0.5) {
+    float rad = min(uCornerRadius, min(uPlaneSize.x, uPlaneSize.y) * 0.12);
+    vec2 halfPx = uPlaneSize * 0.5;
+    vec2 p = (warped - 0.5) * uPlaneSize;
+    vec2 b = max(halfPx - vec2(rad), vec2(0.0));
+    vec2 q = abs(p) - b;
+    float sd = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - rad;
+    if (sd > 0.0) discard;
+  }
+
+  gl_FragColor = texture2D(uMap, clamp(uv, 0.0, 1.0));
 }
 `;
 

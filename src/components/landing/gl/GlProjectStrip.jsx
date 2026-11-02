@@ -178,6 +178,8 @@ function DistortCard({
       uPlaneSize: { value: new THREE.Vector2(width, 400) },
       /** Cover fit locked to max height so shorter cards crop bottom, not rescale */
       uCoverHeight: { value: 400 },
+      uFitContain: { value: 0 },
+      uCornerRadius: { value: 0 },
       /** Falloff radius in px — 100% of the shorter viewport side around the cursor */
       uSpreadPx: { value: 800 },
       uResolution: { value: new THREE.Vector2(1, 1) },

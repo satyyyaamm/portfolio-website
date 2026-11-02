@@ -13,6 +13,7 @@ const RISE = { hidden: { opacity: 0, y: 36 }, show: { opacity: 1, y: 0 } };
  */
 function GalleryShot({ src, variant, side, reducedMotion, scrollRoot }) {
   const ref = useRef(null);
+  const [landscape, setLandscape] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -75,13 +76,29 @@ function GalleryShot({ src, variant, side, reducedMotion, scrollRoot }) {
     };
   }, [reducedMotion, scrollRoot, src]);
 
+  const onImgMeta = (event) => {
+    const img = event.currentTarget;
+    const w = img.naturalWidth || 0;
+    const h = img.naturalHeight || 0;
+    setLandscape(w > 0 && h > 0 && w >= h);
+  };
+
   return (
     <figure
       ref={ref}
-      className={`project-detail__shot project-detail__shot--${variant} project-detail__shot--from-${side}`}
+      className={`project-detail__shot project-detail__shot--${variant} project-detail__shot--from-${side}${
+        landscape ? ' is-landscape' : ''
+      }`}
       data-reveal={side}
+      data-landscape={landscape ? '1' : undefined}
     >
-      <img src={src} alt="" loading="lazy" decoding="async" />
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onLoad={onImgMeta}
+      />
     </figure>
   );
 }
@@ -376,9 +393,7 @@ export function ProjectDetailScroll({
       const slotTop = slotBox.top - stageBox.top;
 
       if (media) {
-        const heroT = reducedMotion ? 1 : smoothstep(y / Math.max(entryY, 1));
-        const scale = lerp(1.2, 1, heroT);
-        media.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        media.style.transform = 'translate(-50%, -50%)';
       }
 
       let dockT;

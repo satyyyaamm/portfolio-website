@@ -27,6 +27,7 @@ import uj2 from './assets/uj/IMG_0189.PNG';
 import uj3 from './assets/uj/IMG_0190.PNG';
 import uj4 from './assets/uj/IMG_0191.PNG';
 import uj5 from './assets/uj/IMG_0192.PNG';
+import ujCarousel from './assets/uj/uj-carousel.jpg';
 import nanda1 from './assets/nanda/nanda1.png';
 import nanda2 from './assets/nanda/nanda2.png';
 import nanda3 from './assets/nanda/nanda3.png';
@@ -39,12 +40,19 @@ import picksyVideo from './assets/picksy/picksy.mp4';
 import nextoffer1 from './assets/nextoffer/nextoffer1.png';
 import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
-/** Temporary cinematic stills for the landing carousel (swap back to product shots later). */
-import cine3 from './assets/cinematic/cine3.jpg';
-import cine4 from './assets/cinematic/cine4.jpg';
-import cine5 from './assets/cinematic/cine5.jpg';
-import cine6 from './assets/cinematic/cine6.jpg';
-import cine7 from './assets/cinematic/cine7.jpg';
+import nextofferCarousel from './assets/nextoffer/nextoffer-carousel.jpg';
+import affittoCarousel from './assets/affitto/affitto-carousel.jpg';
+import affitto1 from './assets/affitto/affitto1.jpg';
+import affitto2 from './assets/affitto/affitto2.jpg';
+import affitto3 from './assets/affitto/affitto3.jpg';
+import mindfulNatureCarousel from './assets/mindful-nature/mindful-nature-carousel.jpg';
+import woopdo1 from './assets/woopdo/woopdo1.png';
+import woopdo2 from './assets/woopdo/woopdo2.png';
+import woopdo3 from './assets/woopdo/woopdo3.png';
+import woopdo4 from './assets/woopdo/woopdo4.png';
+import safeAgainCarousel from './assets/sa/safe-again-carousel.jpg';
+import wayaCarousel from './assets/wayawaya/waya-carousel.jpg';
+import nandaCarousel from './assets/nanda/nanda-carousel.jpg';
 import { trackEvent } from './lib/analytics.js';
 import { AugeLanding } from './components/landing/AugeLanding.jsx';
 import { ProjectOpenOverlay } from './components/ProjectOpenOverlay.jsx';
@@ -71,6 +79,9 @@ const UJ_WAYFINDER_GALLERY = [uj1, uj2, uj3, uj4, uj5];
 const NANDA_GALLERY = [nanda1, nanda2, nanda3, nanda4];
 const PICKSY_GALLERY = [picksy1, picksy2, picksy3];
 const NEXTOFFER_GALLERY = [nextoffer1, nextoffer2, nextoffer3];
+const AFFITTO_GALLERY = [affitto1, affitto2, affitto3];
+/** Woopdo app screens — same product as the Mindful Nature carousel art. */
+const WOOPDO_GALLERY = [woopdo1, woopdo2, woopdo3, woopdo4];
 
 const MediumIcon = ({ className = 'h-4 w-4' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -205,6 +216,98 @@ const App = () => {
     },
     {
       id: 1,
+      slug: 'safe-again',
+      name: "Safe Again",
+      meta: "Women’s safety · Flutter + Firebase · Mid 2023 – Mid 2025 · Live",
+      role: "Lead developer",
+      summary:
+        "A safety network for real moments—broadcast distress to verified people nearby, build private signal groups, and stay connected through community when it matters.",
+      desc: "Real-time safety app: distress signals to nearby verified users, private signal groups, community posts, messaging, and push notifications—with scalable Firestore modeling.",
+      challenge:
+        "Safety tools are either too slow or too public—people need nearby help without exposing themselves to the wrong audience.",
+      solution:
+        "Real-time distress to verified nearby users, private signal groups, and a community layer on Firestore with push that reaches people when seconds count.",
+      highlights: [
+        "Emergency broadcast, acceptance flows, and signal history for accountability.",
+        "Community module with location-based filtering; separate collections for signals, chats, posts, and users.",
+        "Push notifications for emergencies, signal updates, and community activity.",
+      ],
+      image: safeAgainCarousel,
+      gallery: SAFE_AGAIN_GALLERY,
+      previewFrame: 'mobile',
+      href: "#",
+    },
+    {
+      id: 2,
+      slug: 'nextoffer-ai',
+      name: "NextOffer.ai",
+      meta: "AI job search · Next.js · 2026 · Live",
+      role: "Founder & full-stack developer",
+      summary:
+        "A job search companion that reads your resume, scores each role, and helps you send applications that actually sound like you—not a template.",
+      desc: "AI-powered job hunt platform: resume-tailored search with per-role compatibility scores, multi-source job aggregation, LinkedIn profile analysis, and one-click ATS application kits—landing, dashboard, and optimiser flows deployed on Firebase.",
+      challenge:
+        "Job seekers spray generic applications across tabs and tools—with no clear signal of fit, and copy that never sounds like them.",
+      solution:
+        "One Next.js + Firebase product that scores roles against your resume, aggregates listings, and generates ATS-ready kits you can ship in a click.",
+      highlights: [
+        "Job search dashboard with saved profile, skill tags, and filters for remote/hybrid, experience level, salary, and job sources (JSearch, Jooble, Adzuna).",
+        "LinkedIn optimiser: PDF upload or paste-in analysis with scored sections, strengths, and prioritised improvement list.",
+        "Application kit generation and freemium pricing (Free, Weekly Sprint, Monthly Pro) with Google sign-in.",
+      ],
+      image: nextofferCarousel,
+      gallery: NEXTOFFER_GALLERY,
+      previewFrame: 'web',
+      href: "https://nextoffer-ai.web.app",
+    },
+    {
+      id: 3,
+      slug: 'nanda-enterprise',
+      name: "Nanda Enterprises",
+      meta: "Business operations platform",
+      role: "Product and engineering execution",
+      summary:
+        "Operations software for teams tired of chasing updates in calls and chats—one place to see requests, status, and who owns what next.",
+      desc: "Operations software that centralizes request tracking, status visibility, and approval steps. It solves fragmented communication and unclear ownership by giving teams one source of truth for day-to-day execution.",
+      challenge:
+        "Requests lived in calls, chats, and spreadsheets—ownership blurred, follow-ups piled up, and nobody could see the next decision.",
+      solution:
+        "A single operations surface for intake, status, and approvals so handoffs stay visible and teams move without chasing updates.",
+      highlights: [
+        "Unified request intake and status tracking so teams stop juggling calls, chat threads, and spreadsheets.",
+        "Clear handoffs and ownership visibility to reduce follow-ups and missed actions.",
+        "Faster approvals and decision cycles through a single workflow view.",
+      ],
+      image: nandaCarousel,
+      gallery: NANDA_GALLERY,
+      previewFrame: 'web',
+      href: "#",
+    },
+    {
+      id: 4,
+      slug: 'wayawaya',
+      name: "Waya Waya",
+      meta: "Mall rewards & discovery · Flutter · Nov 2021 – Present · Live",
+      role: "Lead mobile developer",
+      summary:
+        "Mall discovery and rewards across South Africa—browse stores, collect points when you walk in, and redeem offers even when the signal drops.",
+      desc: "Consumer mall app used across malls in South Africa: discovery, offers, and a location-based rewards system with offline-first local storage.",
+      challenge:
+        "Mall apps fail underground—spotty signal breaks discovery, check-in, and voucher redeem right when shoppers need them.",
+      solution:
+        "An offline-first Flutter client with local SQL sync, location-based rewards on entry, and partner redemption that still works when the network dips.",
+      highlights: [
+        "Authentication, mall selection, stores, and regional offers.",
+        "Offline-first sync with SQL plus remote data; points for entering malls and voucher redemption with partners.",
+        "Shared architecture patterns with UJ WayFinder, tuned via configuration.",
+      ],
+      image: wayaCarousel,
+      gallery: WAYA_WAYA_GALLERY,
+      previewFrame: 'mobile',
+      href: "#",
+    },
+    {
+      id: 5,
       slug: 'picksy',
       name: "Picksy",
       meta: "Social decision-making · Mobile · 2025 · Concept",
@@ -229,53 +332,7 @@ const App = () => {
       href: "#",
     },
     {
-      id: 2,
-      slug: 'nextoffer-ai',
-      name: "NextOffer.ai",
-      meta: "AI job search · Next.js · 2026 · Live",
-      role: "Founder & full-stack developer",
-      summary:
-        "A job search companion that reads your resume, scores each role, and helps you send applications that actually sound like you—not a template.",
-      desc: "AI-powered job hunt platform: resume-tailored search with per-role compatibility scores, multi-source job aggregation, LinkedIn profile analysis, and one-click ATS application kits—landing, dashboard, and optimiser flows deployed on Firebase.",
-      challenge:
-        "Job seekers spray generic applications across tabs and tools—with no clear signal of fit, and copy that never sounds like them.",
-      solution:
-        "One Next.js + Firebase product that scores roles against your resume, aggregates listings, and generates ATS-ready kits you can ship in a click.",
-      highlights: [
-        "Job search dashboard with saved profile, skill tags, and filters for remote/hybrid, experience level, salary, and job sources (JSearch, Jooble, Adzuna).",
-        "LinkedIn optimiser: PDF upload or paste-in analysis with scored sections, strengths, and prioritised improvement list.",
-        "Application kit generation and freemium pricing (Free, Weekly Sprint, Monthly Pro) with Google sign-in.",
-      ],
-      image: cine3,
-      gallery: NEXTOFFER_GALLERY,
-      previewFrame: 'web',
-      href: "https://nextoffer-ai.web.app",
-    },
-    {
-      id: 3,
-      slug: 'wayawaya',
-      name: "Waya Waya",
-      meta: "Mall rewards & discovery · Flutter · Nov 2021 – Present · Live",
-      role: "Lead mobile developer",
-      summary:
-        "Mall discovery and rewards across South Africa—browse stores, collect points when you walk in, and redeem offers even when the signal drops.",
-      desc: "Consumer mall app used across malls in South Africa: discovery, offers, and a location-based rewards system with offline-first local storage.",
-      challenge:
-        "Mall apps fail underground—spotty signal breaks discovery, check-in, and voucher redeem right when shoppers need them.",
-      solution:
-        "An offline-first Flutter client with local SQL sync, location-based rewards on entry, and partner redemption that still works when the network dips.",
-      highlights: [
-        "Authentication, mall selection, stores, and regional offers.",
-        "Offline-first sync with SQL plus remote data; points for entering malls and voucher redemption with partners.",
-        "Shared architecture patterns with UJ WayFinder, tuned via configuration.",
-      ],
-      image: cine4,
-      gallery: WAYA_WAYA_GALLERY,
-      previewFrame: 'mobile',
-      href: "#",
-    },
-    {
-      id: 4,
+      id: 6,
       slug: 'uj-wayfinder',
       name: "UJ WayFinder",
       meta: "Campus navigation · Flutter · Nov 2021 – Present · Live",
@@ -291,56 +348,59 @@ const App = () => {
         "Map rendering and indoor navigation logic with BLE beacon integration.",
         "Common codebase with Waya Waya, separated by configuration.",
       ],
-      image: cine5,
+      image: ujCarousel,
       gallery: UJ_WAYFINDER_GALLERY,
       previewFrame: 'mobile',
       href: "#",
     },
     {
-      id: 5,
-      slug: 'safe-again',
-      name: "Safe Again",
-      meta: "Women’s safety · Flutter + Firebase · Mid 2023 – Mid 2025 · Live",
-      role: "Lead developer",
+      id: 7,
+      slug: 'affitto',
+      name: 'Affitto',
+      meta: 'Heavy equipment rental · Flutter + Next.js + Firebase · In progress',
+      role: 'Founder · product design & full-stack engineering',
       summary:
-        "A safety network for real moments—broadcast distress to verified people nearby, build private signal groups, and stay connected through community when it matters.",
-      desc: "Real-time safety app: distress signals to nearby verified users, private signal groups, community posts, messaging, and push notifications—with scalable Firestore modeling.",
+        'Heavy equipment, right when you need it—book Hydras and more by the hour, dispatch operators live, and run the yard from one ops console.',
+      desc: 'Marketplace monorepo for construction equipment rental in India: Flutter customer + operator apps sharing packages/affitto_core, and a Next.js admin panel on Firebase (Auth, Firestore, Storage, FCM). Bookings, live jobs with start/end PINs, pricing quotes, operator onboarding, and verification stay behind repository contracts so the backend can move off Firebase later.',
       challenge:
-        "Safety tools are either too slow or too public—people need nearby help without exposing themselves to the wrong audience.",
+        'Yards still book Hydras over phone and WhatsApp—availability is unclear, operators get double-booked, PIN-less job starts are insecure, and revenue only shows up days late across chat threads.',
       solution:
-        "Real-time distress to verified nearby users, private signal groups, and a community layer on Firestore with push that reaches people when seconds count.",
+        'Three surfaces on one domain model: customers quote and book machines, operators go online / accept / navigate / start-complete with customer PINs, and admins see bookings, fleet, verification, and INR revenue without each app inventing its own booking shape.',
       highlights: [
-        "Emergency broadcast, acceptance flows, and signal history for accountability.",
-        "Community module with location-based filtering; separate collections for signals, chats, posts, and users.",
-        "Push notifications for emergencies, signal updates, and community activity.",
+        'Customer + operator Flutter apps with shared affitto_core contracts (auth, bookings, jobs, pricing, earnings)—no Firebase types above the data layer.',
+        'Live job flow: accept offer, on-the-way map, start/complete via customer-read PINs (never stored on-device), extend hours, job photos, and earnings.',
+        'Operator onboarding: personal → equipment → documents (Aadhaar, DL, RC, insurance) → bank → review, with verification queue in admin.',
+        'Next.js ops console: dashboard KPIs, bookings overview, live map, recent jobs, revenue, and catalogue/verification wired to Firestore when configured.',
       ],
-      image: cine6,
-      gallery: SAFE_AGAIN_GALLERY,
+      image: affittoCarousel,
+      previewImage: affitto1,
+      gallery: AFFITTO_GALLERY,
       previewFrame: 'mobile',
-      href: "#",
+      href: 'https://affitto-equipment-app.web.app',
     },
     {
-      id: 6,
-      slug: 'nanda-enterprise',
-      name: "Nanda Enterprise",
-      meta: "Business operations platform",
-      role: "Product and engineering execution",
+      id: 8,
+      slug: 'woopdo',
+      name: 'Woopdo',
+      meta: 'Social covers · Flutter · Concept',
+      role: 'Product design & mobile UX',
       summary:
-        "Operations software for teams tired of chasing updates in calls and chats—one place to see requests, status, and who owns what next.",
-      desc: "Operations software that centralizes request tracking, status visibility, and approval steps. It solves fragmented communication and unclear ownership by giving teams one source of truth for day-to-day execution.",
+        'Collect “woops” like Mindful Nature—swipe today’s highlights, open cover stories, and keep your media in one playful feed.',
+      desc: 'Woopdo is a cover-first social app: today’s highlights cards, polaroid-style woop collections on your profile, and branded experiences like Mindful Nature (Pause · Breathe · Be Present) with a mint, yellow, and navy system.',
       challenge:
-        "Requests lived in calls, chats, and spreadsheets—ownership blurred, follow-ups piled up, and nobody could see the next decision.",
+        'Photo dumps and stories feel either clinical or noisy—people want a soft ritual for saving moments without another productivity dashboard.',
       solution:
-        "A single operations surface for intake, status, and approvals so handoffs stay visible and teams move without chasing updates.",
+        'A highlights feed plus “Your woops” covers that open into media, with Mindful Nature as a flagship cover identity on the landing strip.',
       highlights: [
-        "Unified request intake and status tracking so teams stop juggling calls, chat threads, and spreadsheets.",
-        "Clear handoffs and ownership visibility to reduce follow-ups and missed actions.",
-        "Faster approvals and decision cycles through a single workflow view.",
+        'Today’s highlights feed with thick-border photo cards and Mindful Nature cover badges.',
+        'Profile “Your woops” carousel—tap a cover to open the media inside.',
+        'Shared art direction: mint/yellow UI screens plus the burgundy Mindful Nature carousel hero.',
       ],
-      image: cine7,
-      gallery: NANDA_GALLERY,
-      previewFrame: 'web',
-      href: "#",
+      image: mindfulNatureCarousel,
+      previewImage: woopdo1,
+      gallery: WOOPDO_GALLERY,
+      previewFrame: 'mobile',
+      href: '#',
     },
   ];
 

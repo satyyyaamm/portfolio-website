@@ -24,7 +24,7 @@ export function DistortSurface({
   paramsRef,
   simRef,
   reducedMotion,
-  mode = 'cover', // 'cover' | 'alpha'
+  mode = 'cover', // 'cover' | 'contain' | 'alpha'
   depthWrite: depthWriteProp,
   userData,
   onPointer,
@@ -48,6 +48,8 @@ export function DistortSurface({
       },
       uPlaneSize: { value: new THREE.Vector2(width, height) },
       uCoverHeight: { value: height },
+      uFitContain: { value: mode === 'contain' ? 1 : 0 },
+      uCornerRadius: { value: 0 },
       uSpreadPx: { value: 800 },
       uResolution: { value: new THREE.Vector2(1, 1) },
       uEdgeWidth: { value: 0.03 },
@@ -67,7 +69,7 @@ export function DistortSurface({
       uClipBottom: { value: -1 },
       ...dropUniformDefaults(),
     };
-  }, [texture, width, height]);
+  }, [texture, width, height, mode]);
 
   useFrame(() => {
     const mat = matRef.current;
@@ -113,6 +115,16 @@ export function DistortSurface({
     applyBottomHingeSkew(mesh, cx, bottomY, w, h, skewDeg);
     mat.uniforms.uPlaneSize.value.set(w, h);
     mat.uniforms.uCoverHeight.value = rect?.coverHeight || h;
+    if (mat.uniforms.uCornerRadius) {
+      // Soft radius on landscape gallery shots only (match CSS is-landscape)
+      const img = texture?.image;
+      const iw = img?.naturalWidth || img?.width || 0;
+      const ih = img?.naturalHeight || img?.height || 0;
+      const isLandscape = mode === 'contain' && iw > 0 && ih > 0 && iw >= ih;
+      mat.uniforms.uCornerRadius.value = isLandscape
+        ? Math.min(12, Math.min(w, h) * 0.08)
+        : 0;
+    }
 
     const vw = m.vw || window.innerWidth;
     const vh = m.vh || window.innerHeight;
