@@ -99,13 +99,14 @@
 }
 
 @media (max-width: 720px) {
-  /*
-    Titles sit above the single media canvas and difference against it.
-    No title/copy GL on phones — avoids the dual-context washout.
-  */
-  .project-open__detail-stage--gl .project-detail__title-float,
+  /* No invert on phones — keeps title colors stable over media GL */
+  .project-open__detail-stage--gl .project-detail__title-float {
+    color: #000;
+    mix-blend-mode: normal;
+  }
+
   .project-open__detail-stage--gl .project-detail__title-hero {
     color: #fff;
-    mix-blend-mode: difference;
+    mix-blend-mode: normal;
   }
 }

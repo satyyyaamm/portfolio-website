@@ -714,13 +714,17 @@ body.project-open-active .auge-view-tip.project-detail__view-tip.is-on {
   }
 
   /*
-    Keep white + difference so the top title inverts over hero / cream
-    (same as desktop). Safe now that mobile detail WebGL is off.
+    Solid type on phones — difference blend shifts title colors against the
+    GL photo/cream. Distortion stays on the media canvas.
   */
-  .project-detail__title-float,
+  .project-detail__title-float {
+    color: var(--detail-ink);
+    mix-blend-mode: normal;
+  }
+
   .project-detail__title-hero {
     color: #fff;
-    mix-blend-mode: difference;
+    mix-blend-mode: normal;
   }
 }
 
