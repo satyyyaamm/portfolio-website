@@ -48,7 +48,7 @@ import affittoCustomerCategories from './assets/affitto/affitto-customer-categor
 import affittoCustomerEquipment from './assets/affitto/affitto-customer-equipment.png';
 import affittoCustomerBookings from './assets/affitto/affitto-customer-bookings.png';
 import affittoOperatorHome from './assets/affitto/affitto-operator-home.png';
-import affittoOperatorEnroute from './assets/affitto/affitto-operator-enroute.jpg';
+import affittoOperatorEnroute from './assets/affitto/affitto-operator-enroute.png';
 import affittoOperatorEarnings from './assets/affitto/affitto-operator-earnings.png';
 import mindfulNatureCarousel from './assets/mindful-nature/mindful-nature-carousel.jpg';
 import woopdo1 from './assets/woopdo/woopdo1.png';
