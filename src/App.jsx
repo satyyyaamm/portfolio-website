@@ -42,9 +42,14 @@ import nextoffer2 from './assets/nextoffer/nextoffer2.png';
 import nextoffer3 from './assets/nextoffer/nextoffer3.png';
 import nextofferCarousel from './assets/nextoffer/nextoffer-carousel.jpg';
 import affittoCarousel from './assets/affitto/affitto-carousel.jpg';
-import affitto1 from './assets/affitto/affitto1.jpg';
-import affitto2 from './assets/affitto/affitto2.jpg';
-import affitto3 from './assets/affitto/affitto3.jpg';
+import affittoAdmin from './assets/affitto/affitto-admin.png';
+import affittoCustomerHome from './assets/affitto/affitto-customer-home.png';
+import affittoCustomerCategories from './assets/affitto/affitto-customer-categories.png';
+import affittoCustomerEquipment from './assets/affitto/affitto-customer-equipment.png';
+import affittoCustomerBookings from './assets/affitto/affitto-customer-bookings.png';
+import affittoOperatorHome from './assets/affitto/affitto-operator-home.png';
+import affittoOperatorEnroute from './assets/affitto/affitto-operator-enroute.jpg';
+import affittoOperatorEarnings from './assets/affitto/affitto-operator-earnings.png';
 import mindfulNatureCarousel from './assets/mindful-nature/mindful-nature-carousel.jpg';
 import woopdo1 from './assets/woopdo/woopdo1.png';
 import woopdo2 from './assets/woopdo/woopdo2.png';
@@ -79,7 +84,16 @@ const UJ_WAYFINDER_GALLERY = [uj1, uj2, uj3, uj4, uj5];
 const NANDA_GALLERY = [nanda1, nanda2, nanda3, nanda4];
 const PICKSY_GALLERY = [picksy1, picksy2, picksy3];
 const NEXTOFFER_GALLERY = [nextoffer1, nextoffer2, nextoffer3];
-const AFFITTO_GALLERY = [affitto1, affitto2, affitto3];
+const AFFITTO_GALLERY = [
+  affittoAdmin,
+  affittoCustomerHome,
+  affittoCustomerCategories,
+  affittoCustomerEquipment,
+  affittoCustomerBookings,
+  affittoOperatorHome,
+  affittoOperatorEnroute,
+  affittoOperatorEarnings,
+];
 /** Woopdo app screens — same product as the Mindful Nature carousel art. */
 const WOOPDO_GALLERY = [woopdo1, woopdo2, woopdo3, woopdo4];
 
@@ -373,7 +387,7 @@ const App = () => {
         'Next.js ops console: dashboard KPIs, bookings overview, live map, recent jobs, revenue, and catalogue/verification wired to Firestore when configured.',
       ],
       image: affittoCarousel,
-      previewImage: affitto1,
+      previewImage: affittoCustomerHome,
       gallery: AFFITTO_GALLERY,
       previewFrame: 'mobile',
       href: 'https://affitto-equipment-app.web.app',
