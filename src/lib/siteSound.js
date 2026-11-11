@@ -40,8 +40,8 @@ const SOUND_ON_ATTR = 'data-sound-on';
 const GAIN = 0.6;
 const SILENCE = 0.0025;
 const IDLE_SUSPEND_MS = 30_000;
-const UNLOCK_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
-const RESUME_EVENTS = ['pointerdown', 'keydown'];
+const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'keydown', 'touchstart', 'mousedown'];
+const RESUME_EVENTS = ['pointerdown', 'pointerup', 'keydown', 'mousedown'];
 
 const listeners = new Set();
 const buffers = new Map();
@@ -106,12 +106,13 @@ function notify() {
 }
 
 export function isSoundMuted() {
-  if (typeof document === 'undefined') return true;
+  if (typeof document === 'undefined') return false;
   return !document.documentElement.hasAttribute(SOUND_ON_ATTR);
 }
 
+/** Match index.html `data-sound-on` — first paint must not flash muted. */
 export function isSoundMutedOnServer() {
-  return true;
+  return false;
 }
 
 export function setSoundMuted(muted) {
@@ -158,26 +159,35 @@ function bumpIdle() {
 }
 
 export function resumeSound() {
-  if (!ctx || !unlocked || isSoundMuted()) {
+  if (!ctx || isSoundMuted()) {
     return Promise.resolve();
   }
   if (ctx.state === 'running') {
+    unlocked = true;
     bumpIdle();
     return Promise.resolve();
   }
-  const p = ctx.resume().catch(() => {});
+  // Always attempt resume when preference is on — browsers only fulfill it
+  // after a real user gesture, which also flips `unlocked`.
+  const p = ctx
+    .resume()
+    .then(() => {
+      if (ctx?.state === 'running') unlocked = true;
+    })
+    .catch(() => {});
   bumpIdle();
   return p;
 }
 
 function enableSoundFromGesture() {
+  // First gesture: keep preference on (site starts unmuted) and unlock Web Audio.
   if (isSoundMuted()) setSoundMuted(false);
   unlock();
   return resumeSound();
 }
 
 function unlock() {
-  if (unlocked) return;
+  if (unlocked && ctx?.state === 'running') return;
   unlocked = true;
   for (const ev of UNLOCK_EVENTS) {
     window.removeEventListener(ev, onUnlockGesture, true);
@@ -336,11 +346,12 @@ export function initSound() {
   if (inited || typeof window === 'undefined') return;
   if (typeof window.AudioContext !== 'function') return;
   inited = true;
+  // Site default: sound on (html already has data-sound-on; re-assert for SPA navigations).
   setSoundMuted(false);
 
   const audioCtx = new AudioContext({ latencyHint: 'interactive' });
   const gain = audioCtx.createGain();
-  gain.gain.value = isSoundMuted() ? 0 : GAIN;
+  gain.gain.value = GAIN;
   gain.connect(audioCtx.destination);
   ctx = audioCtx;
   master = gain;
@@ -359,8 +370,12 @@ export function initSound() {
     }
   });
 
-  // Prefetch immediately so the first card hover isn't silent.
+  // Prefetch immediately so the first card hover isn't silent after unlock.
   for (const url of allUrls()) {
     decodeUrl(audioCtx, url);
   }
+
+  // Optimistic resume — succeeds only after a user gesture, but keeps preference live.
+  resumeSound();
+  notify();
 }
